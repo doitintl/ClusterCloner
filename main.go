@@ -14,27 +14,30 @@ import (
 
 var (
 	// main context
-	mainCtx context.Context
-	// Version contains the current version.
-	Version = "dev"
-	// BuildDate contains a string with the build date.
+	mainCtx   context.Context
+	Version   = "dev"
 	BuildDate = "unknown"
 	// GitCommit git commit SHA
 	GitCommit = "dirty"
-	// GitBranch git branch
 	GitBranch = "master"
 )
 
-func mainCmd(c *cli.Context) error {
-	log.Printf("running main command with %s", c.FlagNames())
-	origClusInfo:= clusters.ReadCluster(c)
-	clusters.CreateClusters(c, origClusInfo)
+func mainCmd(cliCtx *cli.Context) error {
+	var s = ""
+	for _, flagName := range cliCtx.FlagNames() {
+		value := cliCtx.String(flagName)
+		s += fmt.Sprintf("\t\t%s: %s\n", flagName, value)
+	}
+	log.Printf("Running main command with:\n %s", s)
+	origClusInfo := clusters.ReadCluster(cliCtx)
+	clusters.CreateClusters(cliCtx, origClusInfo)
 	return nil
 }
 
 func init() {
 	// handle termination signal
 	mainCtx = handleSignals()
+	_ = mainCtx
 }
 
 func handleSignals() context.Context {
@@ -66,9 +69,8 @@ func main() {
 				Required: true, //todo use current GCP default
 			},
 			&cli.StringFlag{
-				Name:        "location",
-				Usage:       "GCP zone",
-
+				Name:  "location",
+				Usage: "GCP zone",
 			},
 		},
 		Name:    "goapp",
@@ -84,8 +86,8 @@ func main() {
 		fmt.Printf("  Built with: %s\n", runtime.Version())
 	}
 
-	error := app.Run(os.Args)
-	if error != nil {
-		log.Fatal(error)
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
 	}
 }

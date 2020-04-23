@@ -11,6 +11,7 @@ import (
 
 //CreateClusters Create a cluster with the given params
 func CreateClusters(cliCtx *cli.Context, origClustersInfo *containerpb.ListClustersResponse) {
+	//todo support Azure, AWS, for both read and write cluster
 	ctx := context.Background()
 	clustMgrClient, err := containers.NewClusterManagerClient(ctx)
 	if err != nil {
@@ -20,18 +21,19 @@ func CreateClusters(cliCtx *cli.Context, origClustersInfo *containerpb.ListClust
 	loc := cliCtx.String("location")
 
 	if loc == "=" {
-		panic("Cannot use wildcard for zones, _, to create cluster")
+		panic("Cannot use wildcard for zones (_) to create cluster")
 	}
 	for _, clusterInfo := range origClustersInfo.Clusters {
-		createACluster(ctx, proj, loc, clusterInfo, clustMgrClient)
+		createCluster(ctx, proj, loc, clusterInfo, clustMgrClient)
 	}
 
 }
 
-func createACluster(bkgrdCtx context.Context, proj string, loc string, origCluster *containerpb.Cluster, clustMgrClient *containers.ClusterManagerClient) {
+func createCluster(bkgrdCtx context.Context, proj string, loc string, origCluster *containerpb.Cluster, clustMgrClient *containers.ClusterManagerClient) {
 	clusterName := origCluster.Name + "-copy"
 	initialNodeCount := origCluster.InitialNodeCount
 	if initialNodeCount < 1 {
+		log.Print("Copying a paused cluster, creating one node as a necessary minimum.")
 		initialNodeCount = 1
 	}
 	path := fmt.Sprintf("projects/%s/locations/%s", proj, loc)
