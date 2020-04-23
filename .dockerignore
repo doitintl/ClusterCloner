@@ -21,7 +21,5 @@ docs
 
 # customization and secrets
 .env
-# secret
-credential*.json
 # license
 LICENSE

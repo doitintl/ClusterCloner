@@ -20,6 +20,7 @@ WORKDIR /go/src/app
 # load dependency
 COPY go.mod .
 COPY go.sum .
+COPY gcp-credentials-for-docker.json .
 RUN --mount=type=cache,target=/go/mod go mod download
 
 # copy sources
@@ -46,5 +47,7 @@ COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifica
 
 # this is the last command since it's never cached
 COPY --from=build /go/src/app/.bin/goapp /goapp
+
+ENV  GOOGLE_APPLICATION_CREDENTIALS "gcp-credentials-for-docker.json"
 
 ENTRYPOINT ["/goapp"]

@@ -15,8 +15,14 @@
 .env
 # secret keys
 credential*.json
+gcp-credentials-for-docker.json
 
 # temporary
 **/.DS_Store
 **/debug
 **/debug.test
+
+# personal scripts
+run.sh
+build.sh
+docker_run.sh

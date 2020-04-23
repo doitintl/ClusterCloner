@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/urfave/cli/v2"
 	"goapp/clusters"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -27,7 +28,8 @@ var (
 
 func mainCmd(c *cli.Context) error {
 	log.Printf("running main command with %s", c.FlagNames())
-	clusters.ReadCluster(c)
+	origClusInfo:= clusters.ReadCluster(c)
+	clusters.CreateClusters(c, origClusInfo)
 	return nil
 }
 
@@ -55,6 +57,25 @@ func handleSignals() context.Context {
 }
 
 func main() {
+	log.Print("Starting")
+	dir, _ := os.Getwd()
+	os.Stderr.WriteString("..........................\n")
+	os.Stderr.WriteString(dir)
+	os.Stderr.WriteString("\n")
+	files, _ := ioutil.ReadDir("./")
+
+	for _, f := range files {
+		os.Stderr.WriteString(f.Name())
+	}
+
+     os.Stderr.WriteString("..........................\n")
+	files0, _ := ioutil.ReadDir("./goapp")
+
+	for _, f2 := range files0 {
+		os.Stderr.WriteString(f2.Name())
+	}
+
+//	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS","gcp-credentials-for-docker.json")
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -64,8 +85,8 @@ func main() {
 			},
 			&cli.StringFlag{
 				Name:        "location",
-				Usage:       "GCP region",
-				DefaultText: "-",
+				Usage:       "GCP zone",
+
 			},
 		},
 		Name:    "goapp",
@@ -81,8 +102,8 @@ func main() {
 		fmt.Printf("  Built with: %s\n", runtime.Version())
 	}
 
-	err := app.Run(os.Args)
-	if err != nil {
-		log.Fatal(err)
+	error := app.Run(os.Args)
+	if error != nil {
+		log.Fatal(error)
 	}
 }

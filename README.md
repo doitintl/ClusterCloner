@@ -12,20 +12,22 @@ Permissions:
 Based on goapp, the bootstrap project for Go CLI application.
 
 ## Docker
+Build with `DOCKER_BUILDKIT=1 docker build -t <TAG> .`
 
-The `goapp` uses Docker both as a CI tool and for releasing final `goapp` Docker image (`scratch` with updated `ca-credentials` package).
+Based on`goapp`, this uses Docker both as a CI tool and for releasing a final Docker image 
+(based on `scratch` with updated `ca-credentials` package).
 
 ## Makefile
 
-The `goapp` `Makefile` is used for task automation only: compile, lint, test and etc.
+The `Makefile` is used for task automation: compile, lint, test and etc.
 
 ## Continuous Integration
 
-GitHub action `Docker CI` is used for `goapp` CI.
+GitHub action `Docker CI` is used.
 
 ### Required GitHub secrets
 
-Please specify the following GitHub secrets:
+For GitHub CI, please specify the following GitHub secrets:
 
 1. `DOCKER_USERNAME` - Docker Registry username
 2. `DOCKER_PASSWORD` - Docker Registry password or token
