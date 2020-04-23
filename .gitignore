@@ -14,8 +14,7 @@
 # env customization
 .env
 # secret keys
-credential*.json
-gcp-credentials-for-docker.json
+*credential*.json
 
 # temporary
 **/.DS_Store
@@ -26,3 +25,4 @@ gcp-credentials-for-docker.json
 run.sh
 build.sh
 docker_run.sh
+/out.txt

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/urfave/cli/v2"
 	"goapp/clusters"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -58,24 +57,7 @@ func handleSignals() context.Context {
 
 func main() {
 	log.Print("Starting")
-	dir, _ := os.Getwd()
-	os.Stderr.WriteString("..........................\n")
-	os.Stderr.WriteString(dir)
-	os.Stderr.WriteString("\n")
-	files, _ := ioutil.ReadDir("./")
 
-	for _, f := range files {
-		os.Stderr.WriteString(f.Name())
-	}
-
-     os.Stderr.WriteString("..........................\n")
-	files0, _ := ioutil.ReadDir("./goapp")
-
-	for _, f2 := range files0 {
-		os.Stderr.WriteString(f2.Name())
-	}
-
-//	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS","gcp-credentials-for-docker.json")
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.StringFlag{

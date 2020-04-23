@@ -29,7 +29,7 @@ func CreateClusters(cliCtx *cli.Context, origClustersInfo *containerpb.ListClust
 }
 
 func createACluster(bkgrdCtx context.Context, proj string, loc string, origCluster *containerpb.Cluster, clustMgrClient *containers.ClusterManagerClient) {
-	clusterName := origCluster.Name + "copy"
+	clusterName := origCluster.Name + "-copy"
 	initialNodeCount := origCluster.InitialNodeCount
 	if initialNodeCount < 1 {
 		initialNodeCount = 1
