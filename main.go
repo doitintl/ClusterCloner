@@ -3,37 +3,45 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/urfave/cli/v2"
 	"goapp/clusters"
 	"log"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
+
+	"github.com/urfave/cli/v2"
 )
 
 var (
 	// main context
 	mainCtx context.Context
-	// Version contains the current version.
+	//Version version of app
 	Version = "dev"
-	// BuildDate contains a string with the build date.
+	//BuildDate build date
 	BuildDate = "unknown"
 	// GitCommit git commit SHA
 	GitCommit = "dirty"
-	// GitBranch git branch
+	//GitBranch git branch
 	GitBranch = "master"
 )
 
-func mainCmd(c *cli.Context) error {
-	log.Printf("running main command with %s", c.FlagNames())
-	clusters.ReadCluster(c)
+func mainCmd(cliCtx *cli.Context) error {
+	var s = ""
+	for _, flagName := range cliCtx.FlagNames() {
+		value := cliCtx.String(flagName)
+		s += fmt.Sprintf("\t\t%s: %s\n", flagName, value)
+	}
+	log.Printf("Running main command with:\n %s", s)
+	origClusInfo := clusters.ReadCluster(cliCtx)
+	clusters.CreateClusters(cliCtx, origClusInfo)
 	return nil
 }
 
 func init() {
 	// handle termination signal
 	mainCtx = handleSignals()
+	_ = mainCtx
 }
 
 func handleSignals() context.Context {
@@ -55,6 +63,8 @@ func handleSignals() context.Context {
 }
 
 func main() {
+	log.Print("Starting")
+
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -63,9 +73,8 @@ func main() {
 				Required: true, //todo use current GCP default
 			},
 			&cli.StringFlag{
-				Name:        "location",
-				Usage:       "GCP region",
-				DefaultText: "-",
+				Name:  "location",
+				Usage: "GCP zone",
 			},
 		},
 		Name:    "goapp",

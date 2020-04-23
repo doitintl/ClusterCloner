@@ -14,9 +14,16 @@
 # env customization
 .env
 # secret keys
-credential*.json
+*credential*.json
+account.json
 
 # temporary
 **/.DS_Store
 **/debug
 **/debug.test
+
+# personal scripts
+run.sh
+build.sh
+docker_run.sh
+out.txt
