@@ -15,11 +15,14 @@ import (
 
 var (
 	// main context
-	mainCtx   context.Context
-	Version   = "dev"
+	mainCtx context.Context
+	//Version version of app
+	Version = "dev"
+	//BuildDate build date
 	BuildDate = "unknown"
 	// GitCommit git commit SHA
 	GitCommit = "dirty"
+	//GitBranch git branch
 	GitBranch = "master"
 )
 
