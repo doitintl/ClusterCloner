@@ -39,6 +39,7 @@ jobs:
         IMAGE_NAME: ${{ steps.decide_name.outputs.image_name }}
         IMAGE_TAG: ${{ steps.decide_tag.outputs.image_tag }}
       run: |
+        echo "DOCKER_REPOSITORY ${DOCKER_REPOSITORY}"
         docker build --tag ${IMAGE_NAME}:${IMAGE_TAG} .
     
     - name: push image
