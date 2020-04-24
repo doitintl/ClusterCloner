@@ -26,3 +26,4 @@ run.sh
 build.sh
 docker_run.sh
 /out.txt
+account.json
