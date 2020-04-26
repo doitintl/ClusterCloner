@@ -47,11 +47,11 @@ jobs:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-        GCR_KEY_JSON_BASE64: ${{secrets.GCR_KEY_JSON_BASE64}}
+        GCR_PUSHER_KEYJSON_BASE64: ${{secrets.GCR_PUSHER_KEYJSON_BASE64}}
         IMAGE_NAME: ${{ steps.decide_name.outputs.image_name }}
         IMAGE_TAG: ${{ steps.decide_tag.outputs.image_tag }}
       run: |
-        echo $GCR_KEY_JSON_BASE64 | base64 --decode > account.json
+        echo GCR_PUSHER_KEYJSON_BASE64 | base64 --decode > account.json
         docker login -u _json_key --password-stdin ${DOCKER_REGISTRY}  < account.json
         docker push ${IMAGE_NAME}:${IMAGE_TAG}
         docker logout
