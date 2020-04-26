@@ -51,10 +51,7 @@ jobs:
         IMAGE_NAME: ${{ steps.decide_name.outputs.image_name }}
         IMAGE_TAG: ${{ steps.decide_tag.outputs.image_tag }}
       run: |
-        echo ${GCR_PUSHER_KEYJSON_BASE64}>x.txt
-        ls -l
-        cat x.txt
-        echo GCR_PUSHER_KEYJSON_BASE64 | base64 --decode > account.json
+        echo $GCR_PUSHER_KEYJSON_BASE64 | base64 --decode > account.json
         docker login -u _json_key --password-stdin ${DOCKER_REGISTRY}  < account.json
         docker push ${IMAGE_NAME}:${IMAGE_TAG}
         docker logout
