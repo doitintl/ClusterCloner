@@ -1,7 +1,7 @@
 package main
 
 import (
-	aks_ "clusterCloner/clusters/aks"
+	"clusterCloner/clusters/crossCloud"
 	"context"
 	"fmt"
 	"log"
@@ -27,14 +27,19 @@ var (
 )
 
 func mainCmd(cliCtx *cli.Context) error {
-	var s = ""
+	printFlags(cliCtx)
+	crossCloud.CopyCluster(cliCtx)
+	//aks.CreateClusterFromEnv("mycluster")
+	return nil
+}
+
+func printFlags(cliCtx *cli.Context) {
+	var s = "\n"
 	for _, flagName := range cliCtx.FlagNames() {
 		value := cliCtx.String(flagName)
 		s += fmt.Sprintf("\t\t%s: %s\n", flagName, value)
 	}
-	aks_.CreateCluster()
-
-	return nil
+	log.Print(s)
 }
 
 func init() {

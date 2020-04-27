@@ -13,6 +13,9 @@
 
 # env customization
 .env
+# binary
+clusterCloner
+
 # secret keys
 *credential*.json
 account.json

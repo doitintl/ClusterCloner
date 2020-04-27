@@ -52,11 +52,6 @@ func DefaultLocation() string {
 	return locationDefault
 }
 
-// AuthorizationServerURL is the OAuth authorization server URL.
-func AuthorizationServerURL() string {
-	return authorizationServerURL
-}
-
 func SetBaseGroupName(name string) {
 	baseGroupName = name
 }

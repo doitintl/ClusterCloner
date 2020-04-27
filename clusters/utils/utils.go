@@ -1,21 +1,18 @@
-package util
+package utils
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 )
 
-// PrintAndLog writes to stdout and to a logger.
-func PrintAndLog(message string) {
-	log.Println(message)
-	fmt.Println(message)
-}
-
-func LogAndPanic(err error) {
-	PrintAndLog(err.Error())
-	panic(err)
+func PrintAsJson(props interface{}) {
+	jsonByteArr, err := json.MarshalIndent(props, "", " ")
+	if err != nil {
+		log.Print(err)
+	}
+	jsonStr := string(jsonByteArr)
+	log.Println(jsonStr)
 }
 
 // ReadJSON reads a json file, and unmashals it.

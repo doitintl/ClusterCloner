@@ -15,6 +15,7 @@ require (
 	github.com/Azure/go-autorest/autorest/validation v0.2.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/joho/godotenv v1.3.0
-	github.com/urfave/cli/v2 v2.2.0 // indirect
+	github.com/urfave/cli/v2 v2.2.0
 	golang.org/x/text v0.3.2 // indirect
+	google.golang.org/genproto v0.0.0-20190716160619-c506a9f90610
 )

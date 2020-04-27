@@ -22,8 +22,8 @@ func getAKSClient() (containerservice.ManagedClustersClient, error) {
 	return aksClient, nil
 }
 
-// createAKS creates a new managed Kubernetes cluster
-func createAKS(ctx context.Context, resourceName, location, resourceGroupName, username, sshPublicKeyPath, clientID, clientSecret string, agentPoolCount int32) (c containerservice.ManagedCluster, err error) {
+// createAKSCluster creates a new managed Kubernetes cluster
+func createAKSCluster(ctx context.Context, resourceName, location, resourceGroupName, username, sshPublicKeyPath, clientID, clientSecret string, agentPoolCount int32) (c containerservice.ManagedCluster, err error) {
 	var sshKeyData string
 	if _, err = os.Stat(sshPublicKeyPath); err == nil {
 		sshBytes, err := ioutil.ReadFile(sshPublicKeyPath)
@@ -32,7 +32,8 @@ func createAKS(ctx context.Context, resourceName, location, resourceGroupName, u
 		}
 		sshKeyData = string(sshBytes)
 	} else {
-		sshKeyData = fakepubkey
+		log.Printf("Cannot load: %s", sshPublicKeyPath)
+		sshKeyData = "fakepubkey"
 	}
 
 	aksClient, err := getAKSClient()
@@ -83,19 +84,4 @@ func createAKS(ctx context.Context, resourceName, location, resourceGroupName, u
 	}
 
 	return future.Result(aksClient)
-}
-
-// getAKS returns an existing AKS cluster given a resource group name and resource name
-func getAKS(ctx context.Context, resourceGroupName, resourceName string) (c containerservice.ManagedCluster, err error) {
-	aksClient, err := getAKSClient()
-	if err != nil {
-		return c, fmt.Errorf("cannot get AKS client: %v", err)
-	}
-
-	c, err = aksClient.Get(ctx, resourceGroupName, resourceName)
-	if err != nil {
-		return c, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %v", resourceName, resourceGroupName, err)
-	}
-
-	return c, nil
 }

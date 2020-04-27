@@ -2,6 +2,7 @@ package gke
 
 import (
 	container "cloud.google.com/go/container/apiv1"
+	"clusterCloner/clusters/utils"
 	"context"
 	"fmt"
 	"github.com/urfave/cli/v2"
@@ -26,12 +27,6 @@ func ReadCluster(cliCtx *cli.Context) *containerpb.ListClustersResponse {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//	var js []byte
-	//	js, err = json.MarshalIndent(resp, "", "  ")
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	jsonStr := string(js)
-	//	fmt.Println(jsonStr)
+	utils.PrintAsJson(resp)
 	return resp
 }
