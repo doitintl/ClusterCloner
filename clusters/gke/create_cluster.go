@@ -1,4 +1,4 @@
-package clusters
+package gke
 
 import (
 	containers "cloud.google.com/go/container/apiv1"

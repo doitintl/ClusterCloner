@@ -1,4 +1,4 @@
-package clusters
+package gke
 
 import (
 	container "cloud.google.com/go/container/apiv1"
@@ -26,12 +26,12 @@ func ReadCluster(cliCtx *cli.Context) *containerpb.ListClustersResponse {
 	if err != nil {
 		log.Fatal(err)
 	}
-//	var js []byte
-//	js, err = json.MarshalIndent(resp, "", "  ")
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	jsonStr := string(js)
-//	fmt.Println(jsonStr)
+	//	var js []byte
+	//	js, err = json.MarshalIndent(resp, "", "  ")
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	jsonStr := string(js)
+	//	fmt.Println(jsonStr)
 	return resp
 }

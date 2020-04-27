@@ -1,9 +1,9 @@
 package main
 
 import (
+	aks_ "clusterCloner/clusters/aks"
 	"context"
 	"fmt"
-	"goapp/clusters"
 	"log"
 	"os"
 	"os/signal"
@@ -32,9 +32,8 @@ func mainCmd(cliCtx *cli.Context) error {
 		value := cliCtx.String(flagName)
 		s += fmt.Sprintf("\t\t%s: %s\n", flagName, value)
 	}
-	log.Printf("Running main command with:\n %s", s)
-	origClusInfo := clusters.ReadCluster(cliCtx)
-	clusters.CreateClusters(cliCtx, origClusInfo)
+	aks_.CreateCluster()
+
 	return nil
 }
 
