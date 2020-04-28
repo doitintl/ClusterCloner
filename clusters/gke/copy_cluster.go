@@ -5,7 +5,7 @@ import (
 )
 
 func CopyCluster(cliCtx *cli.Context) {
-	origClusInfo := ReadCluster(cliCtx)
+	origClusInfo := ReadClusters(cliCtx)
 	CreateClusters(cliCtx, origClusInfo)
 
 }

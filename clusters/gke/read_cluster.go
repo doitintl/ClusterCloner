@@ -10,8 +10,8 @@ import (
 	"log"
 )
 
-//ReadCluster Return data on the cluster in JSON form. cliCtx shold provide project and location (zone, where _ means all zones)
-func ReadCluster(cliCtx *cli.Context) *containerpb.ListClustersResponse {
+//ReadClusters Return data on the cluster in JSON form. cliCtx shold provide project and location (zone, where _ means all zones)
+func ReadClusters(cliCtx *cli.Context) *containerpb.ListClustersResponse {
 
 	ctx := context.Background()
 	c, err := container.NewClusterManagerClient(ctx)
