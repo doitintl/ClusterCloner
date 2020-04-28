@@ -1,0 +1,51 @@
+{
+  "Cluster": {
+    "Arn": "arn:aws:eks:us-west-2:649592902942:cluster/mycluster",
+    "CertificateAuthority": {
+      "Data": null
+    },
+    "ClientRequestToken": null,
+    "CreatedAt": "2020-04-28T09:47:59Z",
+    "EncryptionConfig": null,
+    "Endpoint": null,
+    "Identity": {
+      "Oidc": {
+        "Issuer": "https://oidc.eks.us-west-2.amazonaws.com/id/6E9D21A35138035CCF358BA96132671B"
+      }
+    },
+    "Logging": {
+      "ClusterLogging": [
+        {
+          "Enabled": false,
+          "Types": [
+            "api",
+            "audit",
+            "authenticator",
+            "controllerManager",
+            "scheduler"
+          ]
+        }
+      ]
+    },
+    "Name": "mycluster",
+    "PlatformVersion": "eks.2",
+    "ResourcesVpcConfig": {
+      "ClusterSecurityGroupId": "sg-0f42febca8fd81c0e",
+      "EndpointPrivateAccess": false,
+      "EndpointPublicAccess": true,
+      "PublicAccessCidrs": [
+        "0.0.0.0/0"
+      ],
+      "SecurityGroupIds": [],
+      "SubnetIds": [
+        "subnet-53c2272b",
+        "subnet-5800f405"
+      ],
+      "VpcId": "vpc-edb23a95"
+    },
+    "RoleArn": "arn:eks:iam::649592902942:role/eksClusterRole",
+    "Status": "FAILED",
+    "Tags": {},
+    "Version": "1.15"
+  }
+}

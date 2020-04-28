@@ -1,7 +1,8 @@
 package main
 
 import (
-	"clusterCloner/clusters/crossCloud"
+	"clusterCloner/clusters/launcher"
+	"clusterCloner/poc/crossCloud"
 	"context"
 	"fmt"
 	"log"
@@ -28,8 +29,8 @@ var (
 
 func mainCmd(cliCtx *cli.Context) error {
 	printFlags(cliCtx)
-	crossCloud.CopyCluster(cliCtx)
-	//aks.CreateClusterFromEnv("mycluster")
+	launcher.Launch(cliCtx)
+	//	crossCloud.PocLaunch()
 	return nil
 }
 
@@ -59,7 +60,7 @@ func handleSignals() context.Context {
 	go func() {
 		defer cancel()
 		sid := <-sig
-		log.Printf("received signal: %d\n", sid)
+		log.Printf("Received signal: %d\n", sid)
 		log.Println("canceling main command ...")
 	}()
 
@@ -69,20 +70,11 @@ func handleSignals() context.Context {
 func main() {
 	log.Print("Starting")
 
+	flags := crossCloud.CliFlags()
 	app := &cli.App{
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:     "project",
-				Usage:    "GCP project",
-				Required: true, //todo use current GCP default
-			},
-			&cli.StringFlag{
-				Name:  "location",
-				Usage: "GCP zone",
-			},
-		},
-		Name:    "goapp",
-		Usage:   "goapp CLI",
+		Flags:   flags,
+		Name:    "Cluster Cloner",
+		Usage:   "CLI",
 		Action:  mainCmd,
 		Version: Version,
 	}
