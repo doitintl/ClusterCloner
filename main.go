@@ -31,6 +31,7 @@ func mainCmd(cliCtx *cli.Context) error {
 	printFlags(cliCtx)
 	launcher.Launch(cliCtx)
 	//	crossCloud.PocLaunch()
+
 	return nil
 }
 
@@ -72,9 +73,10 @@ func main() {
 
 	flags := crossCloud.CliFlags()
 	app := &cli.App{
-		Flags:   flags,
-		Name:    "Cluster Cloner",
-		Usage:   "CLI",
+		Flags: flags,
+		Name:  "Cluster Cloner",
+		Usage: "CLI",
+
 		Action:  mainCmd,
 		Version: Version,
 	}

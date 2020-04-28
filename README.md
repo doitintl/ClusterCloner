@@ -18,7 +18,7 @@ This was based on [goapp](https://github.com/alexei-led/goapp), the bootstrap pr
 Build with `DOCKER_BUILDKIT=1 docker build -t <TAG> .`
 
 Based on `goapp`, this uses Docker both as a CI tool and for releasing a final Docker image 
-(based on `scratch` with updated `ca-credentials` package).
+(which is based on `scratch` with updated `ca-credentials` package).
 
 ## Makefile
 
