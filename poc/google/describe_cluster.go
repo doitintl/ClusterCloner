@@ -1,8 +1,8 @@
-package gke
+package google
 
 import (
 	container "cloud.google.com/go/container/apiv1"
-	"clusterCloner/clusters/utils"
+	"clusterCloner/poc/utilities"
 	"context"
 	"fmt"
 	"github.com/urfave/cli/v2"
@@ -10,8 +10,8 @@ import (
 	"log"
 )
 
-//ReadClusters Return data on the cluster in JSON form. cliCtx shold provide project and location (zone, where _ means all zones)
-func ReadClusters(cliCtx *cli.Context) *containerpb.ListClustersResponse {
+//DescribeClusters Return data on the cluster in JSON form. cliCtx shold provide project and location (zone, where _ means all zones)
+func ListClusters(cliCtx *cli.Context) *containerpb.ListClustersResponse {
 
 	ctx := context.Background()
 	c, err := container.NewClusterManagerClient(ctx)
@@ -27,6 +27,6 @@ func ReadClusters(cliCtx *cli.Context) *containerpb.ListClustersResponse {
 	if err != nil {
 		log.Fatal(err)
 	}
-	utils.PrintAsJson(resp)
+	utilities.PrintAsJson(resp)
 	return resp
 }

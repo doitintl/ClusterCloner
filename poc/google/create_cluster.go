@@ -1,4 +1,4 @@
-package gke
+package google
 
 import (
 	containers "cloud.google.com/go/container/apiv1"

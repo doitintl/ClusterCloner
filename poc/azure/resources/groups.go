@@ -6,8 +6,8 @@
 package resources
 
 import (
-	"clusterCloner/clusters/aks/utils/config"
-	"clusterCloner/clusters/aks/utils/iam"
+	"clusterCloner/poc/azure/aks_utils/config"
+	"clusterCloner/poc/azure/aks_utils/iam"
 	"context"
 	"fmt"
 	"log"
@@ -27,7 +27,7 @@ func getGroupsClient() resources.GroupsClient {
 		log.Fatalf("failed to initialize authorizer: %v\n", err)
 	}
 	groupsClient.Authorizer = a
-	groupsClient.AddToUserAgent(config.UserAgent())
+	_ = groupsClient.AddToUserAgent(config.UserAgent())
 	return groupsClient
 }
 

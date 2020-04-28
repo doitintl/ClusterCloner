@@ -1,12 +1,14 @@
-package eks
+package aws
 
 import (
+	"clusterCloner/poc/utilities"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"log"
 )
 
 func DescribeCluster(name string) {
@@ -39,8 +41,8 @@ func DescribeCluster(name string) {
 		}
 		return
 	}
-
-	fmt.Println(result)
+	utilities.PrintAsJson(result)
+	log.Print()
 }
 
 func ListClusters() {

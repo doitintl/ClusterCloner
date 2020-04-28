@@ -1,7 +1,7 @@
-package utils
+package aks_utils
 
 import (
-	"clusterCloner/clusters/aks/utils/config"
+	"clusterCloner/poc/azure/aks_utils/config"
 	"fmt"
 	"github.com/joho/godotenv"
 	"log"
