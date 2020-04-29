@@ -29,7 +29,7 @@ func (ca EksClusterAccess) DescribeCluster(clusterName string, region string) (c
 		return clusters.ClusterInfo{}, err
 	}
 	util.PrintAsJson(result)
-	return clusters.ClusterInfo{clusterName, 1}, nil
+	return clusters.ClusterInfo{Scope: "", Location: region, Name: clusterName, NodeCount: 1}, nil
 }
 
 func (ca EksClusterAccess) ListClusters(_ string, location string) ([]clusters.ClusterInfo, error) {
@@ -43,7 +43,7 @@ func (ca EksClusterAccess) ListClusters(_ string, location string) ([]clusters.C
 		log.Print(*s)
 		var clusterInfo, err_ = ca.DescribeCluster(location, *s)
 		if err_ != nil {
-			log.Print("Error %v", err_)
+			log.Print("Error ", err_)
 			return nil, err_
 		}
 		ret = append(ret, clusterInfo)
@@ -61,7 +61,7 @@ func clusterNames(region string) ([]*string, error) {
 		printAwsErr(err)
 		return nil, err
 	}
-	var clusterNames []*string = result.Clusters
+	var clusterNames = result.Clusters
 	return clusterNames, nil
 }
 
@@ -69,15 +69,15 @@ func printAwsErr(err error) {
 	if aerr, ok := err.(awserr.Error); ok {
 		switch aerr.Code() {
 		case eks.ErrCodeInvalidParameterException:
-			fmt.Println(eks.ErrCodeInvalidParameterException, aerr.Error())
+			log.Println(eks.ErrCodeInvalidParameterException, aerr.Error())
 		case eks.ErrCodeClientException:
-			fmt.Println(eks.ErrCodeClientException, aerr.Error())
+			log.Println(eks.ErrCodeClientException, aerr.Error())
 		case eks.ErrCodeServerException:
-			fmt.Println(eks.ErrCodeServerException, aerr.Error())
+			log.Println(eks.ErrCodeServerException, aerr.Error())
 		case eks.ErrCodeServiceUnavailableException:
-			fmt.Println(eks.ErrCodeServiceUnavailableException, aerr.Error())
+			log.Println(eks.ErrCodeServiceUnavailableException, aerr.Error())
 		default:
-			fmt.Println(aerr.Error())
+			log.Println(aerr.Error())
 		}
 	} else {
 		// cast err to awserror.Error to get the Code and Message from an error.

@@ -28,6 +28,12 @@ func CreateClusters(cliCtx *cli.Context, origClustersInfo *containerpb.ListClust
 	}
 
 }
+func createClusterInt(bkgrdCtx context.Context, proj string, loc string, origCluster *containerpb.Cluster, clustMgrClient *containers.ClusterManagerClient) {
+	clusterName := origCluster.Name + "-copy"
+	initialNodeCount := origCluster.InitialNodeCount
+	createCluster_(bkgrdCtx, proj, loc, clusterName, initialNodeCount, clustMgrClient)
+}
+
 func CreateCluster(cliCtx *cli.Context, name string, initNodeCount int32) {
 	backgroundCtx := context.Background()
 	proj := cliCtx.String("project")
@@ -35,11 +41,6 @@ func CreateCluster(cliCtx *cli.Context, name string, initNodeCount int32) {
 	clustMgrClient, _ := containers.NewClusterManagerClient(backgroundCtx)
 	createCluster_(backgroundCtx, proj, loc, name, initNodeCount, clustMgrClient)
 
-}
-func createClusterInt(bkgrdCtx context.Context, proj string, loc string, origCluster *containerpb.Cluster, clustMgrClient *containers.ClusterManagerClient) {
-	clusterName := origCluster.Name + "-copy"
-	initialNodeCount := origCluster.InitialNodeCount
-	createCluster_(bkgrdCtx, proj, loc, clusterName, initialNodeCount, clustMgrClient)
 }
 
 func createCluster_(bkgrdCtx context.Context, proj string, loc string, clusterName string, initialNodeCount int32, clustMgrClient *containers.ClusterManagerClient) {

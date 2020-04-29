@@ -15,17 +15,16 @@ var (
 	// each has corresponding public accessors below.
 	// if anything requires a `Set` accessor, that indicates it perhaps
 	// shouldn't be set here, because mutable vars shouldn't be global.
-	clientID               string
-	clientSecret           string
-	tenantID               string
-	subscriptionID         string
-	locationDefault        string
-	authorizationServerURL string
-	cloudName              = "AzurePublicCloud"
-	keepResources          bool
-	baseGroupName          string
-	userAgent              string
-	environment            *azure.Environment
+	clientID        string
+	clientSecret    string
+	tenantID        string
+	subscriptionID  string
+	locationDefault string
+	cloudName       = "AzurePublicCloud"
+	keepResources   bool
+	baseGroupName   string
+	userAgent       string
+	environment     *azure.Environment
 )
 
 // ClientID is the OAuth client ID.

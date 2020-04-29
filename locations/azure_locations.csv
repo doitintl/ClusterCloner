@@ -1,0 +1,11 @@
+Display Name;Latitude;Longitude;Name;SupportAKS;Standard Location Name
+Central US;41.5908;-93.6208;centralus;true;us-central1
+East US;37.3719;-79.8164;eastus;true;us-east4
+East US 2;36.6681;-78.3889;eastus2;true;us-east4
+France Central;46.3772;2.373;francecentral;true;europe-west6
+Japan West;34.6939;135.5022;japanwest;true;asia-northeast2
+North Europe;53.3478;-6.2597;northeurope;true;europe-west2
+Southeast Asia;1.283;103.833;southeastasia;true;asia-southeast1
+UK South;50.941;-0.799;uksouth;true;europe-west2
+West Europe;52.3667;4.9;westeurope;true;europe-west4
+West US 2;47.233;-119.852;westus2;true;us-west1

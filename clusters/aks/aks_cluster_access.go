@@ -6,7 +6,7 @@ import (
 	"clusterCloner/clusters/aks/iam"
 	"clusterCloner/clusters/util"
 	"context"
-	"fmt"
+	"errors"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	_ "log"
 	_ "reflect"
@@ -25,7 +25,7 @@ func (ca AksClusterAccess) ListClusters(subscription string, location string) (c
 	defer cancel()
 	var aksClient, err_ = getAKSClient()
 	if err_ != nil {
-		return ci, fmt.Errorf("cannot get AKS client: %managedCluster", err_)
+		return ci, errors.New("cannot get AKS client")
 	}
 	ret := make([]clusters.ClusterInfo, 0)
 
@@ -37,7 +37,7 @@ func (ca AksClusterAccess) ListClusters(subscription string, location string) (c
 		for _, app := range *props.AgentPoolProfiles {
 			count += *app.Count
 		}
-		ci := clusters.ClusterInfo{Name: *managedCluster.Name, NodeCount: count}
+		ci := clusters.ClusterInfo{Scope: subscription, Location: location, Name: *managedCluster.Name, NodeCount: count}
 		ret = append(ret, ci)
 
 	}

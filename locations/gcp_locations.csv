@@ -1,0 +1,24 @@
+Region;Zones;Location
+asia-east1;a, b, c;Changhua County, Taiwan
+asia-east2;a, b, c;Hong Kong
+asia-northeast1;a, b, c;Tokyo, Japan
+asia-northeast2;a, b, c;Osaka, Japan
+asia-northeast3;a, b, c;Seoul, South Korea
+asia-south1;a, b, c;Mumbai, India
+asia-southeast1;a, b, c;Jurong West, Singapore
+australia-southeast1;a, b, c;Sydney, Australia
+europe-north1;a, b, c;Hamina, Finland
+europe-west1;b, c, d;St. Ghislain, Belgium
+europe-west2;a, b, c;London, England, UK
+europe-west3;a, b, c;Frankfurt, Germany
+europe-west4;a, b, c;Eemshaven, Netherlands
+europe-west6;a, b, c;Zürich, Switzerland
+northamerica-northeast1;a, b, c;Montréal, Québec, Canada
+southamerica-east1;a, b, c;Osasco (São Paulo), Brazil
+us-central1;a, b, c, f;Council Bluffs, Iowa, USA
+us-east1;b, c, d;Moncks Corner, South Carolina, USA
+us-east4;a, b, c;Ashburn, Northern Virginia, USA
+us-west1;a, b, c;The Dalles, Oregon, USA
+us-west2;a, b, c;Los Angeles, California, USA
+us-west3;a, b, c;Salt Lake City, Utah, USA
+us-west4;a, b, c;Las Vegas, Nevada, USA

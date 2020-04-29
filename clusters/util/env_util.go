@@ -12,7 +12,7 @@ func ReadEnv() error {
 		log.Print("No .env file found")
 	}
 	if err = config.ParseEnvironment(); err != nil {
-		log.Print("Error parsing environment %v", err)
+		log.Print("Error parsing environment", err)
 		return err
 	}
 	return nil
