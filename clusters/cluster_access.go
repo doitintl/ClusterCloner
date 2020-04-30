@@ -1,15 +1,10 @@
 package clusters
 
-type ClusterInfo struct {
-	Cloud         string //GCP, Azure, AWS, or Hub (for a standard neutral format)
-	Scope         string //Project in GKE, Subscription in AKS, blank in EKS
-	Location      string
-	Name          string
-	NodeCount     int32
-	sourceCluster *ClusterInfo
-}
+import (
+	"clusterCloner/clusters/cluster_info"
+)
 
 type ClusterAccess interface {
-	ListClusters(project, location string) ([]ClusterInfo, error)
-	CreateCluster(info ClusterInfo) error
+	ListClusters(project, location string) ([]cluster_info.ClusterInfo, error)
+	CreateCluster(info cluster_info.ClusterInfo) error
 }

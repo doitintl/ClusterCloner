@@ -1,7 +1,7 @@
-package eks
+package access
 
 import (
-	"clusterCloner/clusters"
+	"clusterCloner/clusters/cluster_info"
 	"clusterCloner/clusters/util"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,7 +14,7 @@ import (
 type EksClusterAccess struct {
 }
 
-func (ca EksClusterAccess) DescribeCluster(clusterName string, region string) (clusters.ClusterInfo, error) {
+func (ca EksClusterAccess) DescribeCluster(clusterName string, region string) (cluster_info.ClusterInfo, error) {
 
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
 	svc := eks.New(sess)
@@ -26,18 +26,18 @@ func (ca EksClusterAccess) DescribeCluster(clusterName string, region string) (c
 	result, err := svc.DescribeCluster(input)
 	if err != nil {
 		printAwsErr(err)
-		return clusters.ClusterInfo{}, err
+		return cluster_info.ClusterInfo{}, err
 	}
 	util.PrintAsJson(result)
-	return clusters.ClusterInfo{Scope: "", Location: region, Name: clusterName, NodeCount: 1}, nil
+	return cluster_info.ClusterInfo{Scope: "", Location: region, Name: clusterName, NodeCount: 1}, nil
 }
 
-func (ca EksClusterAccess) ListClusters(_ string, location string) ([]clusters.ClusterInfo, error) {
+func (ca EksClusterAccess) ListClusters(_ string, location string) ([]cluster_info.ClusterInfo, error) {
 	clusterNames, err := clusterNames(location)
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]clusters.ClusterInfo, 0)
+	ret := make([]cluster_info.ClusterInfo, 0)
 
 	for _, s := range clusterNames {
 		log.Print(*s)

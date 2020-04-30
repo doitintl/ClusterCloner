@@ -1,7 +1,7 @@
 package launcher
 
 import (
-	"clusterCloner/clusters/aks"
+	"clusterCloner/clusters/aks/access"
 	"clusterCloner/clusters/util"
 	"github.com/urfave/cli/v2"
 )
@@ -42,7 +42,7 @@ func CliFlags() []cli.Flag {
 func Launch(cliCtx *cli.Context) {
 	scope := cliCtx.String("scope")
 	loc := cliCtx.String("location")
-	ret, _ := aks.AksClusterAccess{}.ListClusters(scope, loc)
+	ret, _ := access.AksClusterAccess{}.ListClusters(scope, loc)
 	util.PrintAsJson(ret)
 
 }

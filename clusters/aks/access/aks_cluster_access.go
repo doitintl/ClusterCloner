@@ -1,9 +1,9 @@
-package aks
+package access
 
 import (
-	"clusterCloner/clusters"
-	"clusterCloner/clusters/aks/config"
-	"clusterCloner/clusters/aks/iam"
+	"clusterCloner/clusters/aks/access/config"
+	"clusterCloner/clusters/aks/access/iam"
+	"clusterCloner/clusters/cluster_info"
 	"clusterCloner/clusters/util"
 	"context"
 	"errors"
@@ -20,14 +20,14 @@ func init() {
 type AksClusterAccess struct {
 }
 
-func (ca AksClusterAccess) ListClusters(subscription string, location string) (ci []clusters.ClusterInfo, err error) {
+func (ca AksClusterAccess) ListClusters(subscription string, location string) (ci []cluster_info.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
 	var aksClient, err_ = getAKSClient()
 	if err_ != nil {
 		return ci, errors.New("cannot get AKS client")
 	}
-	ret := make([]clusters.ClusterInfo, 0)
+	ret := make([]cluster_info.ClusterInfo, 0)
 
 	clusterList, _ := aksClient.List(ctx)
 	for _, managedCluster := range clusterList.Values() {
@@ -37,7 +37,7 @@ func (ca AksClusterAccess) ListClusters(subscription string, location string) (c
 		for _, app := range *props.AgentPoolProfiles {
 			count += *app.Count
 		}
-		ci := clusters.ClusterInfo{Scope: subscription, Location: location, Name: *managedCluster.Name, NodeCount: count}
+		ci := cluster_info.ClusterInfo{Scope: subscription, Location: location, Name: *managedCluster.Name, NodeCount: count}
 		ret = append(ret, ci)
 
 	}

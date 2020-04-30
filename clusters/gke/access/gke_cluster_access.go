@@ -1,8 +1,8 @@
-package gke
+package access
 
 import (
 	container "cloud.google.com/go/container/apiv1"
-	"clusterCloner/clusters"
+	"clusterCloner/clusters/cluster_info"
 	"context"
 	"fmt"
 	containerpb "google.golang.org/genproto/googleapis/container/v1"
@@ -12,8 +12,8 @@ import (
 type GkeClusterAccess struct {
 }
 
-func (GkeClusterAccess) ListClusters(project, location string) (ret []clusters.ClusterInfo, err error) {
-	ret = make([]clusters.ClusterInfo, 0)
+func (GkeClusterAccess) ListClusters(project, location string) (ret []cluster_info.ClusterInfo, err error) {
+	ret = make([]cluster_info.ClusterInfo, 0)
 
 	bkgdCtx := context.Background()
 	client, err := container.NewClusterManagerClient(bkgdCtx)
@@ -29,13 +29,13 @@ func (GkeClusterAccess) ListClusters(project, location string) (ret []clusters.C
 	}
 
 	for _, clus := range resp.GetClusters() {
-		clusInfo := clusters.ClusterInfo{Scope: project, Location: location, Name: clus.Name, NodeCount: clus.InitialNodeCount}
+		clusInfo := cluster_info.ClusterInfo{Scope: project, Location: location, Name: clus.Name, NodeCount: clus.InitialNodeCount}
 		ret = append(ret, clusInfo)
 
 	}
 	return ret, nil
 }
-func (GkeClusterAccess) CreateCluster(clusterInfo clusters.ClusterInfo) error {
+func (GkeClusterAccess) CreateCluster(clusterInfo cluster_info.ClusterInfo) error {
 
 	initialNodeCount := clusterInfo.NodeCount
 
