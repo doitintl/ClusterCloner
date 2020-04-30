@@ -1,14 +1,13 @@
-package clusters
+package cluster_transformation
 
 import (
-	"clusterCloner/clusters/cluster_conversion"
 	"clusterCloner/clusters/cluster_info"
 	"testing"
 )
 
 func TestTransformAzureToGCP(t *testing.T) {
 	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.AZURE, Location: "westus2", Scope: "joshua-playground"}
-	gcp, err := cluster_conversion.Transform(ci, cluster_info.GCP)
+	gcp, err := Transform(ci, cluster_info.GCP)
 	if err != nil {
 		t.Error(err)
 	}

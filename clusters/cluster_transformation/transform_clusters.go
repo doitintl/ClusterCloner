@@ -1,9 +1,9 @@
-package cluster_conversion
+package cluster_transformation
 
 import (
-	"clusterCloner/clusters/aks/transform"
+	"clusterCloner/clusters/clouds/aks/transform"
+	transform2 "clusterCloner/clusters/clouds/gke/transform"
 	"clusterCloner/clusters/cluster_info"
-	transform2 "clusterCloner/clusters/gke/transform"
 	"errors"
 	"fmt"
 	"log"

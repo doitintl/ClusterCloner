@@ -1,7 +1,7 @@
 package iam
 
 import (
-	"clusterCloner/clusters/aks/access/config"
+	"clusterCloner/clusters/clouds/aks/access/config"
 	"fmt"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"

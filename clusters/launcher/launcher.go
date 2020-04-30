@@ -1,7 +1,7 @@
 package launcher
 
 import (
-	"clusterCloner/clusters/aks/access"
+	"clusterCloner/clusters/clouds/aks/access"
 	"clusterCloner/clusters/util"
 	"github.com/urfave/cli/v2"
 )

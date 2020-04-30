@@ -1,8 +1,8 @@
 package access
 
 import (
-	"clusterCloner/clusters/aks/access/config"
-	"clusterCloner/clusters/aks/access/iam"
+	"clusterCloner/clusters/clouds/aks/access/config"
+	"clusterCloner/clusters/clouds/aks/access/iam"
 	"clusterCloner/clusters/cluster_info"
 	"clusterCloner/clusters/util"
 	"context"

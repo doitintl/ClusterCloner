@@ -1,7 +1,7 @@
 package util
 
 import (
-	"clusterCloner/clusters/aks/access/config"
+	"clusterCloner/clusters/clouds/aks/access/config"
 	"github.com/joho/godotenv"
 	"io/ioutil"
 	"log"
