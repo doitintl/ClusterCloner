@@ -1,7 +1,7 @@
 package launcher
 
 import (
-	"clusterCloner/clusters/clouds/aks/access"
+	"clusterCloner/clusters/cluster_transformation"
 	"clusterCloner/clusters/util"
 	"github.com/urfave/cli/v2"
 )
@@ -33,16 +33,15 @@ func CliFlags() []cli.Flag {
 			Required: true,
 		},
 		&cli.BoolFlag{
-			Name:  "dryrun",
-			Usage: "true for JSON output only",
+			Name:  "create",
+			Usage: "true: Create new clusters; default is not to create (dry run)",
 		},
 	}
 }
 
 func Launch(cliCtx *cli.Context) {
-	scope := cliCtx.String("scope")
-	loc := cliCtx.String("location")
-	ret, _ := access.AksClusterAccess{}.ListClusters(scope, loc)
+	ret, _ := cluster_transformation.Clone(cliCtx)
+	//	ret, _ := access.AksClusterAccess{}.ListClusters(scope, loc)
 	util.PrintAsJson(ret)
 
 }

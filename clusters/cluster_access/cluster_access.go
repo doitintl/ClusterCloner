@@ -1,4 +1,4 @@
-package clusters
+package cluster_access
 
 import (
 	"clusterCloner/clusters/cluster_info"

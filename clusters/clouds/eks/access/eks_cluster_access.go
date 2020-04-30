@@ -14,6 +14,10 @@ import (
 type EksClusterAccess struct {
 }
 
+func (ca EksClusterAccess) CreateCluster(info cluster_info.ClusterInfo) error {
+	panic("implement me")
+}
+
 func (ca EksClusterAccess) DescribeCluster(clusterName string, region string) (cluster_info.ClusterInfo, error) {
 
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
@@ -29,7 +33,7 @@ func (ca EksClusterAccess) DescribeCluster(clusterName string, region string) (c
 		return cluster_info.ClusterInfo{}, err
 	}
 	util.PrintAsJson(result)
-	return cluster_info.ClusterInfo{Scope: "", Location: region, Name: clusterName, NodeCount: 1}, nil
+	return cluster_info.ClusterInfo{Scope: "", Location: region, Name: clusterName, NodeCount: 1, GeneratedBy: cluster_info.READ}, nil
 }
 
 func (ca EksClusterAccess) ListClusters(_ string, location string) ([]cluster_info.ClusterInfo, error) {

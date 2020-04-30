@@ -29,7 +29,7 @@ func (GkeClusterAccess) ListClusters(project, location string) (ret []cluster_in
 	}
 
 	for _, clus := range resp.GetClusters() {
-		clusInfo := cluster_info.ClusterInfo{Scope: project, Location: location, Name: clus.Name, NodeCount: clus.InitialNodeCount}
+		clusInfo := cluster_info.ClusterInfo{Scope: project, Location: location, Name: clus.Name, NodeCount: clus.InitialNodeCount, GeneratedBy: cluster_info.READ}
 		ret = append(ret, clusInfo)
 
 	}

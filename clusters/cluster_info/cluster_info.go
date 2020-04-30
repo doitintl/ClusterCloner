@@ -7,7 +7,15 @@ type ClusterInfo struct {
 	Name          string
 	NodeCount     int32
 	SourceCluster *ClusterInfo
+	GeneratedBy   string
 }
+
+var (
+	MOCK          = "Mock"
+	READ          = "Read"
+	CREATED       = "Created"
+	TRANFORMATION = "Transformation"
+)
 
 var (
 	HUB   = "Hub"

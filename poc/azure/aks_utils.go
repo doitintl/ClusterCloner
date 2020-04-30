@@ -41,6 +41,24 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 		return c, fmt.Errorf("cannot get AKS client: %v", err)
 	}
 
+	agentPoolProfiles := &[]containerservice.AgentPoolProfile{
+		{
+			Count:  to.Int32Ptr(agentPoolCount),
+			Name:   to.StringPtr("agentpool1"),
+			VMSize: containerservice.StandardD2sV3,
+		},
+	}
+	servicePrincipalProfile := &containerservice.ServicePrincipalProfile{
+		ClientID: to.StringPtr(clientID),
+		Secret:   to.StringPtr(clientSecret),
+	}
+	sshConfiguration := &containerservice.SSHConfiguration{
+		PublicKeys: &[]containerservice.SSHPublicKey{
+			{
+				KeyData: to.StringPtr(sshKeyData),
+			},
+		},
+	}
 	future, err := aksClient.CreateOrUpdate(
 		ctx,
 		resourceGroupName,
@@ -52,25 +70,10 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 				DNSPrefix: &resourceName,
 				LinuxProfile: &containerservice.LinuxProfile{
 					AdminUsername: to.StringPtr(username),
-					SSH: &containerservice.SSHConfiguration{
-						PublicKeys: &[]containerservice.SSHPublicKey{
-							{
-								KeyData: to.StringPtr(sshKeyData),
-							},
-						},
-					},
+					SSH:           sshConfiguration,
 				},
-				AgentPoolProfiles: &[]containerservice.AgentPoolProfile{
-					{
-						Count:  to.Int32Ptr(agentPoolCount),
-						Name:   to.StringPtr("agentpool1"),
-						VMSize: containerservice.StandardD2sV3,
-					},
-				},
-				ServicePrincipalProfile: &containerservice.ServicePrincipalProfile{
-					ClientID: to.StringPtr(clientID),
-					Secret:   to.StringPtr(clientSecret),
-				},
+				AgentPoolProfiles:       agentPoolProfiles,
+				ServicePrincipalProfile: servicePrincipalProfile,
 			},
 		},
 	)

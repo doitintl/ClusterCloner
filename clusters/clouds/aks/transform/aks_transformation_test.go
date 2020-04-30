@@ -6,7 +6,7 @@ import (
 )
 
 func TestTransformAzureToHub(t *testing.T) {
-	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.AZURE, Location: "westus2", Scope: "joshua-playground"}
+	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.AZURE, Location: "westus2", Scope: "joshua-playground", GeneratedBy: cluster_info.MOCK}
 	std, err := TransformAzureToHub(ci)
 	if err != nil {
 		t.Error(err)
@@ -19,7 +19,7 @@ func TestTransformAzureToHub(t *testing.T) {
 	}
 }
 func TestTransformAzureToHubBadLoc(t *testing.T) {
-	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.AZURE, Location: "westus1", Scope: "joshua-playground"}
+	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.AZURE, Location: "westus1", Scope: "joshua-playground", GeneratedBy: cluster_info.MOCK}
 	_, err := TransformAzureToHub(ci)
 	if err == nil {
 		t.Error("expect error")
@@ -27,7 +27,7 @@ func TestTransformAzureToHubBadLoc(t *testing.T) {
 }
 
 func TestTransformHubToAzure(t *testing.T) {
-	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.HUB, Location: "us-central1", Scope: ""}
+	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.HUB, Location: "us-central1", Scope: "", GeneratedBy: cluster_info.MOCK}
 	std, err := TransformHubToAzure(ci)
 	if err != nil {
 		t.Error(err)

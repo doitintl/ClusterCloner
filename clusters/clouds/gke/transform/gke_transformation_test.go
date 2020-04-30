@@ -6,7 +6,7 @@ import (
 )
 
 func TestTransformGcpToHubAndBack(t *testing.T) {
-	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.GCP, Location: "us-east1", Scope: "joshua-playground"}
+	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.GCP, Location: "us-east1", Scope: "joshua-playground", GeneratedBy: cluster_info.MOCK}
 	std, err := TranformGCPToHub(ci)
 	if err != nil {
 		t.Error(err)
@@ -27,7 +27,7 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	}
 }
 func TestTransformGcpToHubBadLoc(t *testing.T) {
-	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.GCP, Location: "westus2", Scope: "joshua-playground"}
+	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.GCP, Location: "westus2", Scope: "joshua-playground", GeneratedBy: cluster_info.MOCK}
 	_, err := TranformGCPToHub(ci)
 	if err == nil {
 		t.Error("expect error")
