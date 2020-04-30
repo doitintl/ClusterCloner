@@ -64,6 +64,30 @@ func getAzureToHubLocations() (map[string]string, error) {
 	}
 	return ret, nil
 }
+func ConvertLocationHubToAzure(location string) (string, error) {
+	azToHub, err := getAzureToHubLocations()
+	if err != nil {
+		return "", err
+	}
+	hubToAz := reverseMap(azToHub)
+	azLoc, ok := hubToAz[location]
+	if !ok {
+		return "", errors.New(fmt.Sprintf("Cannot find %s", location))
+	}
+	return azLoc, nil
+
+}
+
+func reverseMap(m map[string]string) map[string]string {
+	n := make(map[string]string)
+	for k, v := range m {
+		existing, ok := n[v]
+		if !ok || k < existing { //map may not be 1-to-1. If so, take the lexically lowest key as new value
+			n[v] = k
+		}
+	}
+	return n
+}
 
 func ConvertLocationGcpToHub(loc string) (string, error) {
 	locs, err := getGcpLocations()
@@ -77,6 +101,9 @@ func ConvertLocationGcpToHub(loc string) (string, error) {
 
 }
 
+func ConvertLocationHubToToGcp(location string) (string, error) {
+	return ConvertLocationGcpToHub(location) //locations are taken from GCP, so no conversion; reusing existing code
+}
 func contains(slice []string, elem string) bool {
 	for _, a := range slice {
 		if a == elem {

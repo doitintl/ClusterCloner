@@ -9,24 +9,40 @@ import (
 func CliFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
-			Name:     "scope",
+			Name:     "inputscope",
 			Usage:    "GCP project or AKS resource group",
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:  "location",
-			Usage: "GCP zone or AWS region",
+			Name:     "outputscope",
+			Usage:    "GCP project or AKS resource group",
+			Required: false,
+		},
+		&cli.StringFlag{
+			Name:  "inputlocation",
+			Usage: "GCP zone or AWS region or AKS region",
+		},
+		&cli.StringFlag{
+			Name:     "inputcloud",
+			Usage:    "GCP, Azure, or AWS",
+			Required: true,
+		},
+		&cli.StringFlag{
+			Name:     "outputcloud",
+			Usage:    "GCP, Azure, or AWS",
+			Required: true,
+		},
+		&cli.BoolFlag{
+			Name:  "dryrun",
+			Usage: "true for JSON output only",
 		},
 	}
 }
 
 func Launch(cliCtx *cli.Context) {
-	//	azure.CreateClusterFromEnv("mycluster")
-	proj := cliCtx.String("scope")
-	_ = proj
+	scope := cliCtx.String("scope")
 	loc := cliCtx.String("location")
-	//	azure.CreateClusterFromEnv("mycluster")
-	ret, _ := aks.AksClusterAccess{}.ListClusters(proj, loc)
+	ret, _ := aks.AksClusterAccess{}.ListClusters(scope, loc)
 	util.PrintAsJson(ret)
 
 }
