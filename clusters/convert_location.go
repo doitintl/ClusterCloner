@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func ConvertLocationAzureToHub(loc string) (string, error) {
+func transformLocationAzureToHub(loc string) (string, error) {
 	mapping, err := getAzureToHubLocations()
 	if err != nil {
 		return "", err
@@ -64,7 +64,7 @@ func getAzureToHubLocations() (map[string]string, error) {
 	}
 	return ret, nil
 }
-func ConvertLocationHubToAzure(location string) (string, error) {
+func transformLocationHubToAzure(location string) (string, error) {
 	azToHub, err := getAzureToHubLocations()
 	if err != nil {
 		return "", err
@@ -89,7 +89,7 @@ func reverseMap(m map[string]string) map[string]string {
 	return n
 }
 
-func ConvertLocationGcpToHub(loc string) (string, error) {
+func transformLocationGcpToHub(loc string) (string, error) {
 	locs, err := getGcpLocations()
 	if err != nil {
 		return "", err
@@ -101,8 +101,8 @@ func ConvertLocationGcpToHub(loc string) (string, error) {
 
 }
 
-func ConvertLocationHubToToGcp(location string) (string, error) {
-	return ConvertLocationGcpToHub(location) //locations are taken from GCP, so no conversion; reusing existing code
+func transformLocationHubToToGcp(location string) (string, error) {
+	return transformLocationGcpToHub(location) //locations are taken from GCP, so no conversion; reusing existing code
 }
 func contains(slice []string, elem string) bool {
 	for _, a := range slice {

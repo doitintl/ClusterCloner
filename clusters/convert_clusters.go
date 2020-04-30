@@ -14,26 +14,26 @@ var (
 )
 
 func Transform(clusterInfo ClusterInfo, toCloud string) (c ClusterInfo, err error) {
-	hub, err1 := ToHubFormat(clusterInfo)
+	hub, err1 := toHubFormat(clusterInfo)
 	if err1 != nil {
 		return ClusterInfo{}, err1
 	}
-	target, err2 := FromHubFormat(hub, toCloud)
+	target, err2 := fromHubFormat(hub, toCloud)
 	if err2 != nil {
 		return ClusterInfo{}, err2
 	}
 	return target, nil
 }
-func ToHubFormat(clusterInfo ClusterInfo) (c ClusterInfo, err error) {
+func toHubFormat(clusterInfo ClusterInfo) (c ClusterInfo, err error) {
 	err = nil
 	var ret ClusterInfo
 	switch cloud := clusterInfo.Cloud; cloud { //todo Split out into "adapters" to avoid switch statement. Putting it here now for reference.
 	case GCP:
 		log.Print("From GCP ")
-		ret, err = ConvertGCPToHub(clusterInfo)
+		ret, err = tranformGCPToHub(clusterInfo)
 	case AZURE:
 		log.Print("From Azure ")
-		ret, err = ConvertAzureToHub(clusterInfo)
+		ret, err = transformAzureToHub(clusterInfo)
 	case AWS:
 		log.Print("From AWS ")
 		return c, errors.New(fmt.Sprintf("Unsupported %s", cloud))
@@ -45,7 +45,7 @@ func ToHubFormat(clusterInfo ClusterInfo) (c ClusterInfo, err error) {
 	}
 	return ret, err
 }
-func FromHubFormat(clusterInfo ClusterInfo, toCloud string) (c ClusterInfo, err error) {
+func fromHubFormat(clusterInfo ClusterInfo, toCloud string) (c ClusterInfo, err error) {
 	if clusterInfo.Cloud != HUB {
 		return ClusterInfo{}, errors.New(fmt.Sprintf("Wrong Cloud %s", clusterInfo.Cloud))
 	}
@@ -54,10 +54,10 @@ func FromHubFormat(clusterInfo ClusterInfo, toCloud string) (c ClusterInfo, err 
 	switch toCloud { //todo Split out into "adapters" to avoid switch statement. Putting it here now for reference.
 	case GCP:
 		log.Print("to GCP ")
-		ret, err = ConvertHubToGCP(clusterInfo)
+		ret, err = transformHubToGCP(clusterInfo)
 	case AZURE:
 		log.Print("to Azure ")
-		ret, err = ConvertHubToAzure(clusterInfo)
+		ret, err = transformHubToAzure(clusterInfo)
 	case AWS:
 		log.Print("to AWS ")
 		return c, errors.New(fmt.Sprintf("Unsupported %s", toCloud))
@@ -70,7 +70,7 @@ func FromHubFormat(clusterInfo ClusterInfo, toCloud string) (c ClusterInfo, err 
 	return ret, err
 }
 
-func ConvertAzureToHub(clusterInfo ClusterInfo) (ClusterInfo, error) {
+func transformAzureToHub(clusterInfo ClusterInfo) (ClusterInfo, error) {
 	var ret = clusterInfo
 	ret.sourceCluster = &clusterInfo
 	if clusterInfo.sourceCluster == ret.sourceCluster {
@@ -80,13 +80,13 @@ func ConvertAzureToHub(clusterInfo ClusterInfo) (ClusterInfo, error) {
 	// ret.Name unchanged
 	// ret.NodeCount unchanged
 	ret.Scope = "" //Scope not meaningful in conversion cross-cloud
-	loc, err := ConvertLocationAzureToHub(ret.Location)
+	loc, err := transformLocationAzureToHub(ret.Location)
 	ret.Location = loc
 	return ret, err
 }
 
-func ConvertHubToAzure(clusterInfo ClusterInfo) (ClusterInfo, error) {
-	//todo this is duplicate to ConvertAzureToHub
+func transformHubToAzure(clusterInfo ClusterInfo) (ClusterInfo, error) {
+	//todo this is duplicate to transformAzureToHub
 	var ret = clusterInfo
 	ret.sourceCluster = &clusterInfo
 	if clusterInfo.sourceCluster == ret.sourceCluster {
@@ -96,13 +96,13 @@ func ConvertHubToAzure(clusterInfo ClusterInfo) (ClusterInfo, error) {
 	// ret.Name unchanged
 	// ret.NodeCount unchanged
 	ret.Scope = "" //Scope not meaningful in conversion cross-cloud
-	loc, err := ConvertLocationHubToAzure(ret.Location)
+	loc, err := transformLocationHubToAzure(ret.Location)
 	ret.Location = loc
 	return ret, err
 }
 
-func ConvertGCPToHub(clusterInfo ClusterInfo) (ClusterInfo, error) {
-	//todo this is duplicate to ConvertAzureToHub
+func tranformGCPToHub(clusterInfo ClusterInfo) (ClusterInfo, error) {
+	//todo this is duplicate to transformAzureToHub
 	var ret = clusterInfo
 	ret.sourceCluster = &clusterInfo
 	if clusterInfo.sourceCluster == ret.sourceCluster {
@@ -112,13 +112,13 @@ func ConvertGCPToHub(clusterInfo ClusterInfo) (ClusterInfo, error) {
 	//	ret.Name unchanged
 	// ret.NodeCount unchanged
 	ret.Scope = "" //Scope not meaningful in converstion cross-cloud
-	loc, err := ConvertLocationGcpToHub(ret.Location)
+	loc, err := transformLocationGcpToHub(ret.Location)
 	ret.Location = loc
 	return ret, err
 }
 
-func ConvertHubToGCP(clusterInfo ClusterInfo) (ClusterInfo, error) {
-	//todo this is duplicate to ConvertAzureToHub
+func transformHubToGCP(clusterInfo ClusterInfo) (ClusterInfo, error) {
+	//todo this is duplicate to transformAzureToHub
 	var ret = clusterInfo
 	ret.sourceCluster = &clusterInfo
 	if clusterInfo.sourceCluster == ret.sourceCluster {
@@ -128,7 +128,7 @@ func ConvertHubToGCP(clusterInfo ClusterInfo) (ClusterInfo, error) {
 	//	ret.Name unchanged
 	// ret.NodeCount unchanged
 	ret.Scope = "" //Scope not meaningful in conversion cross-cloud
-	loc, err := ConvertLocationHubToToGcp(ret.Location)
+	loc, err := transformLocationHubToToGcp(ret.Location)
 	ret.Location = loc
 	return ret, err
 }

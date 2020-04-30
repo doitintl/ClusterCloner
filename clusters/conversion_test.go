@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func TestConvertGcpToHubAndBack(t *testing.T) {
+func TestTransformGcpToHubAndBack(t *testing.T) {
 	ci := ClusterInfo{Name: "c", NodeCount: 1, Cloud: GCP, Location: "us-east1", Scope: "joshua-playground"}
-	std, err := ConvertGCPToHub(ci)
+	std, err := tranformGCPToHub(ci)
 	if err != nil {
 		t.Error(err)
 	}
@@ -17,7 +17,7 @@ func TestConvertGcpToHubAndBack(t *testing.T) {
 		t.Errorf("Not the standard cloud %s", std.Cloud)
 	}
 
-	gcp, err := ConvertHubToGCP(std)
+	gcp, err := transformHubToGCP(std)
 	if err != nil {
 		t.Error(err)
 	}
@@ -25,17 +25,17 @@ func TestConvertGcpToHubAndBack(t *testing.T) {
 		t.Error(gcp)
 	}
 }
-func TestConvertGcpToHubBadLoc(t *testing.T) {
+func TestTransformGcpToHubBadLoc(t *testing.T) {
 	ci := ClusterInfo{Name: "c", NodeCount: 1, Cloud: GCP, Location: "westus2", Scope: "joshua-playground"}
-	_, err := ConvertGCPToHub(ci)
+	_, err := tranformGCPToHub(ci)
 	if err == nil {
 		t.Error("expect error")
 	}
 }
 
-func TestConvertAzureToHub(t *testing.T) {
+func TestTransformAzureToHub(t *testing.T) {
 	ci := ClusterInfo{Name: "c", NodeCount: 1, Cloud: AZURE, Location: "westus2", Scope: "joshua-playground"}
-	std, err := ConvertAzureToHub(ci)
+	std, err := transformAzureToHub(ci)
 	if err != nil {
 		t.Error(err)
 	}
@@ -46,17 +46,17 @@ func TestConvertAzureToHub(t *testing.T) {
 		t.Errorf("Not the standard cloud %s", std.Cloud)
 	}
 }
-func TestConvertAzureToHubBadLoc(t *testing.T) {
+func TestTransformAzureToHubBadLoc(t *testing.T) {
 	ci := ClusterInfo{Name: "c", NodeCount: 1, Cloud: AZURE, Location: "westus1", Scope: "joshua-playground"}
-	_, err := ConvertAzureToHub(ci)
+	_, err := transformAzureToHub(ci)
 	if err == nil {
 		t.Error("expect error")
 	}
 }
 
-func TestConvertHubToAzure(t *testing.T) {
+func TestTransformHubToAzure(t *testing.T) {
 	ci := ClusterInfo{Name: "c", NodeCount: 1, Cloud: HUB, Location: "us-central1", Scope: ""}
-	std, err := ConvertHubToAzure(ci)
+	std, err := transformHubToAzure(ci)
 	if err != nil {
 		t.Error(err)
 	}
