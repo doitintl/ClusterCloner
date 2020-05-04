@@ -11,7 +11,6 @@ import (
 
 //CreateClusters Create a cluster with the given params
 func CreateClusters(cliCtx *cli.Context, origClustersInfo *containerpb.ListClustersResponse) {
-	//todo support Azure, AWS, for both read and write cluster
 	ctx := context.Background()
 	clustMgrClient, err := containers.NewClusterManagerClient(ctx)
 	if err != nil {
@@ -29,7 +28,7 @@ func CreateClusters(cliCtx *cli.Context, origClustersInfo *containerpb.ListClust
 
 }
 func createClusterInt(bkgrdCtx context.Context, proj string, loc string, origCluster *containerpb.Cluster, clustMgrClient *containers.ClusterManagerClient) {
-	clusterName := origCluster.Name + "-copy"
+	clusterName := origCluster.Name + "copied"
 	initialNodeCount := origCluster.InitialNodeCount
 	createCluster_(bkgrdCtx, proj, loc, clusterName, initialNodeCount, clustMgrClient)
 }

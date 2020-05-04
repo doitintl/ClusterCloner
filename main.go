@@ -2,7 +2,6 @@ package main
 
 import (
 	"clusterCloner/clusters/launcher"
-	"clusterCloner/poc/crossCloud"
 	"context"
 	"fmt"
 	"log"
@@ -30,7 +29,6 @@ var (
 func mainCmd(cliCtx *cli.Context) error {
 	printFlags(cliCtx)
 	launcher.Launch(cliCtx)
-	//	crossCloud.PocLaunch()
 
 	return nil
 }
@@ -71,7 +69,7 @@ func handleSignals() context.Context {
 func main() {
 	log.Print("Starting")
 
-	flags := crossCloud.CliFlags()
+	flags := launcher.CliFlags()
 	app := &cli.App{
 		Flags: flags,
 		Name:  "Cluster Cloner",

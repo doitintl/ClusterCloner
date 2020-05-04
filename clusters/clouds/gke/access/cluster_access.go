@@ -13,6 +13,7 @@ type GkeClusterAccess struct {
 }
 
 func (GkeClusterAccess) ListClusters(project, location string) (ret []cluster_info.ClusterInfo, err error) {
+
 	ret = make([]cluster_info.ClusterInfo, 0)
 
 	bkgdCtx := context.Background()
@@ -29,24 +30,36 @@ func (GkeClusterAccess) ListClusters(project, location string) (ret []cluster_in
 	}
 
 	for _, clus := range resp.GetClusters() {
-		clusInfo := cluster_info.ClusterInfo{Scope: project, Location: location, Name: clus.Name, NodeCount: clus.InitialNodeCount, GeneratedBy: cluster_info.READ}
+		var nodePools = clus.GetNodePools()
+		var nodeCount int32 = 0
+		for _, np := range nodePools {
+			nodeCount += np.InitialNodeCount
+		}
+
+		clusInfo := cluster_info.ClusterInfo{Scope: project,
+			Location:    location,
+			Name:        clus.Name,
+			NodeCount:   nodeCount,
+			GeneratedBy: cluster_info.READ,
+			Cloud:       cluster_info.GCP,
+		}
 		ret = append(ret, clusInfo)
 
 	}
 	return ret, nil
 }
-func (GkeClusterAccess) CreateCluster(clusterInfo cluster_info.ClusterInfo) error {
+func (GkeClusterAccess) CreateCluster(createThis cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
 
-	initialNodeCount := clusterInfo.NodeCount
+	initialNodeCount := createThis.NodeCount
 
 	if initialNodeCount < 1 {
 		log.Print("Copying a paused cluster, creating one node as a necessary minimum.")
 		initialNodeCount = 1
 	}
-	path := fmt.Sprintf("projects/%s/locations/%s", clusterInfo.Scope, clusterInfo.Location)
+	path := fmt.Sprintf("projects/%s/locations/%s", createThis.Scope, createThis.Location)
 
 	cluster := containerpb.Cluster{
-		Name:             clusterInfo.Name,
+		Name:             createThis.Name,
 		InitialNodeCount: initialNodeCount,
 	}
 	req := &containerpb.CreateClusterRequest{Parent: path, Cluster: &cluster}
@@ -55,8 +68,10 @@ func (GkeClusterAccess) CreateCluster(clusterInfo cluster_info.ClusterInfo) erro
 	resp, err := clustMgrClient.CreateCluster(backgroundCtx, req)
 	if err != nil {
 		log.Print(err)
-		return err
+		return cluster_info.ClusterInfo{}, err
 	}
+	var created = createThis
+	created.GeneratedBy = cluster_info.CREATED
 	log.Print(resp)
-	return nil
+	return created, err
 }

@@ -21,7 +21,7 @@ func CliFlags() []cli.Flag {
 
 func PocLaunch() {
 	//azure.CreateClusterFromEnv("mycluster")
-	azure.DescribeCluster("joshua-playground", "mycluster")
+	_, _ = azure.DescribeCluster("joshua-playground", "mycluster")
 	//aws.DescribeCluster("mycluster")
 	//aws.CreateCluster("cluster3")
 

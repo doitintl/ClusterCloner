@@ -14,7 +14,7 @@ import (
 type EksClusterAccess struct {
 }
 
-func (ca EksClusterAccess) CreateCluster(info cluster_info.ClusterInfo) error {
+func (ca EksClusterAccess) CreateCluster(info cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
 	panic("implement me")
 }
 
@@ -32,7 +32,7 @@ func (ca EksClusterAccess) DescribeCluster(clusterName string, region string) (c
 		printAwsErr(err)
 		return cluster_info.ClusterInfo{}, err
 	}
-	util.PrintAsJson(result)
+	log.Println(util.MarshallToJsonString(result))
 	return cluster_info.ClusterInfo{Scope: "", Location: region, Name: clusterName, NodeCount: 1, GeneratedBy: cluster_info.READ}, nil
 }
 

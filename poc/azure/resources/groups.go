@@ -47,7 +47,7 @@ func getGroupsClientWithAuthFile() resources.GroupsClient {
 // CreateGroup creates a new resource group named by env var
 func CreateGroup(ctx context.Context, groupName string) (resources.Group, error) {
 	groupsClient := getGroupsClient()
-	log.Println(fmt.Sprintf("creating resource group '%s' on location: %v", groupName, config.DefaultLocation()))
+	log.Println(fmt.Sprintf("ireating resource group '%s' on location: %v", groupName, config.DefaultLocation()))
 	return groupsClient.CreateOrUpdate(
 		ctx,
 		groupName,
@@ -60,7 +60,7 @@ func CreateGroup(ctx context.Context, groupName string) (resources.Group, error)
 // is set up based on an auth file created using the Azure CLI.
 func CreateGroupWithAuthFile(ctx context.Context, groupName string) (resources.Group, error) {
 	groupsClient := getGroupsClientWithAuthFile()
-	log.Println(fmt.Sprintf("creating resource group '%s' on location: %v", groupName, config.DefaultLocation()))
+	log.Println(fmt.Sprintf("Creating resource group '%s' on location: %v", groupName, config.DefaultLocation()))
 	return groupsClient.CreateOrUpdate(
 		ctx,
 		groupName,

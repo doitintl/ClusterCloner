@@ -4,59 +4,120 @@ import (
 	"clusterCloner/clusters/cluster_info"
 	"clusterCloner/clusters/util"
 	"encoding/csv"
-	"errors"
+	"github.com/pkg/errors"
+
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 )
 
-func TranformGCPToHub(clusterInfo cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
-	//todo this is duplicate to TransformAzureToHub
-	var ret = clusterInfo
-	ret.SourceCluster = &clusterInfo
-	if clusterInfo.SourceCluster == ret.SourceCluster {
+var randNumGen *rand.Rand
+
+func init() {
+	s := rand.NewSource(time.Now().Unix())
+	randNumGen = rand.New(s) // initialize local pseudorandom generator
+}
+
+type GkeTransformer struct {
+}
+
+func (tr GkeTransformer) CloudToHub(inputClusterInfo cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
+	var ret = inputClusterInfo
+	ret.SourceCluster = &inputClusterInfo
+	ret.GeneratedBy = cluster_info.TRANSFORMATION
+	if inputClusterInfo.SourceCluster == ret.SourceCluster {
 		panic("Copying didn't work as expected")
 	}
 	ret.Cloud = cluster_info.HUB
-	//	ret.Name unchanged
+	// ret.Name unchanged
 	// ret.NodeCount unchanged
-	ret.Scope = "" //Scope not meaningful in converstion cross-cloud
-	loc, err := TransformLocationGcpToHub(ret.Location)
-	ret.Location = loc
+	ret.Scope = ""
+	region, err := tr.LocationCloudToHub(ret.Location)
+	if err != nil {
+		return cluster_info.ClusterInfo{}, err
+	}
+	ret.Location = region
 	return ret, err
 }
 
-func TransformHubToGCP(clusterInfo cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
-	//todo this is duplicate to TransformAzureToHub
-	var ret = clusterInfo
-	ret.SourceCluster = &clusterInfo
-	if clusterInfo.SourceCluster == ret.SourceCluster {
+func (tr GkeTransformer) HubToCloud(hub cluster_info.ClusterInfo, outputScope string) (cluster_info.ClusterInfo, error) {
+
+	var ret = hub
+	ret.SourceCluster = &hub
+	ret.GeneratedBy = cluster_info.TRANSFORMATION
+	if hub.SourceCluster == ret.SourceCluster {
 		panic("Copying didn't work as expected")
 	}
 	ret.Cloud = cluster_info.GCP
-	//	ret.Name unchanged
+	// ret.Name unchanged
 	// ret.NodeCount unchanged
-	ret.Scope = "" //Scope not meaningful in conversion cross-cloud
-	loc, err := TransformLocationHubToToGcp(ret.Location)
+	ret.Scope = outputScope
+	loc, err := tr.LocationHubToCloud(hub.Location)
+	if err != nil {
+		return cluster_info.ClusterInfo{}, errors.Wrap(err, "")
+	}
 	ret.Location = loc
 	return ret, err
 }
-
-func TransformLocationGcpToHub(loc string) (string, error) {
+func (tr GkeTransformer) LocationCloudToHub(zone string) (string, error) {
 	locs, err := getGcpLocations()
 	if err != nil {
 		return "", err
 	}
-	if !contains(locs, loc) {
-		return "", errors.New(fmt.Sprintf("%s is not a legal location for GCP", loc))
+	hyphenCount, secondHyphenIdx := Hyphens(zone)
+	if hyphenCount != 1 && hyphenCount != 2 {
+		msg := fmt.Sprintf("%s is not a legal zone/region format for GCP", zone)
+		log.Println(msg)
+		return "", errors.New(msg)
 	}
-	return loc, nil
+	runes := []rune(zone)
+	endRegion := len(runes)
+	if secondHyphenIdx > 1 {
+		endRegion = secondHyphenIdx
+	}
+	region := string(runes[0:endRegion])
+	if !contains(locs, region) {
+		msg := fmt.Sprintf("Zone %s is not in a legal region for GCP", zone)
+		log.Println(msg)
+		return "", errors.New(msg)
+	}
+	return region, nil
 
 }
 
-func TransformLocationHubToToGcp(location string) (string, error) {
-	return TransformLocationGcpToHub(location) //locations are taken from GCP, so no conversion; reusing existing code
+func Hyphens(zone string) (int, int) {
+	hyphens := 0
+	secondHyphenIdx := 0
+	for i, ch := range zone {
+		if ch == '-' {
+			hyphens += 1
+			if hyphens == 2 {
+				secondHyphenIdx = i
+			}
+		}
+	}
+	return hyphens, secondHyphenIdx
+}
+
+func (GkeTransformer) LocationHubToCloud(location string) (string, error) {
+	hyphenCount, _ := Hyphens(location)
+	var zone string
+	if hyphenCount == 1 {
+		zones := []string{"a", "b"}
+		//Even when converting GCP to GCP, use a random zone, because we decided to convert GCP to GCP through the Hub format.
+		var randIdx = randNumGen.Intn(len(zones))
+		randZone := zones[randIdx]
+		zone = location + "-" + randZone
+	} else if hyphenCount == 2 {
+		zone = location
+	} else {
+		panic(location)
+	}
+	return zone, nil
+
 }
 func contains(slice []string, elem string) bool {
 	for _, a := range slice {

@@ -4,6 +4,7 @@ import (
 	"clusterCloner/poc/azure/aks_utils/config"
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/pkg/errors"
 	"log"
 )
 
@@ -25,7 +26,7 @@ func ReadEnv() error {
 	}
 	err = addEnv()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "")
 	}
 
 	return nil

@@ -1,10 +1,10 @@
 package aws
 
 import (
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/eks"
+	"log"
 )
 
 func CreateCluster(name string) {
@@ -73,8 +73,8 @@ func CreateCluster(name string) {
 		},
 	}
 	a, b := svc.CreateNodegroup(cngi)
-	fmt.Print(a)
-	fmt.Print(b)
+	log.Print(a)
+	log.Print(b)
 	_ = a
 	_ = b
 }

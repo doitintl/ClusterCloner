@@ -6,17 +6,16 @@ import (
 	"log"
 )
 
-func PrintAsJson(props interface{}) {
-	jsonByteArr, err := json.MarshalIndent(props, "", " ")
+func MarshallToJsonString(props interface{}) string {
+	jsonByteArr, err := json.MarshalIndent(props, "", "  ")
 	if err != nil {
 		log.Print(err)
+		return "<ERROR>"
 	}
 	jsonStr := string(jsonByteArr)
-	log.Println(jsonStr)
+	return jsonStr
 }
 
-// ReadJSON reads a json file, and unmashals it.
-// Very useful for template deployments.
 func ReadJSON(path string) (*map[string]interface{}, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {

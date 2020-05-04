@@ -4,32 +4,34 @@ import (
 	"clusterCloner/clusters/cluster_transformation"
 	"clusterCloner/clusters/util"
 	"github.com/urfave/cli/v2"
+	"log"
+	"os"
 )
 
 func CliFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
-			Name:     "inputscope",
-			Usage:    "GCP project or AKS resource group",
-			Required: true,
+			Name:  "inputscope",
+			Usage: "GCP project or AKS resource group; for AWS value is ignored",
 		},
 		&cli.StringFlag{
 			Name:     "outputscope",
-			Usage:    "GCP project or AKS resource group",
-			Required: false,
+			Usage:    "GCP project or AKS resource group; for AWS value is ignored ",
+			Required: true,
 		},
 		&cli.StringFlag{
-			Name:  "inputlocation",
-			Usage: "GCP zone or AWS region or AKS region",
+			Name:     "inputlocation",
+			Usage:    "GCP zone or AWS region or AKS region",
+			Required: true,
 		},
-		&cli.StringFlag{
+		&cli.StringFlag{ //todo allow inputting JSON for inputcloud=Hub
 			Name:     "inputcloud",
 			Usage:    "GCP, Azure, or AWS",
 			Required: true,
 		},
 		&cli.StringFlag{
 			Name:     "outputcloud",
-			Usage:    "GCP, Azure, or AWS",
+			Usage:    "GCP, Azure, AWS, or Hub",
 			Required: true,
 		},
 		&cli.BoolFlag{
@@ -40,8 +42,10 @@ func CliFlags() []cli.Flag {
 }
 
 func Launch(cliCtx *cli.Context) {
+	log.SetOutput(os.Stderr)
+
 	ret, _ := cluster_transformation.Clone(cliCtx)
 	//	ret, _ := access.AksClusterAccess{}.ListClusters(scope, loc)
-	util.PrintAsJson(ret)
+	log.Println(util.MarshallToJsonString(ret))
 
 }

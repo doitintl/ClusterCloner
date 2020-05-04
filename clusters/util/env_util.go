@@ -3,6 +3,7 @@ package util
 import (
 	"clusterCloner/clusters/clouds/aks/access/config"
 	"github.com/joho/godotenv"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -11,12 +12,16 @@ import (
 
 func ReadEnv() error {
 	var err error
-	if err := godotenv.Load(); err != nil {
-		log.Print("No .env file found")
+
+	rootPath := RootPath()
+	envFile := rootPath + "/.env"
+	if err := godotenv.Load(envFile); err != nil {
+		log.Print("No .env file found at ", envFile)
 	}
 	if err = config.ParseEnvironment(); err != nil {
-		log.Print("Error parsing environment", err)
-		return err
+		log.Print("Error parsing environment: ", err)
+		return errors.Wrap(err, "")
+
 	}
 	return nil
 }

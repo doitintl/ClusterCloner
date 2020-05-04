@@ -2,33 +2,43 @@ package transform
 
 import (
 	"clusterCloner/clusters/cluster_info"
+	"clusterCloner/clusters/util"
+	"strings"
 	"testing"
 )
 
 func TestTransformGcpToHubAndBack(t *testing.T) {
-	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.GCP, Location: "us-east1", Scope: "joshua-playground", GeneratedBy: cluster_info.MOCK}
-	std, err := TranformGCPToHub(ci)
+	scope := "joshua-playground"
+	input := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.GCP,
+		Location: "us-east1-a", Scope: scope, GeneratedBy: cluster_info.MOCK}
+	tr := GkeTransformer{}
+	hub, err := tr.CloudToHub(input)
 	if err != nil {
 		t.Error(err)
 	}
-	if std.Location != ci.Location {
-		t.Error(std.Location)
+	if !strings.HasPrefix(input.Location, hub.Location) {
+		t.Error(hub.Location)
 	}
-	if std.Cloud != cluster_info.HUB {
-		t.Errorf("Not the standard cloud %s", std.Cloud)
+	if hub.Cloud != cluster_info.HUB {
+		t.Errorf("Not the standard cloud %s", hub.Cloud)
 	}
 
-	gcp, err := TransformHubToGCP(std)
+	output, err := tr.HubToCloud(hub, scope)
 	if err != nil {
 		t.Error(err)
 	}
-	if gcp.Scope != "" || gcp.Name != ci.Name || gcp.NodeCount != ci.NodeCount || gcp.Location != ci.Location || gcp.Cloud != ci.Cloud {
-		t.Error(gcp)
+
+	if output.Scope != scope || output.Name != input.Name || output.NodeCount != input.NodeCount ||
+		output.Cloud != input.Cloud {
+		outputStr := util.MarshallToJsonString(output)
+		inputStr := util.MarshallToJsonString(input)
+		t.Error(outputStr + "!=" + inputStr)
 	}
 }
 func TestTransformGcpToHubBadLoc(t *testing.T) {
 	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.GCP, Location: "westus2", Scope: "joshua-playground", GeneratedBy: cluster_info.MOCK}
-	_, err := TranformGCPToHub(ci)
+	tr := GkeTransformer{}
+	_, err := tr.CloudToHub(ci)
 	if err == nil {
 		t.Error("expect error")
 	}

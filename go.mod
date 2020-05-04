@@ -12,6 +12,7 @@ require (
 	github.com/Azure/go-autorest/autorest/validation v0.2.0 // indirect
 	github.com/aws/aws-sdk-go v1.30.14
 	github.com/joho/godotenv v1.3.0
+	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli/v2 v2.2.0
 	google.golang.org/genproto v0.0.0-20190716160619-c506a9f90610
 )

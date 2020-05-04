@@ -1,5 +1,5 @@
 AZURE_BASE_GROUP_NAME=
-AZURE_LOCATION_DEFAULT=westus2
+AZURE_LOCATION_DEFAULT=
 
 # create with:
 # `az ad sp create-for-rbac --name 'my-sp' --output json --sdk-auth`

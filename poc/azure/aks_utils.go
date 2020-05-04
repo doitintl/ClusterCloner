@@ -17,7 +17,10 @@ func getAKSClient() (containerservice.ManagedClustersClient, error) {
 	aksClient := containerservice.NewManagedClustersClient(config.SubscriptionID())
 	auth, _ := iam.GetResourceManagementAuthorizer()
 	aksClient.Authorizer = auth
-	aksClient.AddToUserAgent(config.UserAgent())
+	err := aksClient.AddToUserAgent(config.UserAgent())
+	if err != nil {
+		return containerservice.ManagedClustersClient{}, err
+	}
 	aksClient.PollingDuration = time.Hour * 1
 	return aksClient, nil
 }

@@ -4,46 +4,53 @@ import (
 	"clusterCloner/clusters/cluster_info"
 	"clusterCloner/clusters/util"
 	"encoding/csv"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"log"
 	"os"
 )
 
-func TransformAzureToHub(clusterInfo cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
-	var ret = clusterInfo
-	ret.SourceCluster = &clusterInfo
-	if clusterInfo.SourceCluster == ret.SourceCluster {
+type AksTransformer struct{}
+
+func (tr AksTransformer) CloudToHub(inputClusterInfo cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
+	var ret = inputClusterInfo
+	ret.SourceCluster = &inputClusterInfo
+	ret.GeneratedBy = cluster_info.TRANSFORMATION
+	if inputClusterInfo.SourceCluster == ret.SourceCluster {
 		panic("Copying didn't work as expected")
 	}
 	ret.Cloud = cluster_info.HUB
 	// ret.Name unchanged
 	// ret.NodeCount unchanged
 	ret.Scope = "" //Scope not meaningful in conversion cross-cloud
-	loc, err := TransformLocationAzureToHub(ret.Location)
+	loc, err := tr.LocationCloudToHub(ret.Location)
+	if err != nil {
+		return cluster_info.ClusterInfo{}, err
+	}
 	ret.Location = loc
 	return ret, err
 }
 
-func TransformHubToAzure(clusterInfo cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
-	//todo this is duplicate to TransformAzureToHub
-	var ret = clusterInfo
-	ret.SourceCluster = &clusterInfo
-	if clusterInfo.SourceCluster == ret.SourceCluster {
+func (tr AksTransformer) HubToCloud(hub cluster_info.ClusterInfo, outputScope string) (cluster_info.ClusterInfo, error) {
+	var ret = hub
+	ret.SourceCluster = &hub
+	if hub.SourceCluster == ret.SourceCluster {
 		panic("Copying didn't work as expected")
 	}
 	ret.Cloud = cluster_info.AZURE
 	// ret.Name unchanged
 	// ret.NodeCount unchanged
-	ret.Scope = "" //Scope not meaningful in conversion cross-cloud
-	loc, err := TransformLocationHubToAzure(ret.Location)
+	ret.Scope = outputScope
+	loc, err := tr.LocationHubToCloud(ret.Location)
+	if err != nil {
+		return cluster_info.ClusterInfo{}, errors.Wrap(err, "")
+	}
 	ret.Location = loc
 	return ret, err
 }
 
-//todo split this into Azure and GCP packages
-func TransformLocationAzureToHub(loc string) (string, error) {
+func (AksTransformer) LocationCloudToHub(loc string) (string, error) {
 	mapping, err := getAzureToHubLocations()
 	if err != nil {
 		return "", err
@@ -99,7 +106,7 @@ func getAzureToHubLocations() (map[string]string, error) {
 	}
 	return ret, nil
 }
-func TransformLocationHubToAzure(location string) (string, error) {
+func (AksTransformer) LocationHubToCloud(location string) (string, error) {
 	azToHub, err := getAzureToHubLocations()
 	if err != nil {
 		return "", err
@@ -114,12 +121,28 @@ func TransformLocationHubToAzure(location string) (string, error) {
 }
 
 func reverseMap(m map[string]string) map[string]string {
-	n := make(map[string]string)
+	reverse := make(map[string]string)
+	var dupes = make([][3]string, 0)
 	for k, v := range m {
-		existing, ok := n[v]
-		if !ok || k < existing { //map may not be 1-to-1. If so, take the lexically lowest key as new value
-			n[v] = k
+		existing, wasInMap := reverse[v]
+		if wasInMap {
+			var using, notUsing string
+			if k < existing {
+				using = k
+				notUsing = existing
+			} else {
+				using = existing
+				notUsing = k
+			}
+			dupeTriple := [3]string{v, using, notUsing}
+			dupes = append(dupes, dupeTriple)
+
+			reverse[v] = using
+		} else {
+			reverse[v] = k
 		}
 	}
-	return n
+
+	log.Println("Duplicates in reversing map: New keys, followed by a value (old key) that will be used and one that won't ", dupes)
+	return reverse
 }
