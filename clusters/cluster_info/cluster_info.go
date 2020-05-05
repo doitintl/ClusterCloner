@@ -5,6 +5,7 @@ type ClusterInfo struct {
 	Scope         string //Project in GKE, Subscription in AKS, blank in EKS
 	Location      string
 	Name          string
+	K8sVersion    string
 	NodeCount     int32
 	GeneratedBy   string
 	SourceCluster *ClusterInfo

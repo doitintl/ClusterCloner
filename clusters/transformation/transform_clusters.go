@@ -1,4 +1,4 @@
-package cluster_transformation
+package transformation
 
 import (
 	accessaks "clusterCloner/clusters/clouds/aks/access"
@@ -60,7 +60,7 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 	}
 	outputClusterInfos := make([]cluster_info.ClusterInfo, 0)
 	for _, inputClusterInfo := range inputClusterInfos {
-		outputClusterInfo, err := transform(inputClusterInfo, outputCloud, outputScope)
+		outputClusterInfo, err := transformCloudToCloud(inputClusterInfo, outputCloud, outputScope)
 		outputClusterInfos = append(outputClusterInfos, outputClusterInfo)
 		if err != nil {
 			log.Printf("Error processing %v: %v", inputClusterInfo, err)
@@ -113,7 +113,7 @@ func CreateCluster(createThis cluster_info.ClusterInfo) (createdClusterInfo clus
 	return created, err
 }
 
-func transform(clusterInfo cluster_info.ClusterInfo, toCloud string, outputScope string) (c cluster_info.ClusterInfo, err error) {
+func transformCloudToCloud(clusterInfo cluster_info.ClusterInfo, toCloud string, outputScope string) (c cluster_info.ClusterInfo, err error) {
 	if clusterInfo.Cloud == "" {
 		return c, errors.New("No cloud name found in input cluster")
 	}

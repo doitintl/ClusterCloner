@@ -2,7 +2,8 @@ package transform
 
 import (
 	"clusterCloner/clusters/cluster_info"
-	"clusterCloner/clusters/util"
+	transformutil "clusterCloner/clusters/transformation/util"
+	clusterutil "clusterCloner/clusters/util"
 	"encoding/csv"
 	"fmt"
 	"github.com/pkg/errors"
@@ -13,40 +14,29 @@ import (
 
 type AksTransformer struct{}
 
-func (tr AksTransformer) CloudToHub(inputClusterInfo cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
-	var ret = inputClusterInfo
-	ret.SourceCluster = &inputClusterInfo
-	ret.GeneratedBy = cluster_info.TRANSFORMATION
-	if inputClusterInfo.SourceCluster == ret.SourceCluster {
-		panic("Copying didn't work as expected")
-	}
-	ret.Cloud = cluster_info.HUB
-	// ret.Name unchanged
-	// ret.NodeCount unchanged
-	ret.Scope = "" //Scope not meaningful in conversion cross-cloud
-	loc, err := tr.LocationCloudToHub(ret.Location)
+func (tr AksTransformer) CloudToHub(in cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
+	loc, err := tr.LocationCloudToHub(in.Location)
 	if err != nil {
-		return cluster_info.ClusterInfo{}, err
+		return cluster_info.ClusterInfo{}, errors.Wrap(err, "error in converting locations")
 	}
-	ret.Location = loc
+
+	k8sVersion, err := transformutil.MajorMinorPatchVersion(in.K8sVersion)
+	if err != nil {
+		return cluster_info.ClusterInfo{}, errors.Wrap(err, "error in K8s Version "+in.K8sVersion)
+	}
+
+	ret := transformutil.TransformSpoke(in, "", cluster_info.HUB, loc, k8sVersion)
+
 	return ret, err
 }
 
-func (tr AksTransformer) HubToCloud(hub cluster_info.ClusterInfo, outputScope string) (cluster_info.ClusterInfo, error) {
-	var ret = hub
-	ret.SourceCluster = &hub
-	if hub.SourceCluster == ret.SourceCluster {
-		panic("Copying didn't work as expected")
-	}
-	ret.Cloud = cluster_info.AZURE
-	// ret.Name unchanged
-	// ret.NodeCount unchanged
-	ret.Scope = outputScope
-	loc, err := tr.LocationHubToCloud(ret.Location)
+func (tr AksTransformer) HubToCloud(in cluster_info.ClusterInfo, outputScope string) (cluster_info.ClusterInfo, error) {
+	loc, err := tr.LocationHubToCloud(in.Location)
 	if err != nil {
-		return cluster_info.ClusterInfo{}, errors.Wrap(err, "")
+		return cluster_info.ClusterInfo{}, errors.Wrap(err, "error in converting location")
 	}
-	ret.Location = loc
+	ret := transformutil.TransformSpoke(in, outputScope, cluster_info.AZURE, loc, in.K8sVersion)
+
 	return ret, err
 }
 
@@ -69,7 +59,7 @@ func getAzureToHubLocations() (map[string]string, error) {
 		log.Fatal(err)
 	}
 	fmt.Println("PWD", dir)
-	fn := util.RootPath() + "/locations/azure_locations.csv"
+	fn := clusterutil.RootPath() + "/locations/azure_locations.csv"
 	csvfile, err := os.Open(fn)
 	if err != nil {
 		wd, _ := os.Getwd()

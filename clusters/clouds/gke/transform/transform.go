@@ -2,6 +2,7 @@ package transform
 
 import (
 	"clusterCloner/clusters/cluster_info"
+	transformutil "clusterCloner/clusters/transformation/util"
 	"clusterCloner/clusters/util"
 	"encoding/csv"
 	"github.com/pkg/errors"
@@ -24,42 +25,27 @@ func init() {
 type GkeTransformer struct {
 }
 
-func (tr GkeTransformer) CloudToHub(inputClusterInfo cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
-	var ret = inputClusterInfo
-	ret.SourceCluster = &inputClusterInfo
-	ret.GeneratedBy = cluster_info.TRANSFORMATION
-	if inputClusterInfo.SourceCluster == ret.SourceCluster {
-		panic("Copying didn't work as expected")
-	}
-	ret.Cloud = cluster_info.HUB
-	// ret.Name unchanged
-	// ret.NodeCount unchanged
-	ret.Scope = ""
-	region, err := tr.LocationCloudToHub(ret.Location)
+func (tr GkeTransformer) CloudToHub(in cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
+	loc, err := tr.LocationCloudToHub(in.Location)
 	if err != nil {
-		return cluster_info.ClusterInfo{}, err
+		return cluster_info.ClusterInfo{}, errors.Wrap(err, "error in converting locations")
 	}
-	ret.Location = region
+	k8sVersion, err := transformutil.MajorMinorPatchVersion(in.K8sVersion)
+	if err != nil {
+		return cluster_info.ClusterInfo{}, errors.Wrap(err, "error in K8s Version "+in.K8sVersion)
+	}
+
+	ret := transformutil.TransformSpoke(in, "", cluster_info.HUB, loc, k8sVersion)
 	return ret, err
 }
 
-func (tr GkeTransformer) HubToCloud(hub cluster_info.ClusterInfo, outputScope string) (cluster_info.ClusterInfo, error) {
-
-	var ret = hub
-	ret.SourceCluster = &hub
-	ret.GeneratedBy = cluster_info.TRANSFORMATION
-	if hub.SourceCluster == ret.SourceCluster {
-		panic("Copying didn't work as expected")
-	}
-	ret.Cloud = cluster_info.GCP
-	// ret.Name unchanged
-	// ret.NodeCount unchanged
-	ret.Scope = outputScope
-	loc, err := tr.LocationHubToCloud(hub.Location)
+func (tr GkeTransformer) HubToCloud(in cluster_info.ClusterInfo, outputScope string) (cluster_info.ClusterInfo, error) {
+	loc, err := tr.LocationHubToCloud(in.Location)
 	if err != nil {
-		return cluster_info.ClusterInfo{}, errors.Wrap(err, "")
+		return cluster_info.ClusterInfo{}, errors.Wrap(err, "error in converting location")
 	}
-	ret.Location = loc
+	ret := transformutil.TransformSpoke(in, outputScope, cluster_info.GCP, loc, in.K8sVersion)
+
 	return ret, err
 }
 func (tr GkeTransformer) LocationCloudToHub(zone string) (string, error) {

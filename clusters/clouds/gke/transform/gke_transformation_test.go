@@ -9,8 +9,14 @@ import (
 
 func TestTransformGcpToHubAndBack(t *testing.T) {
 	scope := "joshua-playground"
-	input := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.GCP,
-		Location: "us-east1-a", Scope: scope, GeneratedBy: cluster_info.MOCK}
+	input := cluster_info.ClusterInfo{
+		Name:        "c",
+		NodeCount:   1,
+		Cloud:       cluster_info.GCP,
+		Location:    "us-east1-a",
+		K8sVersion:  "1.14.1-gke27",
+		Scope:       scope,
+		GeneratedBy: cluster_info.MOCK}
 	tr := GkeTransformer{}
 	hub, err := tr.CloudToHub(input)
 	if err != nil {
@@ -36,7 +42,9 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	}
 }
 func TestTransformGcpToHubBadLoc(t *testing.T) {
-	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.GCP, Location: "westus2", Scope: "joshua-playground", GeneratedBy: cluster_info.MOCK}
+	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.GCP, Location: "westus2",
+		K8sVersion: "1.14.1-gke-27",
+		Scope:      "joshua-playground", GeneratedBy: cluster_info.MOCK}
 	tr := GkeTransformer{}
 	_, err := tr.CloudToHub(ci)
 	if err == nil {

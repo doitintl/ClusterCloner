@@ -167,10 +167,12 @@ func (ca AksClusterAccess) ListClusters(subscription string, location string) (c
 		for _, app := range *props.AgentPoolProfiles {
 			count += *app.Count
 		}
+
 		ci := cluster_info.ClusterInfo{
 			Scope:       subscription,
 			Location:    location,
 			Name:        *managedCluster.Name,
+			K8sVersion:  *props.KubernetesVersion, //todo could get current version
 			NodeCount:   count,
 			GeneratedBy: cluster_info.READ,
 			Cloud:       cluster_info.AZURE,

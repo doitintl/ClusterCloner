@@ -1,16 +1,24 @@
-package cluster_transformation
+package transformation
 
 import (
 	"clusterCloner/clusters/cluster_info"
 	"clusterCloner/clusters/util"
+	"log"
 	"strings"
 	"testing"
 )
 
 func TestTransformAzureToGCP(t *testing.T) {
 	scope := "joshua-playground"
-	azure := cluster_info.ClusterInfo{Name: "c", NodeCount: 1, Cloud: cluster_info.AZURE, Location: "westus2", Scope: scope, GeneratedBy: cluster_info.MOCK}
-	gcp, err := transform(azure, cluster_info.GCP, scope)
+	azure := cluster_info.ClusterInfo{
+		Name:        "c",
+		NodeCount:   1,
+		Cloud:       cluster_info.AZURE,
+		Location:    "westus2",
+		Scope:       scope,
+		K8sVersion:  "1.14.0",
+		GeneratedBy: cluster_info.MOCK}
+	gcp, err := transformCloudToCloud(azure, cluster_info.GCP, scope)
 	if err != nil {
 		t.Error(err)
 	}
@@ -25,4 +33,6 @@ func TestTransformAzureToGCP(t *testing.T) {
 		inputStr := util.MarshallToJsonString(azure)
 		t.Error(outputStr + "!=" + inputStr)
 	}
+	log.Println(gcp.K8sVersion)
+	log.Println(azure.K8sVersion)
 }

@@ -1,7 +1,7 @@
 package launcher
 
 import (
-	"clusterCloner/clusters/cluster_transformation"
+	"clusterCloner/clusters/transformation"
 	"clusterCloner/clusters/util"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -44,8 +44,7 @@ func CliFlags() []cli.Flag {
 func Launch(cliCtx *cli.Context) {
 	log.SetOutput(os.Stderr)
 
-	ret, _ := cluster_transformation.Clone(cliCtx)
-	//	ret, _ := access.AksClusterAccess{}.ListClusters(scope, loc)
+	ret, _ := transformation.Clone(cliCtx)
 	log.Println(util.MarshallToJsonString(ret))
 
 }

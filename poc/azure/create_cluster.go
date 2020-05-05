@@ -40,6 +40,16 @@ func CreateCluster(grpName string, aksClusterName string, loc string, clientID s
 		}
 	}
 
+	//	_, err = resources.CreateGroup(ctx, "MC_joshua-playground_mycluster_westus2")
+	//	if err != nil {
+	//		errS := err.Error()
+	//		if strings.Contains(errS, "already exists") {
+	//			log.Printf("Group %s already exists", grpName)
+	//		} else {
+	//			log.Fatal(err)
+	//		}
+	//	}
+	//
 	_, err = createAKSCluster(ctx, aksClusterName, loc, grpName, aksUsername, aksSSHPublicKeyPath, clientID, clientSecret, aksAgentPoolCount)
 	if err != nil {
 		aks_utils.LogAndPanic(err)

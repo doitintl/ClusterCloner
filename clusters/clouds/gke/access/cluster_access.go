@@ -40,6 +40,7 @@ func (GkeClusterAccess) ListClusters(project, location string) (ret []cluster_in
 			Location:    location,
 			Name:        clus.Name,
 			NodeCount:   nodeCount,
+			K8sVersion:  clus.CurrentMasterVersion,
 			GeneratedBy: cluster_info.READ,
 			Cloud:       cluster_info.GCP,
 		}

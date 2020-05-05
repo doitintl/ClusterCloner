@@ -17,7 +17,6 @@ type EksClusterAccess struct {
 func (ca EksClusterAccess) CreateCluster(info cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
 	panic("implement me")
 }
-
 func (ca EksClusterAccess) DescribeCluster(clusterName string, region string) (cluster_info.ClusterInfo, error) {
 
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
