@@ -12,8 +12,8 @@ import (
 
 // describeCluster returns an existing AKS cluster given a resource group name and resource name
 func DescribeCluster(grpName, clusterName string) (c containerservice.ManagedCluster, err error) {
-	err_ := aks_utils.ReadEnv()
-	_ = err_
+	err2 := aks_utils.ReadEnv()
+	_ = err2
 	log.Printf("Group %s, Cluster %s", grpName, clusterName)
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()

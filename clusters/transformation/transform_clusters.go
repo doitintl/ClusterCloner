@@ -71,8 +71,8 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 	if create {
 		log.Println("Creating", len(outputClusterInfos), "target clusters")
 		for idx, createThis := range outputClusterInfos {
-			createCi, err_ := CreateCluster(createThis)
-			if err_ != nil {
+			createCi, err := CreateCluster(createThis)
+			if err != nil {
 				log.Printf("Error creating %v: %v", createThis, err)
 			}
 			createdClusterInfos[idx] = createCi

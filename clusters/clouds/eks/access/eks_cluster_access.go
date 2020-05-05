@@ -44,10 +44,10 @@ func (ca EksClusterAccess) ListClusters(_ string, location string) ([]cluster_in
 
 	for _, s := range clusterNames {
 		log.Print(*s)
-		var clusterInfo, err_ = ca.DescribeCluster(location, *s)
-		if err_ != nil {
-			log.Print("Error ", err_)
-			return nil, err_
+		var clusterInfo, err = ca.DescribeCluster(location, *s)
+		if err != nil {
+			log.Print("Error ", err)
+			return nil, err
 		}
 		ret = append(ret, clusterInfo)
 	}

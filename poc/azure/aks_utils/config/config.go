@@ -44,10 +44,7 @@ func SubscriptionID() string {
 	return subscriptionID
 }
 
-//
-// DefaultLocation() returns the default location wherein to create new resources.
-// Some resource types are not available in all locations so another location might need
-// to be chosen.
+// DefaultLocation  returns the default location wherein to create new resources.
 func DefaultLocation() string {
 	return locationDefault
 }

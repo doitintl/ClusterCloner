@@ -55,21 +55,22 @@ func DefaultLocation() string {
 	return locationDefault
 }
 
+// SetBaseGroupName ...
 func SetBaseGroupName(name string) {
 	baseGroupName = name
 }
 
-// BaseGroupName() returns a prefix for new groups.
+// BaseGroupName returns a prefix for new groups.
 func BaseGroupName() string {
 	return baseGroupName
 }
 
-// KeepResources() specifies whether to keep resources created by samples.
+// KeepResources specifies whether to keep resources created by samples.
 func KeepResources() bool {
 	return keepResources
 }
 
-// UserAgent() specifies a string to append to the agent identifier.
+// UserAgent specifies a string to append to the agent identifier.
 func UserAgent() string {
 	if len(userAgent) > 0 {
 		return userAgent
@@ -77,7 +78,7 @@ func UserAgent() string {
 	return "sdk-samples"
 }
 
-// Environment() returns an `azure.Environment{...}` for the current cloud.
+// Environment returns an `azure.Environment{...}` for the current cloud.
 func Environment() *azure.Environment {
 	if environment != nil {
 		return environment

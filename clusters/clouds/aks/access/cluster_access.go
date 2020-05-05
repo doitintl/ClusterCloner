@@ -30,6 +30,7 @@ func init() {
 	_ = util.ReadEnv()
 }
 
+//AksClusterAccess
 type AksClusterAccess struct {
 }
 
@@ -54,6 +55,8 @@ func createGroup(ctx context.Context, groupName string, region string) (resource
 			Location: to.StringPtr(config.DefaultLocation()),
 		})
 }
+
+//CreateCluster...
 func (ca AksClusterAccess) CreateCluster(createThis cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
 	grpName := createThis.Scope
 	log.Printf("Create Cluster: Group %s, Cluster %s, Location %s", grpName, createThis.Name, createThis.Location)
@@ -129,7 +132,7 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 			},
 			AgentPoolProfiles:       agentPoolProfiles,
 			ServicePrincipalProfile: servicePrincipalProfile,
-			KubernetesVersion:       xxxx,
+			KubernetesVersion:       &k8sVersion,
 		},
 	}
 	future, err := aksClient.CreateOrUpdate(
@@ -151,11 +154,12 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 	return future.Result(aksClient)
 }
 
+//ListClusters ...
 func (ca AksClusterAccess) ListClusters(subscription string, location string) (ci []cluster_info.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
-	var aksClient, err_ = getAKSClient()
-	if err_ != nil {
+	var aksClient, err2 = getAKSClient()
+	if err2 != nil {
 		return ci, errors.New("cannot get AKS client")
 	}
 	ret := make([]cluster_info.ClusterInfo, 0)
