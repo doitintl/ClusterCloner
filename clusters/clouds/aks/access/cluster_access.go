@@ -69,7 +69,7 @@ func (ca AksClusterAccess) CreateCluster(createThis cluster_info.ClusterInfo) (c
 			return cluster_info.ClusterInfo{}, err
 		}
 	}
-	_, err = createAKSCluster(ctx, createThis.Name, createThis.Location, grpName, aksUsername, aksSSHPublicKeyPath, config.ClientID(), config.ClientSecret(), createThis.NodeCount)
+	_, err = createAKSCluster(ctx, createThis.Name, createThis.Location, grpName, aksUsername, aksSSHPublicKeyPath, config.ClientID(), config.ClientSecret(), createThis.K8sVersion, createThis.NodeCount)
 	if err != nil {
 		log.Println(err)
 		return cluster_info.ClusterInfo{}, err
@@ -77,12 +77,12 @@ func (ca AksClusterAccess) CreateCluster(createThis cluster_info.ClusterInfo) (c
 	created := createThis
 	created.GeneratedBy = cluster_info.CREATED
 
-	log.Println("Retrieved RAKS cluster")
+	log.Println("Retrieved AKS cluster")
 	return created, nil
 }
 
 // createAKSCluster creates a new managed Kubernetes cluster
-func createAKSCluster(ctx context.Context, resourceName, location, resourceGroupName, username, sshPublicKeyPath, clientID, clientSecret string, agentPoolCount int32) (c containerservice.ManagedCluster, err error) {
+func createAKSCluster(ctx context.Context, resourceName, location, resourceGroupName, username, sshPublicKeyPath, clientID, clientSecret, k8sVersion string, agentPoolCount int32) (c containerservice.ManagedCluster, err error) {
 	var sshKeyData string
 	if _, err = os.Stat(sshPublicKeyPath); err == nil {
 		sshBytes, err := ioutil.ReadFile(sshPublicKeyPath)
@@ -129,6 +129,7 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 			},
 			AgentPoolProfiles:       agentPoolProfiles,
 			ServicePrincipalProfile: servicePrincipalProfile,
+			KubernetesVersion:       xxxx,
 		},
 	}
 	future, err := aksClient.CreateOrUpdate(

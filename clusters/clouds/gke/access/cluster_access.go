@@ -36,7 +36,7 @@ func (GkeClusterAccess) ListClusters(project, location string) (ret []cluster_in
 			nodeCount += np.InitialNodeCount
 		}
 
-		clusInfo := cluster_info.ClusterInfo{Scope: project,
+		foundCluster := cluster_info.ClusterInfo{Scope: project,
 			Location:    location,
 			Name:        clus.Name,
 			NodeCount:   nodeCount,
@@ -44,7 +44,7 @@ func (GkeClusterAccess) ListClusters(project, location string) (ret []cluster_in
 			GeneratedBy: cluster_info.READ,
 			Cloud:       cluster_info.GCP,
 		}
-		ret = append(ret, clusInfo)
+		ret = append(ret, foundCluster)
 
 	}
 	return ret, nil
@@ -60,8 +60,9 @@ func (GkeClusterAccess) CreateCluster(createThis cluster_info.ClusterInfo) (clus
 	path := fmt.Sprintf("projects/%s/locations/%s", createThis.Scope, createThis.Location)
 
 	cluster := containerpb.Cluster{
-		Name:             createThis.Name,
-		InitialNodeCount: initialNodeCount,
+		Name:                  createThis.Name,
+		InitialNodeCount:      initialNodeCount,
+		InitialClusterVersion: createThis.K8sVersion,
 	}
 	req := &containerpb.CreateClusterRequest{Parent: path, Cluster: &cluster}
 	backgroundCtx := context.Background()

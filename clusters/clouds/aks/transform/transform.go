@@ -36,7 +36,7 @@ func (tr AksTransformer) HubToCloud(in cluster_info.ClusterInfo, outputScope str
 		return cluster_info.ClusterInfo{}, errors.Wrap(err, "error in converting location")
 	}
 	ret := transformutil.TransformSpoke(in, outputScope, cluster_info.AZURE, loc, in.K8sVersion)
-
+	ret.Name = ret.Name + "arbitrarysuffix"
 	return ret, err
 }
 
