@@ -128,7 +128,7 @@ func transformCloudToCloud(clusterInfo clusterinfo.ClusterInfo, toCloud string, 
 		return clusterinfo.ClusterInfo{}, err2
 	}
 	if clusterInfo.Cloud == toCloud {
-		// todo maybe self-to-self transformation shoud not go thru hub format.
+		// Maybe self-to-self transformation shoud not go thru hub format.
 		target.Name = target.Name + "-copy"
 	}
 	target.GeneratedBy = clusterinfo.TRANSFORMATION

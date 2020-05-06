@@ -13,7 +13,6 @@
 
 # helper files
 .gitignore
-*.todo
 
 # documentation
 *.md

@@ -51,3 +51,30 @@ func TestTransformGcpToHubBadLoc(t *testing.T) {
 		t.Error("expect error")
 	}
 }
+func TestHyphens(t *testing.T) {
+	hyCount, secondHyIdx := Hyphens("us-central1-c")
+	if hyCount != 2 {
+		t.Error(hyCount)
+	}
+	if secondHyIdx != 11 {
+		t.Error(secondHyIdx)
+	}
+}
+func TestHyphensNone(t *testing.T) {
+	hyCount, secondHyIdx := Hyphens("uscentral1c")
+	if hyCount != 0 {
+		t.Error(hyCount)
+	}
+	if secondHyIdx != -1 {
+		t.Error(secondHyIdx)
+	}
+}
+func TestHyphenOne(t *testing.T) {
+	hyCount, secondHyIdx := Hyphens("us-central1")
+	if hyCount != 1 {
+		t.Error(hyCount)
+	}
+	if secondHyIdx != -1 {
+		t.Error(secondHyIdx)
+	}
+}

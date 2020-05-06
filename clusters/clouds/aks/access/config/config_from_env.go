@@ -85,7 +85,6 @@ func Environment() *azure.Environment {
 	}
 	env, err := azure.EnvironmentFromName(cloudName)
 	if err != nil {
-		// TODO: move to initialization of var
 		panic(fmt.Sprintf(
 			"invalid cloud name '%s' specified, cannot continue\n", cloudName))
 	}

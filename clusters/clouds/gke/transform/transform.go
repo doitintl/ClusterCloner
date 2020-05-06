@@ -80,18 +80,17 @@ func (tr GkeTransformer) LocationCloudToHub(zone string) (string, error) {
 }
 
 // Hyphens ...
-func Hyphens(zone string) (int, int) {
-	hyphens := 0
-	secondHyphenIdx := 0
+func Hyphens(zone string) (hyphenCount int, secondHyphenIdx int) {
+	secondHyphenIdx = -1
 	for i, ch := range zone {
 		if ch == '-' {
-			hyphens++
-			if hyphens == 2 {
+			hyphenCount++
+			if hyphenCount == 2 {
 				secondHyphenIdx = i
 			}
 		}
 	}
-	return hyphens, secondHyphenIdx
+	return hyphenCount, secondHyphenIdx
 }
 
 // LocationHubToCloud ...

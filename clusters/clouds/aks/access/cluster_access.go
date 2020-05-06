@@ -177,7 +177,7 @@ func (ca AksClusterAccess) ListClusters(subscription string, location string) (c
 			Scope:       subscription,
 			Location:    location,
 			Name:        *managedCluster.Name,
-			K8sVersion:  *props.KubernetesVersion, //todo could get current version
+			K8sVersion:  *props.KubernetesVersion,
 			NodeCount:   count,
 			GeneratedBy: clusterinfo.READ,
 			Cloud:       clusterinfo.AZURE,
