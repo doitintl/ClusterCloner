@@ -15,6 +15,17 @@ import (
 	"log"
 )
 
+// Transformer ...
+type Transformer interface {
+	CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error)
+	//	HubToCloud///
+	HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error)
+	// LocationHubToCloud ...
+	LocationHubToCloud(loc string) (string, error)
+	// LocationCloudToHub ...
+	LocationCloudToHub(loc string) (string, error)
+}
+
 // Clone ...
 func Clone(cliCtx *cli.Context) ([]clusterinfo.ClusterInfo, error) {
 	inputCloud := cliCtx.String("inputcloud")
@@ -59,39 +70,41 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 	if err != nil {
 		return nil, err
 	}
-	outputClusterInfos := make([]clusterinfo.ClusterInfo, 0)
+	transformationOutput := make([]clusterinfo.ClusterInfo, 0)
 	for _, inputClusterInfo := range inputClusterInfos {
 		outputClusterInfo, err := transformCloudToCloud(inputClusterInfo, outputCloud, outputScope)
-		outputClusterInfos = append(outputClusterInfos, outputClusterInfo)
+		transformationOutput = append(transformationOutput, outputClusterInfo)
 		if err != nil {
 			log.Printf("Error processing %v: %v", inputClusterInfo, err)
 		}
 	}
-	createdClusterInfos := make([]clusterinfo.ClusterInfo, len(outputClusterInfos))
+	createdClusterInfos := make([]clusterinfo.ClusterInfo, len(transformationOutput))
 
 	if create {
-		log.Println("Creating", len(outputClusterInfos), "target clusters")
-		for idx, createThis := range outputClusterInfos {
-			createCi, err := CreateCluster(createThis)
-			if err != nil {
-				log.Printf("Error creating %v: %v", createThis, err)
-			}
-			createdClusterInfos[idx] = createCi
-		}
-		blank := clusterinfo.ClusterInfo{}
-		for idx, createdClusterInfo := range createdClusterInfos {
-			if createdClusterInfo != blank {
-				outputClusterInfos[idx] = createdClusterInfo
-			}
-		}
-		if len(outputClusterInfos) != len(inputClusterInfos) {
-			log.Fatalf("%d != %d", len(outputClusterInfos), len(inputClusterInfos))
-		}
-		return outputClusterInfos, nil //replaced each ClusterInfo that was created; left the ones that were not
+		createClusters(transformationOutput, createdClusterInfos)
+		return transformationOutput, nil //replaced each ClusterInfo that was created; left the ones that were not
 	}
-	log.Println("Not creating", len(outputClusterInfos), "target clusters")
-	return outputClusterInfos, nil
+	log.Println("Not creating", len(transformationOutput), "target clusters")
+	return transformationOutput, nil
 
+}
+
+func createClusters( /*immutable*/ createThese []clusterinfo.ClusterInfo,
+	/*inout*/ createdClusterInfos []clusterinfo.ClusterInfo) {
+	log.Println("Creating", len(createThese), "target clusters")
+	for idx, createThis := range createThese {
+		createCi, err := CreateCluster(createThis)
+		if err != nil {
+			log.Printf("Error creating %v: %v", createThis, err)
+		}
+		createdClusterInfos[idx] = createCi
+	}
+	blank := clusterinfo.ClusterInfo{}
+	for idx, createdClusterInfo := range createdClusterInfos {
+		if createdClusterInfo != blank {
+			createThese[idx] = createdClusterInfo
+		}
+	}
 }
 
 // CreateCluster ...
@@ -178,16 +191,4 @@ func fromHubFormat(hub clusterinfo.ClusterInfo, toCloud string, outputScope stri
 	}
 	ret, err = transformer.HubToCloud(hub, outputScope)
 	return ret, err
-}
-
-// Transformer ...
-type Transformer interface {
-	// CloudToHub todo: Extract CloudToHub and HubToCloud as 'embedded' functions to be shared by implementors
-	CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error)
-	//	HubToCloud///
-	HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error)
-	// LocationHubToCloud ...
-	LocationHubToCloud(loc string) (string, error)
-	// LocationCloudToHub ...
-	LocationCloudToHub(loc string) (string, error)
 }
