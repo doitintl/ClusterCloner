@@ -137,7 +137,7 @@ func transformCloudToCloud(clusterInfo clusterinfo.ClusterInfo, toCloud string, 
 func toHubFormat(input clusterinfo.ClusterInfo) (c clusterinfo.ClusterInfo, err error) {
 	err = nil
 	var ret clusterinfo.ClusterInfo
-	var transformer clusteraccess.Transformer
+	var transformer Transformer
 	switch cloud := input.Cloud; cloud {
 	case clusterinfo.GCP:
 		transformer = &transformgke.GkeTransformer{}
@@ -159,7 +159,7 @@ func fromHubFormat(hub clusterinfo.ClusterInfo, toCloud string, outputScope stri
 	if hub.Cloud != clusterinfo.HUB {
 		return clusterinfo.ClusterInfo{}, errors.New(fmt.Sprintf("Wrong Cloud %s", hub.Cloud))
 	}
-	var transformer clusteraccess.Transformer
+	var transformer Transformer
 	err = nil
 	var ret clusterinfo.ClusterInfo
 	switch toCloud { //  We do not expect more than  these clouds so not splitting out dynamically loaded adapters
@@ -178,4 +178,16 @@ func fromHubFormat(hub clusterinfo.ClusterInfo, toCloud string, outputScope stri
 	}
 	ret, err = transformer.HubToCloud(hub, outputScope)
 	return ret, err
+}
+
+// Transformer ...
+type Transformer interface {
+	// CloudToHub todo: Extract CloudToHub and HubToCloud as 'embedded' functions to be shared by implementors
+	CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error)
+	//	HubToCloud///
+	HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error)
+	// LocationHubToCloud ...
+	LocationHubToCloud(loc string) (string, error)
+	// LocationCloudToHub ...
+	LocationCloudToHub(loc string) (string, error)
 }

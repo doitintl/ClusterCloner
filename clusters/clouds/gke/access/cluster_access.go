@@ -13,7 +13,7 @@ import (
 type GkeClusterAccess struct {
 }
 
-// ListClusters ...
+// ListClusters lists clusters; location param can be region or zone
 func (GkeClusterAccess) ListClusters(project, location string) (ret []clusterinfo.ClusterInfo, err error) {
 
 	ret = make([]clusterinfo.ClusterInfo, 0)

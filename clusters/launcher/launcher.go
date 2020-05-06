@@ -39,6 +39,10 @@ func CLIFlags() []cli.Flag {
 			Name:  "create",
 			Usage: "true: Create new clusters; default is not to create (dry run)",
 		},
+		&cli.StringFlag{
+			Name:  "outputformat",
+			Usage: "json or tf (Terraform). Default is json",
+		},
 	}
 }
 
