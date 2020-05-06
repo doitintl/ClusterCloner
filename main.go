@@ -1,7 +1,7 @@
 package main
 
 import (
-	"clusterCloner/clusters/launcher"
+	"clustercloner/clusters/launcher"
 	"context"
 	"fmt"
 	"log"
@@ -15,6 +15,7 @@ import (
 
 var (
 	mainCtx context.Context
+	//Version ...
 	Version = "dev"
 	//BuildDate build date
 	BuildDate = "unknown"
@@ -68,7 +69,7 @@ func handleSignals() context.Context {
 func main() {
 	log.Print("Starting")
 
-	flags := launcher.CliFlags()
+	flags := launcher.CLIFlags()
 	app := &cli.App{
 		Flags: flags,
 		Name:  "Cluster Cloner",

@@ -1,5 +1,6 @@
-package cluster_info
+package clusterinfo
 
+// ClusterInfo ...
 type ClusterInfo struct {
 	Cloud         string //GCP, Azure, AWS, or Hub (for a standard neutral format)
 	Scope         string //Project in GKE, Subscription in AKS, blank in EKS
@@ -12,15 +13,23 @@ type ClusterInfo struct {
 }
 
 var (
-	MOCK           = "Mock"
-	READ           = "Read"
-	CREATED        = "Created"
+	// MOCK ...
+	MOCK = "Mock"
+	// READ ...
+	READ = "Read"
+	// CREATED ...
+	CREATED = "Created"
+	// TRANSFORMATION ...
 	TRANSFORMATION = "Transformation"
 )
 
 var (
-	HUB   = "Hub"
-	GCP   = "GCP"
+	// HUB ...
+	HUB = "Hub"
+	// GCP ...
+	GCP = "GCP"
+	// AZURE ...
 	AZURE = "Azure"
-	AWS   = "AWS"
+	// AWS ...
+	AWS = "AWS"
 )

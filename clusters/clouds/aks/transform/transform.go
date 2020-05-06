@@ -1,9 +1,9 @@
 package transform
 
 import (
-	"clusterCloner/clusters/cluster_info"
-	transformutil "clusterCloner/clusters/transformation/util"
-	clusterutil "clusterCloner/clusters/util"
+	"clustercloner/clusters/clusterinfo"
+	transformutil "clustercloner/clusters/transformation/util"
+	clusterutil "clustercloner/clusters/util"
 	"encoding/csv"
 	"fmt"
 	"github.com/pkg/errors"
@@ -12,34 +12,38 @@ import (
 	"os"
 )
 
+// AksTransformer ...
 type AksTransformer struct{}
 
-func (tr AksTransformer) CloudToHub(in cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
+// CloudToHub ...
+func (tr AksTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationCloudToHub(in.Location)
 	if err != nil {
-		return cluster_info.ClusterInfo{}, errors.Wrap(err, "error in converting locations")
+		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting locations")
 	}
 
 	k8sVersion, err := transformutil.MajorMinorPatchVersion(in.K8sVersion)
 	if err != nil {
-		return cluster_info.ClusterInfo{}, errors.Wrap(err, "error in K8s Version "+in.K8sVersion)
+		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in K8s Version "+in.K8sVersion)
 	}
 
-	ret := transformutil.TransformSpoke(in, "", cluster_info.HUB, loc, k8sVersion)
+	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, k8sVersion)
 
 	return ret, err
 }
 
-func (tr AksTransformer) HubToCloud(in cluster_info.ClusterInfo, outputScope string) (cluster_info.ClusterInfo, error) {
+// HubToCloud ...
+func (tr AksTransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationHubToCloud(in.Location)
 	if err != nil {
-		return cluster_info.ClusterInfo{}, errors.Wrap(err, "error in converting location")
+		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting location")
 	}
-	ret := transformutil.TransformSpoke(in, outputScope, cluster_info.AZURE, loc, in.K8sVersion)
+	ret := transformutil.TransformSpoke(in, outputScope, clusterinfo.AZURE, loc, in.K8sVersion)
 	ret.Name = ret.Name + "arbitrarysuffix"
 	return ret, err
 }
 
+//LocationCloudToHub ...
 func (AksTransformer) LocationCloudToHub(loc string) (string, error) {
 	mapping, err := getAzureToHubLocations()
 	if err != nil {
@@ -96,6 +100,8 @@ func getAzureToHubLocations() (map[string]string, error) {
 	}
 	return ret, nil
 }
+
+//LocationHubToCloud ...
 func (AksTransformer) LocationHubToCloud(location string) (string, error) {
 	azToHub, err := getAzureToHubLocations()
 	if err != nil {

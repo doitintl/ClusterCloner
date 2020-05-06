@@ -7,6 +7,7 @@ import (
 	"log"
 )
 
+// CreateCluster ...
 func CreateCluster(name string) {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-west-2")})
 	_ = err
@@ -58,12 +59,12 @@ func CreateCluster(name string) {
 	//	}
 	//
 	//	fmt.Println(result)
-	name_ := "mucluster"
+	clustName := "mucluster"
 	ami := "AL2_x86_64"
 	ng := "myng2"
 	cngi := &eks.CreateNodegroupInput{
 		ClientRequestToken: aws.String("3d2120a1-3d38-999a-9756-e6b97fddb945"),
-		ClusterName:        &name_,
+		ClusterName:        &clustName,
 		AmiType:            &ami,
 		NodeRole:           aws.String("arn:aws:iam::649592902942:role/eksctl-cluster1-nodegroup-standar-NodeInstanceRole-160J0E0MFG4ZA"),
 		NodegroupName:      &ng,

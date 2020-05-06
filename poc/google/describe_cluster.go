@@ -2,7 +2,7 @@ package google
 
 import (
 	container "cloud.google.com/go/container/apiv1"
-	"clusterCloner/poc/utilities"
+	"clustercloner/poc/utilities"
 	"context"
 	"fmt"
 	"github.com/urfave/cli/v2"
@@ -10,7 +10,7 @@ import (
 	"log"
 )
 
-//DescribeClusters Return data on the cluster in JSON form. cliCtx shold provide project and location (zone, where _ means all zones)
+//ListClusters Return data on the cluster in JSON form. cliCtx shold provide project and location (zone, where _ means all zones)
 func ListClusters(cliCtx *cli.Context) *containerpb.ListClustersResponse {
 
 	ctx := context.Background()
@@ -27,6 +27,6 @@ func ListClusters(cliCtx *cli.Context) *containerpb.ListClustersResponse {
 	if err != nil {
 		log.Fatal(err)
 	}
-	utilities.PrintAsJson(resp)
+	utilities.PrintAsJSON(resp)
 	return resp
 }

@@ -6,8 +6,8 @@
 package resources
 
 import (
-	"clusterCloner/poc/azure/aks_utils/config"
-	"clusterCloner/poc/azure/aks_utils/iam"
+	"clustercloner/poc/azure/aksutils/config"
+	"clustercloner/poc/azure/aksutils/iam"
 	"context"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest"

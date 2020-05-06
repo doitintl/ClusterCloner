@@ -1,8 +1,8 @@
 package azure
 
 import (
-	"clusterCloner/poc/azure/aks_utils/config"
-	"clusterCloner/poc/azure/aks_utils/iam"
+	"clustercloner/poc/azure/aksutils/config"
+	"clustercloner/poc/azure/aksutils/iam"
 	"context"
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"

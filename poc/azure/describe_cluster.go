@@ -1,8 +1,8 @@
 package azure
 
 import (
-	"clusterCloner/poc/azure/aks_utils"
-	"clusterCloner/poc/utilities"
+	"clustercloner/poc/azure/aksutils"
+	"clustercloner/poc/utilities"
 	"context"
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
@@ -10,9 +10,9 @@ import (
 	"time"
 )
 
-// describeCluster returns an existing AKS cluster given a resource group name and resource name
+// DescribeCluster returns an existing AKS cluster given a resource group name and resource name
 func DescribeCluster(grpName, clusterName string) (c containerservice.ManagedCluster, err error) {
-	err2 := aks_utils.ReadEnv()
+	err2 := aksutils.ReadEnv()
 	_ = err2
 	log.Printf("Group %s, Cluster %s", grpName, clusterName)
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
@@ -29,6 +29,6 @@ func DescribeCluster(grpName, clusterName string) (c containerservice.ManagedClu
 		return c, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %v", clusterName, grpName, err)
 	}
 	//	props := c.ManagedClusterProperties
-	utilities.PrintAsJson(c)
+	utilities.PrintAsJSON(c)
 	return c, nil
 }

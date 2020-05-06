@@ -2,19 +2,21 @@ package access
 
 import (
 	container "cloud.google.com/go/container/apiv1"
-	"clusterCloner/clusters/cluster_info"
+	"clustercloner/clusters/clusterinfo"
 	"context"
 	"fmt"
 	containerpb "google.golang.org/genproto/googleapis/container/v1"
 	"log"
 )
 
+// GkeClusterAccess ...
 type GkeClusterAccess struct {
 }
 
-func (GkeClusterAccess) ListClusters(project, location string) (ret []cluster_info.ClusterInfo, err error) {
+// ListClusters ...
+func (GkeClusterAccess) ListClusters(project, location string) (ret []clusterinfo.ClusterInfo, err error) {
 
-	ret = make([]cluster_info.ClusterInfo, 0)
+	ret = make([]clusterinfo.ClusterInfo, 0)
 
 	bkgdCtx := context.Background()
 	client, err := container.NewClusterManagerClient(bkgdCtx)
@@ -36,20 +38,23 @@ func (GkeClusterAccess) ListClusters(project, location string) (ret []cluster_in
 			nodeCount += np.InitialNodeCount
 		}
 
-		foundCluster := cluster_info.ClusterInfo{Scope: project,
+		foundCluster := clusterinfo.ClusterInfo{Scope: project,
 			Location:    location,
 			Name:        clus.Name,
 			NodeCount:   nodeCount,
 			K8sVersion:  clus.CurrentMasterVersion,
-			GeneratedBy: cluster_info.READ,
-			Cloud:       cluster_info.GCP,
+			GeneratedBy: clusterinfo.READ,
+			Cloud:       clusterinfo.GCP,
 		}
 		ret = append(ret, foundCluster)
 
 	}
 	return ret, nil
+
 }
-func (GkeClusterAccess) CreateCluster(createThis cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
+
+// CreateCluster ...
+func (GkeClusterAccess) CreateCluster(createThis clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
 
 	initialNodeCount := createThis.NodeCount
 
@@ -70,10 +75,10 @@ func (GkeClusterAccess) CreateCluster(createThis cluster_info.ClusterInfo) (clus
 	resp, err := clustMgrClient.CreateCluster(backgroundCtx, req)
 	if err != nil {
 		log.Print(err)
-		return cluster_info.ClusterInfo{}, err
+		return clusterinfo.ClusterInfo{}, err
 	}
 	var created = createThis
-	created.GeneratedBy = cluster_info.CREATED
+	created.GeneratedBy = clusterinfo.CREATED
 	log.Print(resp)
 	return created, err
 }

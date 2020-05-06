@@ -1,13 +1,13 @@
 package transformation
 
 import (
-	accessaks "clusterCloner/clusters/clouds/aks/access"
-	transformaks "clusterCloner/clusters/clouds/aks/transform"
-	accesseks "clusterCloner/clusters/clouds/eks/access"
-	accessgke "clusterCloner/clusters/clouds/gke/access"
-	transformgke "clusterCloner/clusters/clouds/gke/transform"
-	"clusterCloner/clusters/cluster_access"
-	"clusterCloner/clusters/cluster_info"
+	accessaks "clustercloner/clusters/clouds/aks/access"
+	transformaks "clustercloner/clusters/clouds/aks/transform"
+	accesseks "clustercloner/clusters/clouds/eks/access"
+	accessgke "clustercloner/clusters/clouds/gke/access"
+	transformgke "clustercloner/clusters/clouds/gke/transform"
+	"clustercloner/clusters/clusteraccess"
+	"clustercloner/clusters/clusterinfo"
 	"fmt"
 	"github.com/pkg/errors"
 
@@ -15,7 +15,8 @@ import (
 	"log"
 )
 
-func Clone(cliCtx *cli.Context) ([]cluster_info.ClusterInfo, error) {
+// Clone ...
+func Clone(cliCtx *cli.Context) ([]clusterinfo.ClusterInfo, error) {
 	inputCloud := cliCtx.String("inputcloud")
 	outputCloud := cliCtx.String("outputcloud")
 	inputLocation := cliCtx.String("inputlocation")
@@ -34,20 +35,20 @@ func Clone(cliCtx *cli.Context) ([]cluster_info.ClusterInfo, error) {
 
 }
 
-func clone(inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, create bool) ([]cluster_info.ClusterInfo, error) {
-	var clusterAccessor cluster_access.ClusterAccess
+func clone(inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, create bool) ([]clusterinfo.ClusterInfo, error) {
+	var clusterAccessor clusteraccess.ClusterAccess
 	switch inputCloud {
-	case cluster_info.GCP:
+	case clusterinfo.GCP:
 		if inputScope == "" {
 			return nil, errors.New("Must provide inputScope (project) for GCP")
 		}
 		clusterAccessor = accessgke.GkeClusterAccess{}
-	case cluster_info.AZURE:
+	case clusterinfo.AZURE:
 		if inputScope == "" {
 			return nil, errors.New("Must provide inputScope (Resource Group) for Azure")
 		}
 		clusterAccessor = accessaks.AksClusterAccess{}
-	case cluster_info.AWS:
+	case clusterinfo.AWS:
 		clusterAccessor = accesseks.EksClusterAccess{}
 		//todo support CloudToHub as an output cloud
 	default:
@@ -58,7 +59,7 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 	if err != nil {
 		return nil, err
 	}
-	outputClusterInfos := make([]cluster_info.ClusterInfo, 0)
+	outputClusterInfos := make([]clusterinfo.ClusterInfo, 0)
 	for _, inputClusterInfo := range inputClusterInfos {
 		outputClusterInfo, err := transformCloudToCloud(inputClusterInfo, outputCloud, outputScope)
 		outputClusterInfos = append(outputClusterInfos, outputClusterInfo)
@@ -66,7 +67,7 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 			log.Printf("Error processing %v: %v", inputClusterInfo, err)
 		}
 	}
-	createdClusterInfos := make([]cluster_info.ClusterInfo, len(outputClusterInfos))
+	createdClusterInfos := make([]clusterinfo.ClusterInfo, len(outputClusterInfos))
 
 	if create {
 		log.Println("Creating", len(outputClusterInfos), "target clusters")
@@ -77,7 +78,7 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 			}
 			createdClusterInfos[idx] = createCi
 		}
-		blank := cluster_info.ClusterInfo{}
+		blank := clusterinfo.ClusterInfo{}
 		for idx, createdClusterInfo := range createdClusterInfos {
 			if createdClusterInfo != blank {
 				outputClusterInfos[idx] = createdClusterInfo
@@ -87,23 +88,24 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 			log.Fatalf("%d != %d", len(outputClusterInfos), len(inputClusterInfos))
 		}
 		return outputClusterInfos, nil //replaced each ClusterInfo that was created; left the ones that were not
-	} else {
-		log.Println("Not creating", len(outputClusterInfos), "target clusters")
-		return outputClusterInfos, nil
 	}
+	log.Println("Not creating", len(outputClusterInfos), "target clusters")
+	return outputClusterInfos, nil
+
 }
 
-func CreateCluster(createThis cluster_info.ClusterInfo) (createdClusterInfo cluster_info.ClusterInfo, err error) {
-	var ca cluster_access.ClusterAccess
+// CreateCluster ...
+func CreateCluster(createThis clusterinfo.ClusterInfo) (createdClusterInfo clusterinfo.ClusterInfo, err error) {
+	var ca clusteraccess.ClusterAccess
 	switch createThis.Cloud {
-	case cluster_info.AZURE:
+	case clusterinfo.AZURE:
 		ca = accessaks.AksClusterAccess{}
-	case cluster_info.AWS:
+	case clusterinfo.AWS:
 		panic("AWS not implemented")
-	case cluster_info.GCP:
+	case clusterinfo.GCP:
 		ca = accessgke.GkeClusterAccess{}
 	default:
-		return cluster_info.ClusterInfo{}, errors.New("Unsupported Cloud for creating a cluster: " + createThis.Cloud)
+		return clusterinfo.ClusterInfo{}, errors.New("Unsupported Cloud for creating a cluster: " + createThis.Cloud)
 
 	}
 	created, err := ca.CreateCluster(createThis)
@@ -113,37 +115,37 @@ func CreateCluster(createThis cluster_info.ClusterInfo) (createdClusterInfo clus
 	return created, err
 }
 
-func transformCloudToCloud(clusterInfo cluster_info.ClusterInfo, toCloud string, outputScope string) (c cluster_info.ClusterInfo, err error) {
+func transformCloudToCloud(clusterInfo clusterinfo.ClusterInfo, toCloud string, outputScope string) (c clusterinfo.ClusterInfo, err error) {
 	if clusterInfo.Cloud == "" {
 		return c, errors.New("No cloud name found in input cluster")
 	}
 	hub, err1 := toHubFormat(clusterInfo)
 	if err1 != nil {
-		return cluster_info.ClusterInfo{}, errors.Wrap(err1, "Error in transforming to CloudToHub Format")
+		return clusterinfo.ClusterInfo{}, errors.Wrap(err1, "Error in transforming to CloudToHub Format")
 	}
 	target, err2 := fromHubFormat(hub, toCloud, outputScope)
 	if err2 != nil {
-		return cluster_info.ClusterInfo{}, err2
+		return clusterinfo.ClusterInfo{}, err2
 	}
 	if clusterInfo.Cloud == toCloud {
 		// todo maybe self-to-self transformation shoud not go thru hub format.
 		target.Name = target.Name + "-copy"
 	}
-	target.GeneratedBy = cluster_info.TRANSFORMATION
+	target.GeneratedBy = clusterinfo.TRANSFORMATION
 	return target, nil
 }
-func toHubFormat(input cluster_info.ClusterInfo) (c cluster_info.ClusterInfo, err error) {
+func toHubFormat(input clusterinfo.ClusterInfo) (c clusterinfo.ClusterInfo, err error) {
 	err = nil
-	var ret cluster_info.ClusterInfo
-	var transformer cluster_access.Transformer
+	var ret clusterinfo.ClusterInfo
+	var transformer clusteraccess.Transformer
 	switch cloud := input.Cloud; cloud {
-	case cluster_info.GCP:
+	case clusterinfo.GCP:
 		transformer = transformgke.GkeTransformer{}
-	case cluster_info.AZURE:
+	case clusterinfo.AZURE:
 		transformer = transformaks.AksTransformer{}
-	case cluster_info.AWS:
+	case clusterinfo.AWS:
 		return c, errors.New(fmt.Sprintf("Unsupported %s", cloud))
-	case cluster_info.HUB:
+	case clusterinfo.HUB:
 		log.Print("From CloudToHub , no changes")
 		ret = input
 		return ret, nil
@@ -153,21 +155,21 @@ func toHubFormat(input cluster_info.ClusterInfo) (c cluster_info.ClusterInfo, er
 	ret, err = transformer.CloudToHub(input)
 	return ret, err
 }
-func fromHubFormat(hub cluster_info.ClusterInfo, toCloud string, outputScope string) (c cluster_info.ClusterInfo, err error) {
-	if hub.Cloud != cluster_info.HUB {
-		return cluster_info.ClusterInfo{}, errors.New(fmt.Sprintf("Wrong Cloud %s", hub.Cloud))
+func fromHubFormat(hub clusterinfo.ClusterInfo, toCloud string, outputScope string) (c clusterinfo.ClusterInfo, err error) {
+	if hub.Cloud != clusterinfo.HUB {
+		return clusterinfo.ClusterInfo{}, errors.New(fmt.Sprintf("Wrong Cloud %s", hub.Cloud))
 	}
-	var transformer cluster_access.Transformer
+	var transformer clusteraccess.Transformer
 	err = nil
-	var ret cluster_info.ClusterInfo
+	var ret clusterinfo.ClusterInfo
 	switch toCloud { //  We do not expect more than  these clouds so not splitting out dynamically loaded adapters
-	case cluster_info.GCP:
+	case clusterinfo.GCP:
 		transformer = transformgke.GkeTransformer{}
-	case cluster_info.AZURE:
+	case clusterinfo.AZURE:
 		transformer = transformaks.AksTransformer{}
-	case cluster_info.AWS:
+	case clusterinfo.AWS:
 		return c, errors.New(fmt.Sprintf("Unsupported %s", toCloud))
-	case cluster_info.HUB:
+	case clusterinfo.HUB:
 		log.Print("to Hub , no changes")
 		ret = hub
 		return ret, nil

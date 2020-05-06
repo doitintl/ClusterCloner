@@ -6,7 +6,8 @@ import (
 	"log"
 )
 
-func MarshallToJsonString(props interface{}) string {
+// MarshallToJSONString ...
+func MarshallToJSONString(props interface{}) string {
 	jsonByteArr, err := json.MarshalIndent(props, "", "  ")
 	if err != nil {
 		log.Print(err)
@@ -16,6 +17,7 @@ func MarshallToJsonString(props interface{}) string {
 	return jsonStr
 }
 
+// ReadJSON ...
 func ReadJSON(path string) (*map[string]interface{}, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {

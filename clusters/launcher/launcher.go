@@ -1,14 +1,15 @@
 package launcher
 
 import (
-	"clusterCloner/clusters/transformation"
-	"clusterCloner/clusters/util"
+	"clustercloner/clusters/transformation"
+	"clustercloner/clusters/util"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 )
 
-func CliFlags() []cli.Flag {
+// CLIFlags ...
+func CLIFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
 			Name:  "inputscope",
@@ -41,10 +42,11 @@ func CliFlags() []cli.Flag {
 	}
 }
 
+// Launch ...
 func Launch(cliCtx *cli.Context) {
 	log.SetOutput(os.Stderr)
 
 	ret, _ := transformation.Clone(cliCtx)
-	log.Println(util.MarshallToJsonString(ret))
+	log.Println(util.MarshallToJSONString(ret))
 
 }

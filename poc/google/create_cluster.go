@@ -30,19 +30,20 @@ func CreateClusters(cliCtx *cli.Context, origClustersInfo *containerpb.ListClust
 func createClusterInt(bkgrdCtx context.Context, proj string, loc string, origCluster *containerpb.Cluster, clustMgrClient *containers.ClusterManagerClient) {
 	clusterName := origCluster.Name + "copied"
 	initialNodeCount := origCluster.InitialNodeCount
-	createCluster_(bkgrdCtx, proj, loc, clusterName, initialNodeCount, clustMgrClient)
+	createCluster0(bkgrdCtx, proj, loc, clusterName, initialNodeCount, clustMgrClient)
 }
 
+// CreateCluster ...
 func CreateCluster(cliCtx *cli.Context, name string, initNodeCount int32) {
 	backgroundCtx := context.Background()
 	proj := cliCtx.String("project")
 	loc := cliCtx.String("location")
 	clustMgrClient, _ := containers.NewClusterManagerClient(backgroundCtx)
-	createCluster_(backgroundCtx, proj, loc, name, initNodeCount, clustMgrClient)
+	createCluster0(backgroundCtx, proj, loc, name, initNodeCount, clustMgrClient)
 
 }
 
-func createCluster_(bkgrdCtx context.Context, proj string, loc string, clusterName string, initialNodeCount int32, clustMgrClient *containers.ClusterManagerClient) {
+func createCluster0(bkgrdCtx context.Context, proj string, loc string, clusterName string, initialNodeCount int32, clustMgrClient *containers.ClusterManagerClient) {
 
 	if initialNodeCount < 1 {
 		log.Print("Copying a paused cluster, creating one node as a necessary minimum.")

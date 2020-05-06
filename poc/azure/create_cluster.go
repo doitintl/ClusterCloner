@@ -1,9 +1,9 @@
 package azure
 
 import (
-	"clusterCloner/poc/azure/aks_utils"
-	"clusterCloner/poc/azure/aks_utils/config"
-	"clusterCloner/poc/azure/resources"
+	"clustercloner/poc/azure/aksutils"
+	"clustercloner/poc/azure/aksutils/config"
+	"clustercloner/poc/azure/resources"
 	"context"
 	"log"
 	"os"
@@ -17,14 +17,16 @@ var (
 	aksAgentPoolCount   int32 = 1
 )
 
+// CreateClusterFromEnv ...
 func CreateClusterFromEnv(aksClusterName string) {
-	var err = aks_utils.ReadEnv()
+	var err = aksutils.ReadEnv()
 	if err != nil {
 		log.Fatalf("could not set up environment: %v\n", err)
 	}
 	CreateCluster(config.BaseGroupName(), aksClusterName, config.DefaultLocation(), config.ClientID(), config.ClientSecret())
 }
 
+// CreateCluster ...
 func CreateCluster(grpName string, aksClusterName string, loc string, clientID string, clientSecret string) {
 	log.Printf("Group %s, Cluster %s, Location %s", grpName, aksClusterName, loc)
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
@@ -52,13 +54,13 @@ func CreateCluster(grpName string, aksClusterName string, loc string, clientID s
 	//
 	_, err = createAKSCluster(ctx, aksClusterName, loc, grpName, aksUsername, aksSSHPublicKeyPath, clientID, clientSecret, aksAgentPoolCount)
 	if err != nil {
-		aks_utils.LogAndPanic(err)
+		aksutils.LogAndPanic(err)
 	}
-	aks_utils.PrintAndLog("created AKS cluster")
+	aksutils.PrintAndLog("created AKS cluster")
 	clus, err := DescribeCluster(grpName, aksClusterName)
 	_ = clus
 	if err != nil {
-		aks_utils.LogAndPanic(err)
+		aksutils.LogAndPanic(err)
 	}
-	aks_utils.PrintAndLog("retrieved AKS cluster")
+	aksutils.PrintAndLog("retrieved AKS cluster")
 }

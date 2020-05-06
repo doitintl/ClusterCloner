@@ -6,8 +6,8 @@
 package resources
 
 import (
-	"clusterCloner/poc/azure/aks_utils/config"
-	"clusterCloner/poc/azure/aks_utils/iam"
+	"clustercloner/poc/azure/aksutils/config"
+	"clustercloner/poc/azure/aksutils/iam"
 	"context"
 	"fmt"
 	"log"

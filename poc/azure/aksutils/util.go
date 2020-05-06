@@ -1,7 +1,7 @@
-package aks_utils
+package aksutils
 
 import (
-	"clusterCloner/poc/azure/aks_utils/config"
+	"clustercloner/poc/azure/aksutils/config"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
@@ -14,11 +14,13 @@ func PrintAndLog(message string) {
 	fmt.Println(message)
 }
 
+// LogAndPanic ...
 func LogAndPanic(err error) {
 	PrintAndLog(err.Error())
 	panic(err)
 }
 
+// ReadEnv ...
 func ReadEnv() error {
 	var err error
 	if err := godotenv.Load(); err != nil {

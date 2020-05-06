@@ -1,7 +1,7 @@
 package util
 
 import (
-	"clusterCloner/clusters/clouds/aks/access/config"
+	"clustercloner/clusters/clouds/aks/access/config"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"io/ioutil"
@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 )
 
+// ReadEnv ...
 func ReadEnv() error {
 	var err error
 
@@ -26,6 +27,7 @@ func ReadEnv() error {
 	return nil
 }
 
+// RootPath ...
 func RootPath() string {
 	wd, _ := os.Getwd()
 	for wd != "" {

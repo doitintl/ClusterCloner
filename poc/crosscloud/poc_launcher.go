@@ -1,11 +1,12 @@
-package crossCloud
+package crosscloud
 
 import (
-	"clusterCloner/poc/aws"
-	"clusterCloner/poc/azure"
+	"clustercloner/poc/aws"
+	"clustercloner/poc/azure"
 	"github.com/urfave/cli/v2"
 )
 
+// CliFlags ...
 func CliFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
@@ -20,6 +21,7 @@ func CliFlags() []cli.Flag {
 	}
 }
 
+// PocLaunch ...
 func PocLaunch() {
 	azure.CreateClusterFromEnv("mycluster2")
 	//_, _ = azure.describeCluster("joshua-playground", "mycluster")

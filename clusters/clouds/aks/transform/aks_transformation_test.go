@@ -1,19 +1,19 @@
 package transform
 
 import (
-	"clusterCloner/clusters/cluster_info"
+	"clustercloner/clusters/clusterinfo"
 	"testing"
 )
 
 func TestTransformAzureToHub(t *testing.T) {
-	ci := cluster_info.ClusterInfo{
+	ci := clusterinfo.ClusterInfo{
 		Name:        "c",
 		NodeCount:   1,
-		Cloud:       cluster_info.AZURE,
+		Cloud:       clusterinfo.AZURE,
 		Location:    "westus2",
 		Scope:       "joshua-playground",
 		K8sVersion:  "1.14.0",
-		GeneratedBy: cluster_info.MOCK}
+		GeneratedBy: clusterinfo.MOCK}
 	tr := AksTransformer{}
 	std, err := tr.CloudToHub(ci)
 	if err != nil {
@@ -22,16 +22,16 @@ func TestTransformAzureToHub(t *testing.T) {
 	if std.Location != "us-west1" {
 		t.Error(std.Location)
 	}
-	if std.Cloud != cluster_info.HUB {
+	if std.Cloud != clusterinfo.HUB {
 		t.Errorf("Not the standard cloud %s", std.Cloud)
 	}
 }
 func TestTransformAzureToHubBadLoc(t *testing.T) {
-	ci := cluster_info.ClusterInfo{Name: "c", NodeCount: 1,
-		Cloud: cluster_info.AZURE, Location: "westus1",
+	ci := clusterinfo.ClusterInfo{Name: "c", NodeCount: 1,
+		Cloud: clusterinfo.AZURE, Location: "westus1",
 		Scope:       "joshua-playground",
 		K8sVersion:  "1.15.0",
-		GeneratedBy: cluster_info.MOCK}
+		GeneratedBy: clusterinfo.MOCK}
 	tr := AksTransformer{}
 	_, err := tr.CloudToHub(ci)
 	if err == nil {
@@ -40,14 +40,14 @@ func TestTransformAzureToHubBadLoc(t *testing.T) {
 }
 
 func TestTransformHubToAzure(t *testing.T) {
-	ci := cluster_info.ClusterInfo{
+	ci := clusterinfo.ClusterInfo{
 		Name:        "c",
 		NodeCount:   1,
-		Cloud:       cluster_info.HUB,
+		Cloud:       clusterinfo.HUB,
 		Location:    "us-central1",
 		Scope:       "",
 		K8sVersion:  "1.14.0",
-		GeneratedBy: cluster_info.MOCK,
+		GeneratedBy: clusterinfo.MOCK,
 	}
 	tr := AksTransformer{}
 	std, err := tr.HubToCloud(ci, "")
@@ -57,7 +57,7 @@ func TestTransformHubToAzure(t *testing.T) {
 	if std.Location != "centralus" {
 		t.Error(std.Location)
 	}
-	if std.Cloud != cluster_info.AZURE {
+	if std.Cloud != clusterinfo.AZURE {
 		t.Errorf("Not the expected cloud %s", std.Cloud)
 	}
 }

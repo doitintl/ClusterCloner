@@ -1,7 +1,7 @@
 package aws
 
 import (
-	"clusterCloner/poc/utilities"
+	"clustercloner/poc/utilities"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -11,6 +11,7 @@ import (
 	"log"
 )
 
+// DescribeCluster ...
 func DescribeCluster(name string) {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String("ca-central-1")})
 	svc := eks.New(sess)
@@ -41,10 +42,11 @@ func DescribeCluster(name string) {
 		}
 		return
 	}
-	utilities.PrintAsJson(result)
+	utilities.PrintAsJSON(result)
 	log.Print(result)
 }
 
+// DescribeNG ...
 func DescribeNG() {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String("ca-central-1")})
 	svc := eks.New(sess)
@@ -76,9 +78,10 @@ func DescribeNG() {
 		}
 		return
 	}
-	utilities.PrintAsJson(result)
+	utilities.PrintAsJSON(result)
 }
 
+// ListClusters ...
 func ListClusters() {
 	_ = s3.Error{}
 	sess, err := session.NewSession(&aws.Config{Region: aws.String("ca-central-1")})
@@ -113,6 +116,7 @@ func ListClusters() {
 	fmt.Println(result)
 }
 
+// ListNGs ...
 func ListNGs() {
 	_ = s3.Error{}
 	sess, err := session.NewSession(&aws.Config{Region: aws.String("ca-central-1")})

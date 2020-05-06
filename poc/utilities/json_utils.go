@@ -6,7 +6,8 @@ import (
 	"log"
 )
 
-func PrintAsJson(props interface{}) {
+// PrintAsJSON ...
+func PrintAsJSON(props interface{}) {
 	jsonByteArr, err := json.MarshalIndent(props, "", " ")
 	if err != nil {
 		log.Print(err)

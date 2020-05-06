@@ -1,4 +1,4 @@
-module clusterCloner
+module clustercloner
 
 go 1.13
 

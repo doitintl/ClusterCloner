@@ -1,8 +1,8 @@
 package transformation
 
 import (
-	"clusterCloner/clusters/cluster_info"
-	"clusterCloner/clusters/util"
+	"clustercloner/clusters/clusterinfo"
+	"clustercloner/clusters/util"
 	"log"
 	"strings"
 	"testing"
@@ -10,27 +10,27 @@ import (
 
 func TestTransformAzureToGCP(t *testing.T) {
 	scope := "joshua-playground"
-	azure := cluster_info.ClusterInfo{
+	azure := clusterinfo.ClusterInfo{
 		Name:        "c",
 		NodeCount:   1,
-		Cloud:       cluster_info.AZURE,
+		Cloud:       clusterinfo.AZURE,
 		Location:    "westus2",
 		Scope:       scope,
 		K8sVersion:  "1.14.0",
-		GeneratedBy: cluster_info.MOCK}
-	gcp, err := transformCloudToCloud(azure, cluster_info.GCP, scope)
+		GeneratedBy: clusterinfo.MOCK}
+	gcp, err := transformCloudToCloud(azure, clusterinfo.GCP, scope)
 	if err != nil {
 		t.Error(err)
 	}
 	if !strings.HasPrefix(gcp.Location, "us-west1") {
 		t.Error(gcp.Location)
 	}
-	if gcp.Cloud != cluster_info.GCP {
+	if gcp.Cloud != clusterinfo.GCP {
 		t.Errorf("Not the right cloud %s", gcp.Cloud)
 	}
 	if gcp.Scope != scope || gcp.Name != azure.Name || gcp.NodeCount != azure.NodeCount || !strings.HasPrefix(gcp.Location, "us-west1") {
-		outputStr := util.MarshallToJsonString(gcp)
-		inputStr := util.MarshallToJsonString(azure)
+		outputStr := util.MarshallToJSONString(gcp)
+		inputStr := util.MarshallToJSONString(azure)
 		t.Error(outputStr + "!=" + inputStr)
 	}
 	log.Println(gcp.K8sVersion)

@@ -1,10 +1,10 @@
 package access
 
 import (
-	"clusterCloner/clusters/clouds/aks/access/config"
-	"clusterCloner/clusters/clouds/aks/access/iam"
-	"clusterCloner/clusters/cluster_info"
-	"clusterCloner/clusters/util"
+	"clustercloner/clusters/clouds/aks/access/config"
+	"clustercloner/clusters/clouds/aks/access/iam"
+	"clustercloner/clusters/clusterinfo"
+	"clustercloner/clusters/util"
 	"context"
 	"errors"
 	"fmt"
@@ -30,7 +30,7 @@ func init() {
 	_ = util.ReadEnv()
 }
 
-//AksClusterAccess
+//AksClusterAccess ...
 type AksClusterAccess struct {
 }
 
@@ -56,8 +56,8 @@ func createGroup(ctx context.Context, groupName string, region string) (resource
 		})
 }
 
-//CreateCluster...
-func (ca AksClusterAccess) CreateCluster(createThis cluster_info.ClusterInfo) (cluster_info.ClusterInfo, error) {
+//CreateCluster ...
+func (ca AksClusterAccess) CreateCluster(createThis clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
 	grpName := createThis.Scope
 	log.Printf("Create Cluster: Group %s, Cluster %s, Location %s", grpName, createThis.Name, createThis.Location)
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
@@ -69,16 +69,16 @@ func (ca AksClusterAccess) CreateCluster(createThis cluster_info.ClusterInfo) (c
 		if strings.Contains(errS, "already exists") {
 			log.Printf("Group %s already exists", grpName)
 		} else {
-			return cluster_info.ClusterInfo{}, err
+			return clusterinfo.ClusterInfo{}, err
 		}
 	}
 	_, err = createAKSCluster(ctx, createThis.Name, createThis.Location, grpName, aksUsername, aksSSHPublicKeyPath, config.ClientID(), config.ClientSecret(), createThis.K8sVersion, createThis.NodeCount)
 	if err != nil {
 		log.Println(err)
-		return cluster_info.ClusterInfo{}, err
+		return clusterinfo.ClusterInfo{}, err
 	}
 	created := createThis
-	created.GeneratedBy = cluster_info.CREATED
+	created.GeneratedBy = clusterinfo.CREATED
 
 	log.Println("Retrieved AKS cluster")
 	return created, nil
@@ -155,14 +155,14 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 }
 
 //ListClusters ...
-func (ca AksClusterAccess) ListClusters(subscription string, location string) (ci []cluster_info.ClusterInfo, err error) {
+func (ca AksClusterAccess) ListClusters(subscription string, location string) (ci []clusterinfo.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
 	var aksClient, err2 = getAKSClient()
 	if err2 != nil {
 		return ci, errors.New("cannot get AKS client")
 	}
-	ret := make([]cluster_info.ClusterInfo, 0)
+	ret := make([]clusterinfo.ClusterInfo, 0)
 
 	clusterList, _ := aksClient.List(ctx)
 	for _, managedCluster := range clusterList.Values() {
@@ -173,14 +173,14 @@ func (ca AksClusterAccess) ListClusters(subscription string, location string) (c
 			count += *app.Count
 		}
 
-		ci := cluster_info.ClusterInfo{
+		ci := clusterinfo.ClusterInfo{
 			Scope:       subscription,
 			Location:    location,
 			Name:        *managedCluster.Name,
 			K8sVersion:  *props.KubernetesVersion, //todo could get current version
 			NodeCount:   count,
-			GeneratedBy: cluster_info.READ,
-			Cloud:       cluster_info.AZURE,
+			GeneratedBy: clusterinfo.READ,
+			Cloud:       clusterinfo.AZURE,
 		}
 		ret = append(ret, ci)
 

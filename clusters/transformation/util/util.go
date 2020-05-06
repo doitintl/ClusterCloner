@@ -1,15 +1,16 @@
 package util
 
 import (
-	"clusterCloner/clusters/cluster_info"
+	"clustercloner/clusters/clusterinfo"
 	"github.com/pkg/errors"
 	"regexp"
 )
 
-func TransformSpoke(in cluster_info.ClusterInfo, outputScope, targetCloud, targetLoc, k8sVersion string) cluster_info.ClusterInfo {
+// TransformSpoke ...
+func TransformSpoke(in clusterinfo.ClusterInfo, outputScope, targetCloud, targetLoc, k8sVersion string) clusterinfo.ClusterInfo {
 	var ret = in
 	ret.SourceCluster = &in
-	ret.GeneratedBy = cluster_info.TRANSFORMATION
+	ret.GeneratedBy = clusterinfo.TRANSFORMATION
 	if in.SourceCluster == ret.SourceCluster {
 		panic("Copying didn't work as expected")
 	}
@@ -22,18 +23,18 @@ func TransformSpoke(in cluster_info.ClusterInfo, outputScope, targetCloud, targe
 	return ret
 }
 
+// MajorMinorPatchVersion ...
 func MajorMinorPatchVersion(fullVersion string) (string, error) {
 	re := regexp.MustCompile(`^\d+\.\d+(\.\d+)?`)
 	re2 := regexp.MustCompile(`^\d+\.\d+$`)
 	match := re.FindString(fullVersion)
 	if match == "" {
 		return "", errors.New("No match on " + fullVersion)
-	} else {
-		majorMinorOnly := re2.FindString(fullVersion)
-		if majorMinorOnly != "" {
-			return match + ".0", nil
-		}
-		return match, nil
-
 	}
+	majorMinorOnly := re2.FindString(fullVersion)
+	if majorMinorOnly != "" {
+		return match + ".0", nil
+	}
+	return match, nil
+
 }
