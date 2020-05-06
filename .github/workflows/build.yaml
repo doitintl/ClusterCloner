@@ -41,7 +41,6 @@ jobs:
           IMAGE_TAG: ${{ steps.decide_tag.outputs.image_tag }}
         run: |
           echo $AZ_ENV_BASE64|  base64 --decode > ".env"
-          ls -a
           echo "IMAGE_NAME: ${IMAGE_NAME}"
           docker build --tag ${IMAGE_NAME}:${IMAGE_TAG} .
 

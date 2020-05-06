@@ -18,7 +18,5 @@
 *.md
 docs
 
-# customization and secrets
-.env
 # license
 LICENSE
