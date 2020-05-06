@@ -18,6 +18,7 @@ clustercloner
 
 # secret keys
 *credential*.json
+credential*.json
 account.json
 
 # temporary

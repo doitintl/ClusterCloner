@@ -45,11 +45,11 @@ FROM scratch
 # copy CA certificates
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 # todo  1. store externally 2. specify narrowest permissions needed
-COPY gcp-credentials-for-docker.json  /
+COPY credentials-cluster-manager.json  /
 COPY  .env  /
 
 COPY --from=build /go/src/app/.bin/clustercloner /clustercloner
 
-ENV  GOOGLE_APPLICATION_CREDENTIALS "./gcp-credentials-for-docker.json"
+ENV  GOOGLE_APPLICATION_CREDENTIALS "./credentials-cluster-manager.json"
 
 ENTRYPOINT ["/clustercloner"]
