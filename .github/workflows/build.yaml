@@ -36,9 +36,11 @@ jobs:
       - name: build image
         env:
           DOCKER_BUILDKIT: 1
+          AZ_ENV_BASE64: ${{secrets.AZ_ENV_BASE64}}
           IMAGE_NAME: ${{ steps.decide_name.outputs.image_name }}
           IMAGE_TAG: ${{ steps.decide_tag.outputs.image_tag }}
         run: |
+          echo $AZ_ENV_BASE64|  base64 --decode > .env
           echo "IMAGE_NAME: ${IMAGE_NAME}"
           docker build --tag ${IMAGE_NAME}:${IMAGE_TAG} .
 

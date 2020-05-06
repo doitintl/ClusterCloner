@@ -16,7 +16,7 @@ import (
 type AksTransformer struct{}
 
 // CloudToHub ...
-func (tr AksTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
+func (tr *AksTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationCloudToHub(in.Location)
 	if err != nil {
 		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting locations")
@@ -33,7 +33,7 @@ func (tr AksTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.Clu
 }
 
 // HubToCloud ...
-func (tr AksTransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error) {
+func (tr *AksTransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationHubToCloud(in.Location)
 	if err != nil {
 		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting location")
@@ -43,7 +43,7 @@ func (tr AksTransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope stri
 }
 
 //LocationCloudToHub ...
-func (AksTransformer) LocationCloudToHub(loc string) (string, error) {
+func (*AksTransformer) LocationCloudToHub(loc string) (string, error) {
 	mapping, err := getAzureToHubLocations()
 	if err != nil {
 		return "", err

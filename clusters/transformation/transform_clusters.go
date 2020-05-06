@@ -140,9 +140,9 @@ func toHubFormat(input clusterinfo.ClusterInfo) (c clusterinfo.ClusterInfo, err 
 	var transformer clusteraccess.Transformer
 	switch cloud := input.Cloud; cloud {
 	case clusterinfo.GCP:
-		transformer = transformgke.GkeTransformer{}
+		transformer = &transformgke.GkeTransformer{}
 	case clusterinfo.AZURE:
-		transformer = transformaks.AksTransformer{}
+		transformer = &transformaks.AksTransformer{}
 	case clusterinfo.AWS:
 		return c, errors.New(fmt.Sprintf("Unsupported %s", cloud))
 	case clusterinfo.HUB:
@@ -164,9 +164,9 @@ func fromHubFormat(hub clusterinfo.ClusterInfo, toCloud string, outputScope stri
 	var ret clusterinfo.ClusterInfo
 	switch toCloud { //  We do not expect more than  these clouds so not splitting out dynamically loaded adapters
 	case clusterinfo.GCP:
-		transformer = transformgke.GkeTransformer{}
+		transformer = &transformgke.GkeTransformer{}
 	case clusterinfo.AZURE:
-		transformer = transformaks.AksTransformer{}
+		transformer = &transformaks.AksTransformer{}
 	case clusterinfo.AWS:
 		return c, errors.New(fmt.Sprintf("Unsupported %s", toCloud))
 	case clusterinfo.HUB:

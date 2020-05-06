@@ -27,7 +27,7 @@ type GkeTransformer struct {
 }
 
 // CloudToHub ...
-func (tr GkeTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
+func (tr *GkeTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationCloudToHub(in.Location)
 	if err != nil {
 		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting locations")
@@ -42,7 +42,7 @@ func (tr GkeTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.Clu
 }
 
 // HubToCloud ...
-func (tr GkeTransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error) {
+func (tr *GkeTransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationHubToCloud(in.Location)
 	if err != nil {
 		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting location")
@@ -53,7 +53,7 @@ func (tr GkeTransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope stri
 }
 
 // LocationCloudToHub ...
-func (tr GkeTransformer) LocationCloudToHub(zone string) (string, error) {
+func (tr *GkeTransformer) LocationCloudToHub(zone string) (string, error) {
 	locs, err := getGcpLocations()
 	if err != nil {
 		return "", err
