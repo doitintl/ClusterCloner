@@ -48,9 +48,10 @@ COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifica
 # todo  store externally
 # todo specify narrowest permissions needed
 COPY gcp-credentials-for-docker.json  /
+COPY .env  /
 
-COPY --from=build /go/src/app/.bin/goapp /goapp
+COPY --from=build /go/src/app/.bin/clustercloner /clustercloner
 
 ENV  GOOGLE_APPLICATION_CREDENTIALS "./gcp-credentials-for-docker.json"
 
-ENTRYPOINT ["/goapp"]
+ENTRYPOINT ["/clustercloner"]

@@ -4,7 +4,7 @@ VERSION ?= $(shell git describe --tags --always --dirty --match="v*" 2> /dev/nul
 			cat $(CURDIR)/.version 2> /dev/null || echo v0)
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null)
 BRANCH  ?= $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
-PKGS     = $(or $(PKG),$(shell env GO111MODULE=on $(GO) list ./...))
+PKGS     = $(or $(PKG),"./...")
 TESTPKGS = $(shell env GO111MODULE=on $(GO) list -f \
 			'{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' \
 			$(PKGS))
