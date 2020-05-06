@@ -37,7 +37,7 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           AZ_ENV_BASE64: ${{secrets.AZ_ENV_BASE64}}
-          GCP_CLUSTER_MANAGER_KEYJSON_BASE64: ${{GCP_CLUSTER_MANAGER_KEYJSON_BASE64}}
+          GCP_CLUSTER_MANAGER_KEYJSON_BASE64: ${{secrets.GCP_CLUSTER_MANAGER_KEYJSON_BASE64}}
           IMAGE_NAME: ${{ steps.decide_name.outputs.image_name }}
           IMAGE_TAG: ${{ steps.decide_tag.outputs.image_tag }}
         run: |
