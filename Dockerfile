@@ -44,7 +44,7 @@ FROM scratch
 
 # copy CA certificates
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-RUN ls -a 1>&2
+RUN ls -a
 # todo  1. store externally 2. specify narrowest permissions needed
 COPY gcp-credentials-for-docker.json  /
 COPY --from=build  ".env"  /
