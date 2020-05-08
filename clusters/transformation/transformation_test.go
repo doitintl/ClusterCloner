@@ -11,13 +11,13 @@ import (
 func TestTransformAzureToGCP(t *testing.T) {
 	scope := "joshua-playground"
 	azure := clusterinfo.ClusterInfo{
-		Name:        "c",
-		NodeCount:   1,
-		Cloud:       clusterinfo.AZURE,
-		Location:    "westus2",
-		Scope:       scope,
-		K8sVersion:  "1.14.0",
-		GeneratedBy: clusterinfo.MOCK}
+		Name:                "c",
+		DeprecatedNodeCount: 1,
+		Cloud:               clusterinfo.AZURE,
+		Location:            "westus2",
+		Scope:               scope,
+		K8sVersion:          "1.14.0",
+		GeneratedBy:         clusterinfo.MOCK}
 	gcp, err := transformCloudToCloud(azure, clusterinfo.GCP, scope)
 	if err != nil {
 		t.Error(err)
@@ -28,7 +28,7 @@ func TestTransformAzureToGCP(t *testing.T) {
 	if gcp.Cloud != clusterinfo.GCP {
 		t.Errorf("Not the right cloud %s", gcp.Cloud)
 	}
-	if gcp.Scope != scope || gcp.Name != azure.Name || gcp.NodeCount != azure.NodeCount || !strings.HasPrefix(gcp.Location, "us-west1") {
+	if gcp.Scope != scope || gcp.Name != azure.Name || gcp.DeprecatedNodeCount != azure.DeprecatedNodeCount || !strings.HasPrefix(gcp.Location, "us-west1") {
 		outputStr := util.MarshallToJSONString(gcp)
 		inputStr := util.MarshallToJSONString(azure)
 		t.Error(outputStr + "!=" + inputStr)

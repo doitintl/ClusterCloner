@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"clustercloner/clusters/clouds/aks/access"
 	"clustercloner/clusters/clusterinfo"
 	transformutil "clustercloner/clusters/transformation/util"
 	clusterutil "clustercloner/clusters/util"
@@ -12,11 +13,11 @@ import (
 	"os"
 )
 
-// AksTransformer ...
-type AksTransformer struct{}
+// AKSTransformer ...
+type AKSTransformer struct{}
 
 // CloudToHub ...
-func (tr *AksTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
+func (tr *AKSTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationCloudToHub(in.Location)
 	if err != nil {
 		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting locations")
@@ -24,26 +25,27 @@ func (tr *AksTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.Cl
 
 	k8sVersion, err := transformutil.MajorMinorPatchVersion(in.K8sVersion)
 	if err != nil {
-		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in K8s Version "+in.K8sVersion)
+		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in K8s K8sVersion "+in.K8sVersion)
 	}
 
-	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, k8sVersion)
+	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, k8sVersion, nil)
 
 	return ret, err
 }
 
 // HubToCloud ...
-func (tr *AksTransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error) {
+func (tr *AKSTransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationHubToCloud(in.Location)
 	if err != nil {
 		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting location")
 	}
-	ret := transformutil.TransformSpoke(in, outputScope, clusterinfo.AZURE, loc, in.K8sVersion)
+	ret := transformutil.TransformSpoke(in, outputScope, clusterinfo.AZURE, loc, in.K8sVersion, access.MachineTypes)
+
 	return ret, err
 }
 
 //LocationCloudToHub ...
-func (*AksTransformer) LocationCloudToHub(loc string) (string, error) {
+func (*AKSTransformer) LocationCloudToHub(loc string) (string, error) {
 	mapping, err := getAzureToHubLocations()
 	if err != nil {
 		return "", err
@@ -101,7 +103,7 @@ func getAzureToHubLocations() (map[string]string, error) {
 }
 
 //LocationHubToCloud ...
-func (AksTransformer) LocationHubToCloud(location string) (string, error) {
+func (AKSTransformer) LocationHubToCloud(location string) (string, error) {
 	azToHub, err := getAzureToHubLocations()
 	if err != nil {
 		return "", err

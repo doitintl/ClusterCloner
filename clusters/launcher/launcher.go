@@ -22,7 +22,7 @@ func CLIFlags() []cli.Flag {
 		},
 		&cli.StringFlag{
 			Name:     "inputlocation",
-			Usage:    "GCP zone or AWS region or AKS region",
+			Usage:    "GCP region (regional cluster) or zone (zonal clusters); AWS region; or AKS region",
 			Required: true,
 		},
 		&cli.StringFlag{ //todo allow inputting JSON for inputcloud=Hub
@@ -41,7 +41,7 @@ func CLIFlags() []cli.Flag {
 		},
 		&cli.StringFlag{
 			Name:  "outputformat",
-			Usage: "json or tf (Terraform). Default is json",
+			Usage: "Only json supported for now. Default is json",
 		},
 	}
 }
@@ -49,8 +49,14 @@ func CLIFlags() []cli.Flag {
 // Launch ...
 func Launch(cliCtx *cli.Context) {
 	log.SetOutput(os.Stderr)
+	outputClusters, err := transformation.Clone(cliCtx)
+	if err != nil {
+		log.Fatalf("Error in transformation %v", err)
+	}
+	var outputString string
 
-	ret, _ := transformation.Clone(cliCtx)
-	log.Println(util.MarshallToJSONString(ret))
+	outputString = util.MarshallToJSONString(outputClusters)
+
+	log.Println(outputString)
 
 }

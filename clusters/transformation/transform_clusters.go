@@ -8,6 +8,7 @@ import (
 	transformgke "clustercloner/clusters/clouds/gke/transform"
 	"clustercloner/clusters/clusteraccess"
 	"clustercloner/clusters/clusterinfo"
+	"clustercloner/clusters/util"
 	"fmt"
 	"github.com/pkg/errors"
 
@@ -53,19 +54,18 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 		if inputScope == "" {
 			return nil, errors.New("Must provide inputScope (project) for GCP")
 		}
-		clusterAccessor = accessgke.GkeClusterAccess{}
+		clusterAccessor = accessgke.GKEClusterAccess{}
 	case clusterinfo.AZURE:
 		if inputScope == "" {
 			return nil, errors.New("Must provide inputScope (Resource Group) for Azure")
 		}
-		clusterAccessor = accessaks.AksClusterAccess{}
+		clusterAccessor = accessaks.AKSClusterAccess{}
 	case clusterinfo.AWS:
-		clusterAccessor = accesseks.EksClusterAccess{}
+		clusterAccessor = accesseks.EKSClusterAccess{}
 		//todo support CloudToHub as an output cloud
 	default:
 		return nil, errors.New(fmt.Sprintf("Invalid inputcloud \"%s\"", inputCloud))
 	}
-
 	inputClusterInfos, err := clusterAccessor.ListClusters(inputScope, inputLocation)
 	if err != nil {
 		return nil, err
@@ -78,33 +78,43 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 			log.Printf("Error processing %v: %v", inputClusterInfo, err)
 		}
 	}
-	createdClusterInfos := make([]clusterinfo.ClusterInfo, len(transformationOutput))
 
 	if create {
-		createClusters(transformationOutput, createdClusterInfos)
-		return transformationOutput, nil //replaced each ClusterInfo that was created; left the ones that were not
+		createdClusters, createdIndexes, _ := createClusters(transformationOutput)
+		//replaced each ClusterInfo that was created; left the ones that were not
+		var transformedClustersCreatedOrNot = make([]clusterinfo.ClusterInfo, len(transformationOutput))
+		if len(createdClusters) != len(transformationOutput) {
+			panic(fmt.Sprintf("%d!=%d", len(createdClusters), len(transformationOutput)))
+		}
+		for i := 0; i < len(transformationOutput); i++ {
+			if util.ContainsInt(createdIndexes, i) {
+				transformedClustersCreatedOrNot[i] = createdClusters[i]
+			} else {
+				transformedClustersCreatedOrNot[i] = transformationOutput[i]
+			}
+		}
+		return transformedClustersCreatedOrNot, nil
 	}
-	log.Println("Not creating", len(transformationOutput), "target clusters")
+	log.Println("Dry run, not creating", len(transformationOutput), "target clusters")
 	return transformationOutput, nil
 
 }
 
-func createClusters( /*immutable*/ createThese []clusterinfo.ClusterInfo,
-	/*inout*/ createdClusterInfos []clusterinfo.ClusterInfo) {
+// 'created' return param may be partly populated as some clusters have been successfully populated and some have not
+func createClusters( /*immutable*/ createThese []clusterinfo.ClusterInfo) (createdClusters []clusterinfo.ClusterInfo, createdIndexes []int, err error) {
+	createdIndexes = make([]int, 0)
+	createdClusters = make([]clusterinfo.ClusterInfo, len(createThese))
 	log.Println("Creating", len(createThese), "target clusters")
 	for idx, createThis := range createThese {
-		createCi, err := CreateCluster(createThis)
+		created, err := CreateCluster(createThis)
 		if err != nil {
 			log.Printf("Error creating %v: %v", createThis, err)
-		}
-		createdClusterInfos[idx] = createCi
-	}
-	blank := clusterinfo.ClusterInfo{}
-	for idx, createdClusterInfo := range createdClusterInfos {
-		if createdClusterInfo != blank {
-			createThese[idx] = createdClusterInfo
+		} else {
+			createdClusters[idx] = created
+			createdIndexes = append(createdIndexes, idx)
 		}
 	}
+	return createdClusters, createdIndexes, nil
 }
 
 // CreateCluster ...
@@ -112,11 +122,11 @@ func CreateCluster(createThis clusterinfo.ClusterInfo) (createdClusterInfo clust
 	var ca clusteraccess.ClusterAccess
 	switch createThis.Cloud {
 	case clusterinfo.AZURE:
-		ca = accessaks.AksClusterAccess{}
+		ca = accessaks.AKSClusterAccess{}
 	case clusterinfo.AWS:
 		panic("AWS not implemented")
 	case clusterinfo.GCP:
-		ca = accessgke.GkeClusterAccess{}
+		ca = accessgke.GKEClusterAccess{}
 	default:
 		return clusterinfo.ClusterInfo{}, errors.New("Unsupported Cloud for creating a cluster: " + createThis.Cloud)
 
@@ -153,9 +163,9 @@ func toHubFormat(input clusterinfo.ClusterInfo) (c clusterinfo.ClusterInfo, err 
 	var transformer Transformer
 	switch cloud := input.Cloud; cloud {
 	case clusterinfo.GCP:
-		transformer = &transformgke.GkeTransformer{}
+		transformer = &transformgke.GKETransformer{}
 	case clusterinfo.AZURE:
-		transformer = &transformaks.AksTransformer{}
+		transformer = &transformaks.AKSTransformer{}
 	case clusterinfo.AWS:
 		return c, errors.New(fmt.Sprintf("Unsupported %s", cloud))
 	case clusterinfo.HUB:
@@ -177,9 +187,9 @@ func fromHubFormat(hub clusterinfo.ClusterInfo, toCloud string, outputScope stri
 	var ret clusterinfo.ClusterInfo
 	switch toCloud { //  We do not expect more than  these clouds so not splitting out dynamically loaded adapters
 	case clusterinfo.GCP:
-		transformer = &transformgke.GkeTransformer{}
+		transformer = &transformgke.GKETransformer{}
 	case clusterinfo.AZURE:
-		transformer = &transformaks.AksTransformer{}
+		transformer = &transformaks.AKSTransformer{}
 	case clusterinfo.AWS:
 		return c, errors.New(fmt.Sprintf("Unsupported %s", toCloud))
 	case clusterinfo.HUB:

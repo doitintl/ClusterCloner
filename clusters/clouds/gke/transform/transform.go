@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"clustercloner/clusters/clouds/gke/access"
 	"clustercloner/clusters/clusterinfo"
 	transformutil "clustercloner/clusters/transformation/util"
 	"clustercloner/clusters/util"
@@ -22,43 +23,44 @@ func init() {
 	randNumGen = rand.New(s) // initialize local pseudorandom generator
 }
 
-// GkeTransformer ...
-type GkeTransformer struct {
+// GKETransformer ...
+type GKETransformer struct {
 }
 
 // CloudToHub ...
-func (tr *GkeTransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
+func (tr *GKETransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationCloudToHub(in.Location)
 	if err != nil {
 		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting locations")
 	}
 	k8sVersion, err := transformutil.MajorMinorPatchVersion(in.K8sVersion)
 	if err != nil {
-		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in K8s Version "+in.K8sVersion)
+		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in K8s K8sVersion "+in.K8sVersion)
 	}
 
-	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, k8sVersion)
+	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, k8sVersion, nil)
+
 	return ret, err
 }
 
 // HubToCloud ...
-func (tr *GkeTransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error) {
+func (tr *GKETransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationHubToCloud(in.Location)
 	if err != nil {
 		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting location")
 	}
-	ret := transformutil.TransformSpoke(in, outputScope, clusterinfo.GCP, loc, in.K8sVersion)
+	ret := transformutil.TransformSpoke(in, outputScope, clusterinfo.GCP, loc, in.K8sVersion, access.MachineTypes)
 
 	return ret, err
 }
 
 // LocationCloudToHub ...
-func (tr *GkeTransformer) LocationCloudToHub(zone string) (string, error) {
+func (tr *GKETransformer) LocationCloudToHub(zone string) (string, error) {
 	locs, err := getGcpLocations()
 	if err != nil {
 		return "", err
 	}
-	hyphenCount, secondHyphenIdx := Hyphens(zone)
+	hyphenCount, secondHyphenIdx := hyphensForGCPLocation(zone)
 	if hyphenCount != 1 && hyphenCount != 2 {
 		msg := fmt.Sprintf("%s is not a legal zone/region format for GCP", zone)
 		log.Println(msg)
@@ -70,7 +72,7 @@ func (tr *GkeTransformer) LocationCloudToHub(zone string) (string, error) {
 		endRegion = secondHyphenIdx
 	}
 	region := string(runes[0:endRegion])
-	if !contains(locs, region) {
+	if !util.ContainsStr(locs, region) {
 		msg := fmt.Sprintf("Zone %s is not in a legal region for GCP", zone)
 		log.Println(msg)
 		return "", errors.New(msg)
@@ -79,8 +81,8 @@ func (tr *GkeTransformer) LocationCloudToHub(zone string) (string, error) {
 
 }
 
-// Hyphens ...
-func Hyphens(zone string) (hyphenCount int, secondHyphenIdx int) {
+// hyphensForGCPLocation ...
+func hyphensForGCPLocation(zone string) (hyphenCount int, secondHyphenIdx int) {
 	secondHyphenIdx = -1
 	for i, ch := range zone {
 		if ch == '-' {
@@ -94,8 +96,8 @@ func Hyphens(zone string) (hyphenCount int, secondHyphenIdx int) {
 }
 
 // LocationHubToCloud ...
-func (GkeTransformer) LocationHubToCloud(location string) (string, error) {
-	hyphenCount, _ := Hyphens(location)
+func (GKETransformer) LocationHubToCloud(location string) (string, error) {
+	hyphenCount, _ := hyphensForGCPLocation(location)
 	var zone string
 	if hyphenCount == 1 {
 		zones := []string{"a", "b"}
@@ -110,14 +112,6 @@ func (GkeTransformer) LocationHubToCloud(location string) (string, error) {
 	}
 	return zone, nil
 
-}
-func contains(slice []string, elem string) bool {
-	for _, a := range slice {
-		if a == elem {
-			return true
-		}
-	}
-	return false
 }
 
 func getGcpLocations() ([]string, error) {

@@ -15,7 +15,7 @@ import (
 
 var (
 	mainCtx context.Context
-	//Version ...
+	//K8sVersion ...
 	Version = "dev"
 	//BuildDate build date
 	BuildDate = "unknown"

@@ -11,17 +11,17 @@ import (
 	"log"
 )
 
-// EksClusterAccess ...
-type EksClusterAccess struct {
+// EKSClusterAccess ...
+type EKSClusterAccess struct {
 }
 
 // CreateCluster ...
-func (ca EksClusterAccess) CreateCluster(info clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
+func (ca EKSClusterAccess) CreateCluster(info clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
 	panic("implement me")
 }
 
 // DescribeCluster ...
-func (ca EksClusterAccess) DescribeCluster(clusterName string, region string) (clusterinfo.ClusterInfo, error) {
+func (ca EKSClusterAccess) DescribeCluster(clusterName string, region string) (clusterinfo.ClusterInfo, error) {
 
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
 	svc := eks.New(sess)
@@ -36,11 +36,11 @@ func (ca EksClusterAccess) DescribeCluster(clusterName string, region string) (c
 		return clusterinfo.ClusterInfo{}, err
 	}
 	log.Println(util.MarshallToJSONString(result))
-	return clusterinfo.ClusterInfo{Scope: "", Location: region, Name: clusterName, NodeCount: 1, GeneratedBy: clusterinfo.READ}, nil
+	return clusterinfo.ClusterInfo{Scope: "", Location: region, Name: clusterName, DeprecatedNodeCount: 1, GeneratedBy: clusterinfo.READ}, nil
 }
 
 // ListClusters ...
-func (ca EksClusterAccess) ListClusters(_ string, location string) ([]clusterinfo.ClusterInfo, error) {
+func (ca EKSClusterAccess) ListClusters(_ string, location string) ([]clusterinfo.ClusterInfo, error) {
 	clusterNames, err := clusterNames(location)
 	if err != nil {
 		return nil, err

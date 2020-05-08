@@ -4,12 +4,16 @@ import (
 	"clustercloner/clusters/clouds/aks/access/config"
 	"clustercloner/clusters/clouds/aks/access/iam"
 	"clustercloner/clusters/clusterinfo"
-	"clustercloner/clusters/util"
+	clusterutil "clustercloner/clusters/util"
 	"context"
-	"errors"
+	"encoding/csv"
 	"fmt"
-	//	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
-	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
+	"github.com/pkg/errors"
+	"io"
+	"strconv"
+
+	//"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
+	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice" //todo upgrade API
 
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -27,11 +31,11 @@ var (
 )
 
 func init() {
-	_ = util.ReadEnv()
+	_ = clusterutil.ReadEnv()
 }
 
-//AksClusterAccess ...
-type AksClusterAccess struct {
+//AKSClusterAccess ...
+type AKSClusterAccess struct {
 }
 
 func getGroupsClient() resources.GroupsClient {
@@ -57,7 +61,7 @@ func createGroup(ctx context.Context, groupName string, region string) (resource
 }
 
 //CreateCluster ...
-func (ca AksClusterAccess) CreateCluster(createThis clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
+func (ca AKSClusterAccess) CreateCluster(createThis clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
 	grpName := createThis.Scope
 	log.Printf("Create Cluster: Group %s, Cluster %s, Location %s", grpName, createThis.Name, createThis.Location)
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
@@ -72,7 +76,7 @@ func (ca AksClusterAccess) CreateCluster(createThis clusterinfo.ClusterInfo) (cl
 			return clusterinfo.ClusterInfo{}, err
 		}
 	}
-	_, err = createAKSCluster(ctx, createThis.Name, createThis.Location, grpName, aksUsername, aksSSHPublicKeyPath, config.ClientID(), config.ClientSecret(), createThis.K8sVersion, createThis.NodeCount)
+	_, err = createAKSCluster(ctx, createThis.Name, createThis.Location, grpName, aksUsername, aksSSHPublicKeyPath, config.ClientID(), config.ClientSecret(), createThis.K8sVersion, createThis.DeprecatedNodeCount)
 	if err != nil {
 		log.Println(err)
 		return clusterinfo.ClusterInfo{}, err
@@ -155,7 +159,7 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 }
 
 //ListClusters ...
-func (ca AksClusterAccess) ListClusters(subscription string, location string) (ci []clusterinfo.ClusterInfo, err error) {
+func (ca AKSClusterAccess) ListClusters(subscription string, location string) (ci []clusterinfo.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
 	var aksClient, err2 = getAKSClient()
@@ -168,26 +172,110 @@ func (ca AksClusterAccess) ListClusters(subscription string, location string) (c
 	for _, managedCluster := range clusterList.Values() {
 		var props = managedCluster.ManagedClusterProperties
 
-		var count int32 = 0
-		for _, app := range *props.AgentPoolProfiles {
-			count += *app.Count
+		foundCluster := clusterinfo.ClusterInfo{
+			Scope:               subscription,
+			Location:            location,
+			Name:                *managedCluster.Name,
+			K8sVersion:          *props.KubernetesVersion,
+			DeprecatedNodeCount: 1,
+			GeneratedBy:         clusterinfo.READ,
+			Cloud:               clusterinfo.AZURE,
 		}
 
-		ci := clusterinfo.ClusterInfo{
-			Scope:       subscription,
-			Location:    location,
-			Name:        *managedCluster.Name,
-			K8sVersion:  *props.KubernetesVersion,
-			NodeCount:   count,
-			GeneratedBy: clusterinfo.READ,
-			Cloud:       clusterinfo.AZURE,
+		for _, agentPoolProfile := range *props.AgentPoolProfiles {
+			nodePool := clusterinfo.NodePoolInfo{
+				Name:        *agentPoolProfile.Name,
+				NodeCount:   *agentPoolProfile.Count,
+				MachineType: ParseMachineType(fmt.Sprintf("%v", agentPoolProfile.VMSize)),
+				DiskSizeGB:  *agentPoolProfile.OsDiskSizeGB,
+				K8sVersion:  "",
+			}
+			foundCluster.AddNodePool(nodePool)
+			zero := clusterinfo.MachineType{}
+			if nodePool.MachineType == zero {
+				panic("cannot read " + agentPoolProfile.VMSize)
+			}
 		}
-		ret = append(ret, ci)
+		ret = append(ret, foundCluster)
 
 	}
 	return ret, nil
 }
 
+// ParseMachineType ...
+func ParseMachineType(machineType string) clusterinfo.MachineType {
+	return MachineTypesNoPromo[machineType] //return zero object if not found
+}
+
+// MachineTypes ...
+var MachineTypes, MachineTypesNoPromo map[string]clusterinfo.MachineType
+
+func init() {
+	MachineTypes, _ = loadMachineTypes()
+	MachineTypesNoPromo = make(map[string]clusterinfo.MachineType)
+	for k, v := range MachineTypes {
+		if !strings.HasSuffix(k, "Promo") {
+			MachineTypesNoPromo[k] = v
+		}
+	}
+}
+
+func loadMachineTypes() (map[string]clusterinfo.MachineType, error) {
+	ret := make(map[string]clusterinfo.MachineType)
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("PWD", dir)
+
+	fn := clusterutil.RootPath() + "/machine-types/aks-vm-sizes.csv"
+	csvfile, err := os.Open(fn)
+	if err != nil {
+		wd, _ := os.Getwd()
+		log.Println("At ", wd, ":", err)
+		return nil, err
+	}
+
+	r := csv.NewReader(csvfile)
+	r.Comma = ','
+	first := true
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Println(err)
+			return nil, errors.Wrap(err, "cannot read csv")
+		}
+		if first {
+			first = false
+			continue
+		}
+		if len(record) == 1 {
+			log.Println("Short record ", record)
+		}
+		name := record[0]
+
+		cpus := record[1]
+		cpuFloat, err := strconv.ParseFloat(cpus, 32)
+		if err != nil {
+			return nil, err
+		}
+		cpuInt := int32(cpuFloat)
+
+		ramMBString := record[2]
+		ramMBFloat, err := strconv.ParseFloat(ramMBString, 32)
+		if err != nil {
+			return nil, err
+		}
+		ramGBFloat := ramMBFloat / 1000
+		ramGBInt := int32(ramGBFloat)
+
+		ret[name] = clusterinfo.MachineType{Name: name, CPU: cpuInt, RAMGB: ramGBInt}
+	}
+	return ret, nil
+}
 func getAKSClient() (mcc containerservice.ManagedClustersClient, err error) {
 	aksClient := containerservice.NewManagedClustersClient(config.SubscriptionID())
 	auth, err := iam.GetResourceManagementAuthorizer()
