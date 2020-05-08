@@ -208,7 +208,10 @@ func ParseMachineType(machineType string) clusterinfo.MachineType {
 }
 
 // MachineTypes ...
-var MachineTypes, MachineTypesNoPromo map[string]clusterinfo.MachineType
+var MachineTypes map[string]clusterinfo.MachineType
+
+// MachineTypesNoPromo ...
+var MachineTypesNoPromo map[string]clusterinfo.MachineType
 
 func init() {
 	MachineTypes, _ = loadMachineTypes()
