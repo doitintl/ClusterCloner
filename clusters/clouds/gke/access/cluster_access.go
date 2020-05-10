@@ -20,9 +20,9 @@ type GKEClusterAccess struct {
 }
 
 // ListClusters lists clusters; location param can be region or zone
-func (GKEClusterAccess) ListClusters(project, location string) (ret []clusterinfo.ClusterInfo, err error) {
+func (GKEClusterAccess) ListClusters(project, location string) (ret []*clusterinfo.ClusterInfo, err error) {
 
-	ret = make([]clusterinfo.ClusterInfo, 0)
+	ret = make([]*clusterinfo.ClusterInfo, 0)
 
 	bkgdCtx := context.Background()
 	client, err := container.NewClusterManagerClient(bkgdCtx)
@@ -42,13 +42,12 @@ func (GKEClusterAccess) ListClusters(project, location string) (ret []clusterinf
 	for _, clus := range resp.GetClusters() {
 		var nodePools = clus.GetNodePools()
 		//var nodeCount int32 = 0
-		foundCluster := clusterinfo.ClusterInfo{Scope: project,
-			Location:            clus.Location,
-			Name:                clus.Name,
-			K8sVersion:          clus.CurrentMasterVersion,
-			DeprecatedNodeCount: 1,
-			GeneratedBy:         clusterinfo.READ,
-			Cloud:               clusterinfo.GCP,
+		foundCluster := &clusterinfo.ClusterInfo{Scope: project,
+			Location:    clus.Location,
+			Name:        clus.Name,
+			K8sVersion:  clus.CurrentMasterVersion,
+			GeneratedBy: clusterinfo.READ,
+			Cloud:       clusterinfo.GCP,
 		}
 		for _, np := range nodePools {
 
@@ -137,22 +136,18 @@ func loadMachineTypes() (map[string]clusterinfo.MachineType, error) {
 		ret[name] = clusterinfo.MachineType{Name: name, CPU: cpuInt, RAMGB: ramInt}
 	}
 	return ret, nil
-} // CreateCluster ...
+}
 
 // CreateCluster ...
-func (GKEClusterAccess) CreateCluster(createThis clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
+func (GKEClusterAccess) CreateCluster(createThis *clusterinfo.ClusterInfo) (*clusterinfo.ClusterInfo, error) {
 
-	initialNodeCount := createThis.DeprecatedNodeCount
+	initialNodeCount_deprecated := int32(1)
 
-	if initialNodeCount < 1 {
-		log.Print("Copying a paused cluster, creating one node as a necessary minimum.")
-		initialNodeCount = 1
-	}
 	path := fmt.Sprintf("projects/%s/locations/%s", createThis.Scope, createThis.Location)
 
 	cluster := containerpb.Cluster{
 		Name:                  createThis.Name,
-		InitialNodeCount:      initialNodeCount,
+		InitialNodeCount:      initialNodeCount_deprecated,
 		InitialClusterVersion: createThis.K8sVersion,
 	}
 	req := &containerpb.CreateClusterRequest{Parent: path, Cluster: &cluster}
@@ -161,7 +156,7 @@ func (GKEClusterAccess) CreateCluster(createThis clusterinfo.ClusterInfo) (clust
 	resp, err := clustMgrClient.CreateCluster(backgroundCtx, req)
 	if err != nil {
 		log.Print(err)
-		return clusterinfo.ClusterInfo{}, err
+		return nil, err
 	}
 	var created = createThis
 	created.GeneratedBy = clusterinfo.CREATED

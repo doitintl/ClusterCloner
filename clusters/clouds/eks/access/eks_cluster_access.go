@@ -36,7 +36,7 @@ func (ca EKSClusterAccess) DescribeCluster(clusterName string, region string) (c
 		return clusterinfo.ClusterInfo{}, err
 	}
 	log.Println(util.MarshallToJSONString(result))
-	return clusterinfo.ClusterInfo{Scope: "", Location: region, Name: clusterName, DeprecatedNodeCount: 1, GeneratedBy: clusterinfo.READ}, nil
+	return clusterinfo.ClusterInfo{Scope: "", Location: region, Name: clusterName, GeneratedBy: clusterinfo.READ}, nil
 }
 
 // ListClusters ...

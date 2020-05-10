@@ -12,24 +12,23 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	scope := "joshua-playground"
 	mt := access.ParseMachineType("e2-highcpu-8")
 	var npi1 = clusterinfo.NodePoolInfo{
-		Name:        "xx",
+		Name:        "NPName",
 		NodeCount:   2,
-		K8sVersion:  "1/15.2-gke27",
+		K8sVersion:  "1.15.2-gke27",
 		MachineType: mt,
 		DiskSizeGB:  32,
 	}
 	npi2 := npi1 //copy
 	npi2.Name = "yyy"
 	nodePools := [2]clusterinfo.NodePoolInfo{npi1, npi2}
-	input := clusterinfo.ClusterInfo{
-		Name:                "c",
-		DeprecatedNodeCount: 1,
-		Cloud:               clusterinfo.GCP,
-		Location:            "us-east1-a",
-		K8sVersion:          "1.14.1-gke27",
-		Scope:               scope,
-		GeneratedBy:         clusterinfo.MOCK,
-		NodePools:           nodePools[:],
+	input := &clusterinfo.ClusterInfo{
+		Name:        "c",
+		Cloud:       clusterinfo.GCP,
+		Location:    "us-east1-a",
+		K8sVersion:  "1.14.1-gke27",
+		Scope:       scope,
+		GeneratedBy: clusterinfo.MOCK,
+		NodePools:   nodePools[:],
 	}
 	tr := GKETransformer{}
 	hub, err := tr.CloudToHub(input)
@@ -48,7 +47,7 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 		t.Error(err)
 	}
 
-	if output.Scope != scope || output.Name != input.Name || output.DeprecatedNodeCount != input.DeprecatedNodeCount ||
+	if output.Scope != scope || output.Name != input.Name ||
 		output.Cloud != input.Cloud {
 		outputStr := util.MarshallToJSONString(output)
 		inputStr := util.MarshallToJSONString(input)
@@ -59,9 +58,13 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	}
 }
 func TestTransformGcpToHubBadLoc(t *testing.T) {
-	ci := clusterinfo.ClusterInfo{Name: "c", DeprecatedNodeCount: 1, Cloud: clusterinfo.GCP, Location: "westus2",
-		K8sVersion: "1.14.1-gke-27",
-		Scope:      "joshua-playground", GeneratedBy: clusterinfo.MOCK}
+	ci := &clusterinfo.ClusterInfo{Name: "c",
+		Cloud:       clusterinfo.GCP,
+		Location:    "westus2",
+		K8sVersion:  "1.14.1-gke-27",
+		Scope:       "joshua-playground",
+		GeneratedBy: clusterinfo.MOCK,
+	}
 	tr := GKETransformer{}
 	_, err := tr.CloudToHub(ci)
 	if err == nil {

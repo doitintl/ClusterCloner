@@ -2,15 +2,14 @@ package clusterinfo
 
 // ClusterInfo ...
 type ClusterInfo struct {
-	Cloud               string //GCP, Azure, AWS, or Hub (for a standard neutral format)
-	Scope               string //Project in GKE, Subscription in AKS, blank in EKS
-	Location            string //Zone or Region in GKE, Region in others
-	Name                string
-	K8sVersion          string
-	DeprecatedNodeCount int32
-	GeneratedBy         string
-	NodePools           []NodePoolInfo
-	SourceCluster       *ClusterInfo
+	Cloud         string //GCP, Azure, AWS, or Hub (for a standard neutral format)
+	Scope         string //Project in GKE, Subscription in AKS, blank in EKS
+	Location      string //Zone or Region in GKE, Region in others
+	Name          string
+	K8sVersion    string
+	GeneratedBy   string
+	NodePools     []NodePoolInfo
+	SourceCluster *ClusterInfo
 }
 
 // AddNodePool ...
@@ -18,7 +17,7 @@ func (ci *ClusterInfo) AddNodePool(pool NodePoolInfo) {
 	if ci.NodePools == nil {
 		ci.NodePools = make([]NodePoolInfo, 0)
 	}
-	ci.NodePools = append(ci.NodePools, NodePoolInfo{})
+	ci.NodePools = append(ci.NodePools, pool)
 }
 
 // MachineType ...

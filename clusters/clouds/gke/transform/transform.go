@@ -28,14 +28,14 @@ type GKETransformer struct {
 }
 
 // CloudToHub ...
-func (tr *GKETransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
+func (tr *GKETransformer) CloudToHub(in *clusterinfo.ClusterInfo) (*clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationCloudToHub(in.Location)
 	if err != nil {
-		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting locations")
+		return nil, errors.Wrap(err, "error in converting locations")
 	}
 	k8sVersion, err := transformutil.MajorMinorPatchVersion(in.K8sVersion)
 	if err != nil {
-		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in K8s K8sVersion "+in.K8sVersion)
+		return nil, errors.Wrap(err, "error in K8s K8sVersion "+in.K8sVersion)
 	}
 
 	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, k8sVersion, nil)
@@ -44,10 +44,10 @@ func (tr *GKETransformer) CloudToHub(in clusterinfo.ClusterInfo) (clusterinfo.Cl
 }
 
 // HubToCloud ...
-func (tr *GKETransformer) HubToCloud(in clusterinfo.ClusterInfo, outputScope string) (clusterinfo.ClusterInfo, error) {
+func (tr *GKETransformer) HubToCloud(in *clusterinfo.ClusterInfo, outputScope string) (*clusterinfo.ClusterInfo, error) {
 	loc, err := tr.LocationHubToCloud(in.Location)
 	if err != nil {
-		return clusterinfo.ClusterInfo{}, errors.Wrap(err, "error in converting location")
+		return nil, errors.Wrap(err, "error in converting location")
 	}
 	ret := transformutil.TransformSpoke(in, outputScope, clusterinfo.GCP, loc, in.K8sVersion, access.MachineTypes)
 

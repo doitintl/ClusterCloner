@@ -61,7 +61,7 @@ func createGroup(ctx context.Context, groupName string, region string) (resource
 }
 
 //CreateCluster ...
-func (ca AKSClusterAccess) CreateCluster(createThis clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
+func (ca AKSClusterAccess) CreateCluster(createThis *clusterinfo.ClusterInfo) (*clusterinfo.ClusterInfo, error) {
 	grpName := createThis.Scope
 	log.Printf("Create Cluster: Group %s, Cluster %s, Location %s", grpName, createThis.Name, createThis.Location)
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
@@ -73,13 +73,23 @@ func (ca AKSClusterAccess) CreateCluster(createThis clusterinfo.ClusterInfo) (cl
 		if strings.Contains(errS, "already exists") {
 			log.Printf("Group %s already exists", grpName)
 		} else {
-			return clusterinfo.ClusterInfo{}, err
+			return nil, err
 		}
 	}
-	_, err = createAKSCluster(ctx, createThis.Name, createThis.Location, grpName, aksUsername, aksSSHPublicKeyPath, config.ClientID(), config.ClientSecret(), createThis.K8sVersion, createThis.DeprecatedNodeCount)
+	var agentPoolCount int32 = 1
+	_, err = createAKSCluster(ctx,
+		createThis.Name,
+		createThis.Location,
+		grpName, aksUsername,
+		aksSSHPublicKeyPath,
+		config.ClientID(),
+		config.ClientSecret(),
+		createThis.K8sVersion,
+		agentPoolCount,
+	)
 	if err != nil {
 		log.Println(err)
-		return clusterinfo.ClusterInfo{}, err
+		return nil, err
 	}
 	created := createThis
 	created.GeneratedBy = clusterinfo.CREATED
@@ -159,27 +169,26 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 }
 
 //ListClusters ...
-func (ca AKSClusterAccess) ListClusters(subscription string, location string) (ci []clusterinfo.ClusterInfo, err error) {
+func (ca AKSClusterAccess) ListClusters(subscription string, location string) (ci []*clusterinfo.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
 	var aksClient, err2 = getAKSClient()
 	if err2 != nil {
 		return ci, errors.New("cannot get AKS client")
 	}
-	ret := make([]clusterinfo.ClusterInfo, 0)
+	ret := make([]*clusterinfo.ClusterInfo, 0)
 
 	clusterList, _ := aksClient.List(ctx)
 	for _, managedCluster := range clusterList.Values() {
 		var props = managedCluster.ManagedClusterProperties
 
-		foundCluster := clusterinfo.ClusterInfo{
-			Scope:               subscription,
-			Location:            location,
-			Name:                *managedCluster.Name,
-			K8sVersion:          *props.KubernetesVersion,
-			DeprecatedNodeCount: 1,
-			GeneratedBy:         clusterinfo.READ,
-			Cloud:               clusterinfo.AZURE,
+		foundCluster := &clusterinfo.ClusterInfo{
+			Scope:       subscription,
+			Location:    location,
+			Name:        *managedCluster.Name,
+			K8sVersion:  *props.KubernetesVersion,
+			GeneratedBy: clusterinfo.READ,
+			Cloud:       clusterinfo.AZURE,
 		}
 
 		for _, agentPoolProfile := range *props.AgentPoolProfiles {

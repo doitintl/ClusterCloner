@@ -6,14 +6,13 @@ import (
 )
 
 func TestTransformAzureToHub(t *testing.T) {
-	ci := clusterinfo.ClusterInfo{
-		Name:                "c",
-		DeprecatedNodeCount: 1,
-		Cloud:               clusterinfo.AZURE,
-		Location:            "westus2",
-		Scope:               "joshua-playground",
-		K8sVersion:          "1.14.0",
-		GeneratedBy:         clusterinfo.MOCK}
+	ci := &clusterinfo.ClusterInfo{
+		Name:        "c",
+		Cloud:       clusterinfo.AZURE,
+		Location:    "westus2",
+		Scope:       "joshua-playground",
+		K8sVersion:  "1.14.0",
+		GeneratedBy: clusterinfo.MOCK}
 	tr := AKSTransformer{}
 	std, err := tr.CloudToHub(ci)
 	if err != nil {
@@ -27,7 +26,7 @@ func TestTransformAzureToHub(t *testing.T) {
 	}
 }
 func TestTransformAzureToHubBadLoc(t *testing.T) {
-	ci := clusterinfo.ClusterInfo{Name: "c", DeprecatedNodeCount: 1,
+	ci := &clusterinfo.ClusterInfo{Name: "c",
 		Cloud: clusterinfo.AZURE, Location: "westus1",
 		Scope:       "joshua-playground",
 		K8sVersion:  "1.15.0",
@@ -40,14 +39,13 @@ func TestTransformAzureToHubBadLoc(t *testing.T) {
 }
 
 func TestTransformHubToAzure(t *testing.T) {
-	ci := clusterinfo.ClusterInfo{
-		Name:                "c",
-		DeprecatedNodeCount: 1,
-		Cloud:               clusterinfo.HUB,
-		Location:            "us-central1",
-		Scope:               "",
-		K8sVersion:          "1.14.0",
-		GeneratedBy:         clusterinfo.MOCK,
+	ci := &clusterinfo.ClusterInfo{
+		Name:        "c",
+		Cloud:       clusterinfo.HUB,
+		Location:    "us-central1",
+		Scope:       "",
+		K8sVersion:  "1.14.0",
+		GeneratedBy: clusterinfo.MOCK,
 	}
 	tr := AKSTransformer{}
 	std, err := tr.HubToCloud(ci, "")
