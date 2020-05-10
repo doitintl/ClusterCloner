@@ -70,11 +70,12 @@ func TestTransformAzureToGCP(t *testing.T) {
 
 	// Can vary because map is not determinstically ordered
 	m1 := clusterinfo.MachineType{Name: "m1-ultramem-80", CPU: 80, RAMGB: 1922}
-	n1 := clusterinfo.MachineType{Name: "n1-ultramem-80", CPU: 80, RAMGB: 1922}
-	if mtGcp != m1 && mtGcp != n1 {
+	m2 := clusterinfo.MachineType{Name: "m2-ultramem-80", CPU: 80, RAMGB: 1922}
+	if mtGcp != m1 && mtGcp != m2 {
 		t.Error(mtGcp)
 	}
 }
+
 func TestTransformGCPToAzure(t *testing.T) {
 	scope := "joshua-playground"
 	machineType := "e2-highcpu-16"

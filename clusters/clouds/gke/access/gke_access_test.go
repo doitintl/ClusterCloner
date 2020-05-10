@@ -7,7 +7,7 @@ import (
 
 func TestParseMachineType(t *testing.T) {
 	machineType := "e2-highcpu-8"
-	mt := ParseMachineType(machineType)
+	mt := MachineTypeByName(machineType)
 	if mt.Name != machineType {
 		t.Error(mt.Name)
 	}
@@ -21,7 +21,7 @@ func TestParseMachineType(t *testing.T) {
 }
 func TestParseMachineType2(t *testing.T) {
 	name := "n1-ultramem-40"
-	mt := ParseMachineType(name)
+	mt := MachineTypeByName(name)
 	if mt.Name != name {
 		t.Error(mt.Name)
 	}
@@ -34,7 +34,7 @@ func TestParseMachineType2(t *testing.T) {
 }
 func TestParseMissingMachineType2(t *testing.T) {
 	name := "xx-xx-40"
-	mt := ParseMachineType(name)
+	mt := MachineTypeByName(name)
 	zero := clusterinfo.MachineType{}
 	if mt != zero {
 		t.Error(mt.Name)

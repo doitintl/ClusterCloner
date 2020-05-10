@@ -10,7 +10,7 @@ import (
 
 func TestTransformGcpToHubAndBack(t *testing.T) {
 	scope := "joshua-playground"
-	mt := access.ParseMachineType("e2-highcpu-8")
+	mt := access.MachineTypeByName("e2-highcpu-8")
 	var npi1 = clusterinfo.NodePoolInfo{
 		Name:        "NPName",
 		NodeCount:   2,
