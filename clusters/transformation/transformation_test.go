@@ -69,9 +69,9 @@ func TestTransformAzureToGCP(t *testing.T) {
 	mtGcp := gcp.NodePools[0].MachineType
 
 	// Can vary because map is not determinstically ordered
-	m1 := clusterinfo.MachineType{Name: "m1-ultramem-80", CPU: 80, RAMGB: 1922}
-	m2 := clusterinfo.MachineType{Name: "m2-ultramem-80", CPU: 80, RAMGB: 1922}
-	if mtGcp != m1 && mtGcp != m2 {
+	machineA := clusterinfo.MachineType{Name: "m1-ultramem-80", CPU: 80, RAMGB: 1922}
+	machineB := clusterinfo.MachineType{Name: "n1-ultramem-80", CPU: 80, RAMGB: 1922}
+	if mtGcp != machineA && mtGcp != machineB {
 		t.Error(mtGcp)
 	}
 }
@@ -147,6 +147,7 @@ func TestTransformGCPToAzure(t *testing.T) {
 		"Basic_A0",
 		"Standard_A1",
 		"Standard_A0",
+		"Standard_B1ls",
 	}
 	found := false
 	for _, mTypeName := range mTypeNames {
