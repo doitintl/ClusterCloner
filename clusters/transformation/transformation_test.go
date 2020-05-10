@@ -67,6 +67,12 @@ func TestTransformAzureToGCP(t *testing.T) {
 	}
 
 	mtGcp := gcp.NodePools[0].MachineType
-	assert.Equal(t, clusterinfo.MachineType{Name: "m1-ultramem-80", CPU: 80, RAMGB: 1922}, mtGcp)
+
+	// Can vary because map is not determinstically ordered
+	m1 := clusterinfo.MachineType{Name: "m1-ultramem-80", CPU: 80, RAMGB: 1922}
+	n1 := clusterinfo.MachineType{Name: "n1-ultramem-80", CPU: 80, RAMGB: 1922}
+	if mtGcp != m1 && mtGcp != n1 {
+		t.Error(mtGcp)
+	}
 
 }

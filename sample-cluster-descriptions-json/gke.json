@@ -1,0 +1,111 @@
+{
+  "clusters": [
+    {
+      "name": "cluster-a",
+      "node_config": {
+        "machine_type": "g1-small",
+        "disk_size_gb": 100,
+        "oauth_scopes": [
+          "https://www.googleapis.com/auth/devstorage.read_only",
+          "https://www.googleapis.com/auth/logging.write",
+          "https://www.googleapis.com/auth/monitoring",
+          "https://www.googleapis.com/auth/servicecontrol",
+          "https://www.googleapis.com/auth/service.management.readonly",
+          "https://www.googleapis.com/auth/trace.append"
+        ],
+        "service_account": "default",
+        "metadata": {
+          "disable-legacy-endpoints": "true"
+        },
+        "image_type": "COS",
+        "disk_type": "pd-standard"
+      },
+      "master_auth": {
+        "cluster_ca_certificate": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURERENDQWZTZ0F3SUJBZ0lSQUpRWFZ3QXVjaEllV082NTdRVEtDRFV3RFFZSktvWklodmNOQVFFTEJRQXcKTHpFdE1Dc0dBMVVFQXhNa09HSmpZemRsWTJFdFlqVXlOQzAwTkRVNExUa3dOamN0WWpnNFptSTFabVkxT1RndwpNQjRYRFRJd01EUXlNakUzTWprMU1Wb1hEVEkxTURReU1URTRNamsxTVZvd0x6RXRNQ3NHQTFVRUF4TWtPR0pqCll6ZGxZMkV0WWpVeU5DMDBORFU0TFRrd05qY3RZamc0Wm1JMVptWTFPVGd3TUlJQklqQU5CZ2txaGtpRzl3MEIKQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBbmlrdUpmc1F5MWJ0dEtOV3E0Mzh5eEJFdkNqczljSmdCdzZ3emNMSgorYzZTMVpJSlBkeVI3M3ZuS0JJZi9STi9WNjE4dWdSWGdZU2VTQ3VmOXlWUUdFaDBuWFUrckpXZ3YzVzI0b3RICkwyL0xCZjI3NDNhamdjR0dqbWwzbk5iTWdYaFVLbnc3TStLaFJINHVIZTRBdW1YbWVmVjRHREx1aGFqQ3ZybkkKSHNrbjFxcW5iZjFpMVA0TnZTdDAwcnVMKy9yL0kzUHZ4VEVzNVJadlZRNFhjazY4WWEzOUhKUjV5OWVMb0ZHQgpzdG9jbno4VVhzMy9UdlRwUGxmYmhnN2Rpb056OHN5Tnl5em5ab1JYZUVyUkJ3V2ZRT3UwSWFlQ3VuenlLVkV4CkN1a2c5cE4rSDlVbnJleGRlNmljWGlXQVh3V0h4Qk1IcGEzN3NhRHpsRmswK3dJREFRQUJveU13SVRBT0JnTlYKSFE4QkFmOEVCQU1DQWdRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQQpnc0o1Y0Irdkt4UFhXdWE2WVhQV2dwVC9sQWhzU25tVE9DcURRdHVWRkZwandKWVN3cTFvLytGWW1keXZia2tvClhoeVhTZDgwc1ZuZG9IcFRTekJmQ24zQ0h4S2hXS0x0NHNrQlB1ekxsK3dIYnhEd21XQmc4OHpMZ2hpZGRrNUsKbURTY3djK2s2M3puaUh4bmxJT1ZpN3ROUUk3T0lyTkwvTXRxY2RYQnUrekQ1ei9oZ1hGdWR1WU1IOTUrQjBBcApmZ2xMdTUrblA4NXNaaEtyMmFsYjM4TnpYWjBmVUJaVnp2TGlqYXhFNTZFWGtYd216MUdKcnM4aGQ1RGxUSXNtCjVidGppTmFDT2gwUmhScFB3RGJMTEJiWmRGRENZM1poSTIrSEFZZm5UZDdEbGF1SGowY3dJeFFhcmdsTTV5VTEKVFBKNWVYeFFWYWtaZGNhcEszZDlOQT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
+      },
+      "logging_service": "logging.googleapis.com/kubernetes",
+      "monitoring_service": "monitoring.googleapis.com/kubernetes",
+      "network": "default",
+      "cluster_ipv4_cidr": "10.52.0.0/14",
+      "addons_config": {
+        "http_load_balancing": {},
+        "horizontal_pod_autoscaling": {},
+        "kubernetes_dashboard": {
+          "disabled": true
+        },
+        "network_policy_config": {
+          "disabled": true
+        }
+      },
+      "subnetwork": "default",
+      "node_pools": [
+        {
+          "name": "default-pool",
+          "config": {
+            "machine_type": "g1-small",
+            "disk_size_gb": 100,
+            "oauth_scopes": [
+              "https://www.googleapis.com/auth/devstorage.read_only",
+              "https://www.googleapis.com/auth/logging.write",
+              "https://www.googleapis.com/auth/monitoring",
+              "https://www.googleapis.com/auth/servicecontrol",
+              "https://www.googleapis.com/auth/service.management.readonly",
+              "https://www.googleapis.com/auth/trace.append"
+            ],
+            "service_account": "default",
+            "metadata": {
+              "disable-legacy-endpoints": "true"
+            },
+            "image_type": "COS",
+            "disk_type": "pd-standard"
+          },
+          "self_link": "https://container.googleapis.com/v1/projects/joshua-playground/zones/us-central1-c/clusters/cluster-a/nodePools/default-pool",
+          "version": "1.14.10-gke.27",
+          "instance_group_urls": [
+            "https://www.googleapis.com/compute/v1/projects/joshua-playground/zones/us-central1-c/instanceGroupManagers/gke-cluster-a-default-pool-767037bb-grp"
+          ],
+          "status": 2,
+          "autoscaling": {},
+          "management": {
+            "auto_upgrade": true,
+            "auto_repair": true
+          }
+        }
+      ],
+      "locations": [
+        "us-central1-c"
+      ],
+      "label_fingerprint": "a9dc16a7",
+      "legacy_abac": {},
+      "network_policy": {},
+      "ip_allocation_policy": {
+        "use_ip_aliases": true,
+        "cluster_ipv4_cidr": "10.52.0.0/14",
+        "services_ipv4_cidr": "10.0.0.0/20",
+        "cluster_secondary_range_name": "gke-cluster-a-pods-5897588f",
+        "services_secondary_range_name": "gke-cluster-a-services-5897588f",
+        "cluster_ipv4_cidr_block": "10.52.0.0/14",
+        "services_ipv4_cidr_block": "10.0.0.0/20"
+      },
+      "master_authorized_networks_config": {},
+      "maintenance_policy": {},
+      "network_config": {
+        "network": "projects/joshua-playground/global/networks/default",
+        "subnetwork": "projects/joshua-playground/regions/us-central1/subnetworks/default"
+      },
+      "self_link": "https://container.googleapis.com/v1/projects/joshua-playground/zones/us-central1-c/clusters/cluster-a",
+      "zone": "us-central1-c",
+      "endpoint": "35.193.110.148",
+      "initial_cluster_version": "1.14.10-gke.27",
+      "current_master_version": "1.14.10-gke.27",
+      "current_node_version": "1.14.10-gke.27",
+      "create_time": "2020-04-22T18:29:51+00:00",
+      "status": 2,
+      "services_ipv4_cidr": "10.0.0.0/20",
+      "instance_group_urls": [
+        "https://www.googleapis.com/compute/v1/projects/joshua-playground/zones/us-central1-c/instanceGroupManagers/gke-cluster-a-default-pool-767037bb-grp"
+      ],
+      "location": "us-central1-c"
+    }
+  ]
+}
