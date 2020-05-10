@@ -107,7 +107,7 @@ func createClusters( /*immutable*/ createThese []*clusterinfo.ClusterInfo) (crea
 		if err != nil {
 			log.Printf("Error creating %v: %v", createThis, err)
 		} else {
-			createdClusters[idx] = created
+			createdClusters[idx] = created //todo read the clusters back from the cloud, where feasible (but async creation may prevent that or require delay)
 			createdIndexes = append(createdIndexes, idx)
 		}
 	}
@@ -182,7 +182,7 @@ func fromHubFormat(hub *clusterinfo.ClusterInfo, toCloud string, outputScope str
 	var transformer Transformer
 	err = nil
 	var ret *clusterinfo.ClusterInfo
-	switch toCloud { //  We do not expect more than  these clouds so not splitting out dynamically loaded adapters
+	switch toCloud { //  We do not expect more than  these 3 clouds so not splitting out dynamically loaded adapters
 	case clusterinfo.GCP:
 		transformer = &transformgke.GKETransformer{}
 	case clusterinfo.AZURE:

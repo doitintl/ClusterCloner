@@ -3,11 +3,11 @@ package util
 import (
 	"clustercloner/clusters/clusterinfo"
 	"clustercloner/clusters/transformation/nodes"
-	"github.com/google/martian/log"
+	"log"
 )
 
 // TransformSpoke ...
-func TransformSpoke(in *clusterinfo.ClusterInfo, outputScope, targetCloud, targetLoc, k8sVersion string, machineTypes map[string]clusterinfo.MachineType) *clusterinfo.ClusterInfo {
+func TransformSpoke(in *clusterinfo.ClusterInfo, outputScope, targetCloud, targetLoc, targetClusterK8sVersion string, machineTypes map[string]clusterinfo.MachineType) *clusterinfo.ClusterInfo {
 	var ret = &clusterinfo.ClusterInfo{}
 	ret.Name = in.Name
 	ret.SourceCluster = in
@@ -17,13 +17,13 @@ func TransformSpoke(in *clusterinfo.ClusterInfo, outputScope, targetCloud, targe
 	// ret.DeprecatedNodeCount unchanged
 	ret.Scope = outputScope
 	ret.Location = targetLoc
-	ret.K8sVersion = in.K8sVersion
+	ret.K8sVersion = targetClusterK8sVersion
 	ret.NodePools = make([]clusterinfo.NodePoolInfo, 0)
 	for _, nodePoolIn := range in.NodePools {
-		nodePoolOut := nodes.TransformNode(nodePoolIn, machineTypes)
+		nodePoolOut := nodes.TransformNodePool(nodePoolIn, machineTypes)
 		zero := clusterinfo.NodePoolInfo{}
 		if nodePoolOut == zero {
-			log.Errorf("Empty result of converting %v", nodePoolIn)
+			log.Printf("Empty result of converting %v", nodePoolIn)
 			return nil
 		}
 

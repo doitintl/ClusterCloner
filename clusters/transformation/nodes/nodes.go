@@ -2,18 +2,23 @@ package nodes
 
 import (
 	"clustercloner/clusters/clusterinfo"
+	nodeutil "clustercloner/clusters/transformation/nodes/util"
 	"math"
 )
 
 // MachineTypeConverter ...
 type MachineTypeConverter func(mt clusterinfo.MachineType) clusterinfo.MachineType
 
-// TransformNode ...
-func TransformNode(np clusterinfo.NodePoolInfo, machineTypes map[string]clusterinfo.MachineType) clusterinfo.NodePoolInfo {
+// TransformNodePool ...
+func TransformNodePool(np clusterinfo.NodePoolInfo, machineTypes map[string]clusterinfo.MachineType) clusterinfo.NodePoolInfo {
+	nodePoolK8sVersion, err := nodeutil.MajorMinorPatchVersion(np.K8sVersion)
+	if err != nil {
+		panic(err) //todo fix
+	}
 	ret := clusterinfo.NodePoolInfo{
 		Name:        np.Name,
 		NodeCount:   np.NodeCount,
-		K8sVersion:  np.K8sVersion,
+		K8sVersion:  nodePoolK8sVersion,
 		MachineType: FindMatchingMachineType(np.MachineType, machineTypes),
 		DiskSizeGB:  np.DiskSizeGB,
 	}

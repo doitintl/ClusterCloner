@@ -4,12 +4,14 @@ import (
 	"clustercloner/clusters/clouds/aks/access/config"
 	"clustercloner/clusters/clouds/aks/access/iam"
 	"clustercloner/clusters/clusterinfo"
+	"clustercloner/clusters/transformation/nodes/util"
 	clusterutil "clustercloner/clusters/util"
 	"context"
 	"encoding/csv"
 	"fmt"
 	"github.com/pkg/errors"
 	"io"
+	"math"
 	"strconv"
 
 	//"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
@@ -36,17 +38,6 @@ func init() {
 
 //AKSClusterAccess ...
 type AKSClusterAccess struct {
-}
-
-func getGroupsClient() resources.GroupsClient {
-	groupsClient := resources.NewGroupsClient(config.SubscriptionID())
-	a, err := iam.GetResourceManagementAuthorizer()
-	if err != nil {
-		log.Fatalf("failed to initialize authorizer: %v\n", err)
-	}
-	groupsClient.Authorizer = a
-	_ = groupsClient.AddToUserAgent(config.UserAgent())
-	return groupsClient
 }
 
 func createGroup(ctx context.Context, groupName string, region string) (resources.Group, error) {
@@ -112,7 +103,7 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 		sshKeyData = "fakepubkey"
 	}
 
-	aksClient, err := getAKSClient()
+	aksClient, err := getManagedClustersClient()
 	if err != nil {
 		return c, fmt.Errorf("cannot get AKS client: %v", err)
 	}
@@ -121,7 +112,7 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 		{
 			Count:  to.Int32Ptr(agentPoolCount),
 			Name:   to.StringPtr("agentpool1"),
-			VMSize: containerservice.StandardD2sV3,
+			VMSize: containerservice.StandardD2sV3, //todo correct create AgentP
 		},
 	}
 	servicePrincipalProfile := &containerservice.ServicePrincipalProfile{
@@ -172,10 +163,11 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 func (ca AKSClusterAccess) ListClusters(subscription string, location string) (ci []*clusterinfo.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
-	var aksClient, err2 = getAKSClient()
+	var aksClient, err2 = getManagedClustersClient()
 	if err2 != nil {
 		return ci, errors.New("cannot get AKS client")
 	}
+
 	ret := make([]*clusterinfo.ClusterInfo, 0)
 
 	clusterList, _ := aksClient.List(ctx)
@@ -195,7 +187,7 @@ func (ca AKSClusterAccess) ListClusters(subscription string, location string) (c
 			nodePool := clusterinfo.NodePoolInfo{
 				Name:        *agentPoolProfile.Name,
 				NodeCount:   *agentPoolProfile.Count,
-				MachineType: ParseMachineType(fmt.Sprintf("%v", agentPoolProfile.VMSize)),
+				MachineType: MachineTypeByName(fmt.Sprintf("%v", agentPoolProfile.VMSize)),
 				DiskSizeGB:  *agentPoolProfile.OsDiskSizeGB,
 				K8sVersion:  "",
 			}
@@ -211,8 +203,34 @@ func (ca AKSClusterAccess) ListClusters(subscription string, location string) (c
 	return ret, nil
 }
 
-// ParseMachineType ...
-func ParseMachineType(machineType string) clusterinfo.MachineType {
+// supportedVersions ...
+var supportedVersions []string
+
+// GetSupportedVersions ...
+func GetSupportedVersions() []string {
+	if supportedVersions == nil {
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
+		defer cancel()
+		supportedVersions = make([]string, 0)
+
+		listOrch, err := getContainerServicesClient().ListOrchestrators(ctx, "westus", "")
+		if err != nil {
+			log.Println(err)
+		} else {
+			for _, orch := range *listOrch.Orchestrators {
+				t := *orch.OrchestratorType
+				//				log.Println(*orch.OrchestratorType, *orch.OrchestratorVersion)
+				if t == "Kubernetes" {
+					supportedVersions = append(supportedVersions, *orch.OrchestratorVersion)
+				}
+			}
+		}
+	}
+	return supportedVersions
+}
+
+// MachineTypeByName ...
+func MachineTypeByName(machineType string) clusterinfo.MachineType {
 	return MachineTypesNoPromo[machineType] //return zero object if not found
 }
 
@@ -283,19 +301,82 @@ func loadMachineTypes() (map[string]clusterinfo.MachineType, error) {
 		}
 		ramGBFloat := ramMBFloat / 1000
 		ramGBInt := int32(ramGBFloat)
+		if ramGBInt == 0 {
+			ramGBInt = 1 // todo switch all RAM to MB to avoidthis and get more precision
+		}
 
 		ret[name] = clusterinfo.MachineType{Name: name, CPU: cpuInt, RAMGB: ramGBInt}
 	}
 	return ret, nil
 }
-func getAKSClient() (mcc containerservice.ManagedClustersClient, err error) {
-	aksClient := containerservice.NewManagedClustersClient(config.SubscriptionID())
+
+//
+func getManagedClustersClient() (mcc containerservice.ManagedClustersClient, err error) {
+	client := containerservice.NewManagedClustersClient(config.SubscriptionID())
 	auth, err := iam.GetResourceManagementAuthorizer()
 	if err != nil {
 		return mcc, err
 	}
-	aksClient.Authorizer = auth
-	_ = aksClient.AddToUserAgent(config.UserAgent())
-	aksClient.PollingDuration = time.Hour * 1
-	return aksClient, nil
+	client.Authorizer = auth
+	_ = client.AddToUserAgent(config.UserAgent())
+	return client, nil
+}
+
+func getGroupsClient() resources.GroupsClient {
+	client := resources.NewGroupsClient(config.SubscriptionID())
+	auth, err := iam.GetResourceManagementAuthorizer()
+	if err != nil {
+		log.Fatalf("failed to initialize authorizer: %v\n", err)
+	}
+	client.Authorizer = auth
+	_ = client.AddToUserAgent(config.UserAgent())
+	return client
+}
+func getContainerServicesClient() containerservice.ContainerServicesClient {
+
+	client := containerservice.NewContainerServicesClient(config.SubscriptionID())
+	auth, err := iam.GetResourceManagementAuthorizer()
+	if err != nil {
+		log.Fatalf("failed to initialize authorizer: %v\n", err)
+	}
+	client.Authorizer = auth
+	_ = client.AddToUserAgent(config.UserAgent())
+	return client
+}
+
+// FindBestMatchingSupportedK8sVersion ...
+func FindBestMatchingSupportedK8sVersion(vers string) (string, error) {
+	var potentialMatchPatchVersion = math.MaxInt32
+	supportedVersions := GetSupportedVersions()
+	majorMinor, err := util.MajorMinorVersion(vers)
+	if err != nil {
+		return "", errors.Wrap(err, "cannot parse versions")
+	}
+	patchV, err := util.PatchVersion(vers)
+	if err != nil {
+		return "", errors.Wrap(err, "cannot parse versions")
+	}
+	for _, supported := range supportedVersions {
+		majorMinorSupported, err := util.MajorMinorVersion(supported)
+		if err != nil {
+			return "", errors.Wrap(err, "cannot parse versions")
+		}
+		if majorMinor == majorMinorSupported {
+			var patchSupported int
+			patchSupported, err = util.PatchVersion(supported)
+			if err != nil {
+				panic(err) //should not happen
+			}
+			if patchSupported < potentialMatchPatchVersion && patchSupported >= patchV {
+				potentialMatchPatchVersion = patchSupported
+			}
+		}
+	}
+	if potentialMatchPatchVersion == math.MaxInt32 {
+		//todo try for the next major-minor version
+		return "", errors.New("cannot match to patch version: " + vers)
+
+	}
+	ret := fmt.Sprintf("%s.%d", majorMinor, potentialMatchPatchVersion)
+	return ret, nil
 }

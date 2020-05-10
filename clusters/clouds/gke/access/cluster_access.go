@@ -54,7 +54,7 @@ func (GKEClusterAccess) ListClusters(project, location string) (ret []*clusterin
 			nodePool := clusterinfo.NodePoolInfo{
 				Name:        np.GetName(),
 				NodeCount:   np.GetInitialNodeCount(),
-				MachineType: ParseMachineType(np.GetConfig().MachineType),
+				MachineType: MachineTypeByName(np.GetConfig().MachineType),
 				K8sVersion:  np.GetVersion(),
 				DiskSizeGB:  np.GetConfig().GetDiskSizeGb(),
 			}
@@ -71,8 +71,8 @@ func (GKEClusterAccess) ListClusters(project, location string) (ret []*clusterin
 
 }
 
-// ParseMachineType ...
-func ParseMachineType(machineType string) clusterinfo.MachineType {
+// MachineTypeByName ...
+func MachineTypeByName(machineType string) clusterinfo.MachineType {
 	ret := MachineTypes[machineType]
 	return ret //return zero object if not found
 }
@@ -141,13 +141,13 @@ func loadMachineTypes() (map[string]clusterinfo.MachineType, error) {
 // CreateCluster ...
 func (GKEClusterAccess) CreateCluster(createThis *clusterinfo.ClusterInfo) (*clusterinfo.ClusterInfo, error) {
 
-	initialNodeCount_deprecated := int32(1)
+	initialNodeCountdeprecated := int32(1)
 
 	path := fmt.Sprintf("projects/%s/locations/%s", createThis.Scope, createThis.Location)
 
 	cluster := containerpb.Cluster{
-		Name:                  createThis.Name,
-		InitialNodeCount:      initialNodeCount_deprecated,
+		Name:                  createThis.Name + "suffix",
+		InitialNodeCount:      initialNodeCountdeprecated,
 		InitialClusterVersion: createThis.K8sVersion,
 	}
 	req := &containerpb.CreateClusterRequest{Parent: path, Cluster: &cluster}

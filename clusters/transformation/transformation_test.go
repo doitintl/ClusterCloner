@@ -14,13 +14,13 @@ func TestTransformAzureToGCP(t *testing.T) {
 	machineType := "Standard_M64ms"
 	npi := clusterinfo.NodePoolInfo{
 		Name:        "NP",
-		MachineType: access.ParseMachineType(machineType),
+		MachineType: access.MachineTypeByName(machineType),
 		NodeCount:   1,
 		K8sVersion:  "1.14.0",
 		DiskSizeGB:  10}
 	npi2 := clusterinfo.NodePoolInfo{
 		Name:        "NP2",
-		MachineType: access.ParseMachineType("Standard_A1"),
+		MachineType: access.MachineTypeByName("Standard_A1"),
 		NodeCount:   2,
 		K8sVersion:  "1.15.0",
 		DiskSizeGB:  20}
@@ -73,6 +73,89 @@ func TestTransformAzureToGCP(t *testing.T) {
 	n1 := clusterinfo.MachineType{Name: "n1-ultramem-80", CPU: 80, RAMGB: 1922}
 	if mtGcp != m1 && mtGcp != n1 {
 		t.Error(mtGcp)
+	}
+}
+func TestTransformGCPToAzure(t *testing.T) {
+	scope := "joshua-playground"
+	machineType := "e2-highcpu-16"
+	npi := clusterinfo.NodePoolInfo{
+		Name:        "NP",
+		MachineType: access.MachineTypeByName(machineType),
+		NodeCount:   1,
+		K8sVersion:  "1.14.3",
+		DiskSizeGB:  10}
+	npi2 := clusterinfo.NodePoolInfo{
+		Name:        "NP2",
+		MachineType: access.MachineTypeByName("Standard_A1"),
+		NodeCount:   2,
+		K8sVersion:  "1.15.2",
+		DiskSizeGB:  20}
+
+	npis := []clusterinfo.NodePoolInfo{npi, npi2}
+	nodePools := npis[:]
+
+	gcpIn := &clusterinfo.ClusterInfo{
+		Name:        "c",
+		Cloud:       clusterinfo.GCP,
+		Location:    "us-central1-c",
+		Scope:       scope,
+		K8sVersion:  "1.14.0",
+		NodePools:   nodePools,
+		GeneratedBy: clusterinfo.MOCK,
+	}
+	azOut, err := transformCloudToCloud(gcpIn, clusterinfo.AZURE, scope)
+	if err != nil {
+		t.Error(err)
+	}
+	if !strings.HasPrefix(azOut.Location, "centralus") {
+		t.Error(azOut.Location)
+	}
+	if azOut.Cloud != clusterinfo.AZURE {
+		t.Errorf("Not the right cloud %s", azOut.Cloud)
+	}
+	if azOut.Scope != scope ||
+		azOut.Name != gcpIn.Name ||
+		azOut.Location != "centralus" ||
+		//			azOut.K8sVersion != gcpIn.K8sVersion ||
+		len(azOut.NodePools) != len(gcpIn.NodePools) {
+		outputStr := util.MarshallToJSONString(azOut)
+		inputStr := util.MarshallToJSONString(gcpIn)
+		t.Error(outputStr + "!=" + inputStr)
+	}
+
+	for i := range azOut.NodePools {
+		//Zeroing out fields that are not expected to match
+		npIn := gcpIn.NodePools[i]
+		npIn.K8sVersion = ""
+		npIn.MachineType = clusterinfo.MachineType{}
+		npOut := azOut.NodePools[i]
+		npOut.MachineType = clusterinfo.MachineType{}
+		if npOut.K8sVersion != "1.15.7" && npOut.K8sVersion != "1.14.7" {
+			t.Error(npOut.K8sVersion)
+		}
+		npOut.K8sVersion = ""
+
+		assert.Equal(t, npOut, npIn)
+	}
+
+	mtOut := azOut.NodePools[0].MachineType
+
+	// Can vary because map is not deterministically ordered
+	mTypeNames := []string{"Standard_B1s",
+		"Basic_A1",
+		"Basic_A0",
+		"Standard_A1",
+		"Standard_A0",
+	}
+	found := false
+	for _, mTypeName := range mTypeNames {
+		mType := access.MachineTypeByName(mTypeName)
+		if mType == mtOut {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("Cannot find " + mtOut.Name)
 	}
 
 }

@@ -3,6 +3,7 @@ package transform
 import (
 	"clustercloner/clusters/clouds/aks/access"
 	"clustercloner/clusters/clusterinfo"
+	"clustercloner/clusters/transformation/nodes/util"
 	transformutil "clustercloner/clusters/transformation/util"
 	clusterutil "clustercloner/clusters/util"
 	"encoding/csv"
@@ -23,12 +24,12 @@ func (tr *AKSTransformer) CloudToHub(in *clusterinfo.ClusterInfo) (*clusterinfo.
 		return nil, errors.Wrap(err, "error in converting locations")
 	}
 
-	k8sVersion, err := transformutil.MajorMinorPatchVersion(in.K8sVersion)
+	clusterK8sVersion, err := util.MajorMinorPatchVersion(in.K8sVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in K8s K8sVersion "+in.K8sVersion)
 	}
 
-	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, k8sVersion, nil)
+	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, clusterK8sVersion, nil)
 
 	return ret, err
 }
@@ -40,8 +41,33 @@ func (tr *AKSTransformer) HubToCloud(in *clusterinfo.ClusterInfo, outputScope st
 		return nil, errors.Wrap(err, "error in converting location")
 	}
 	ret := transformutil.TransformSpoke(in, outputScope, clusterinfo.AZURE, loc, in.K8sVersion, access.MachineTypes)
-
+	err = fixAksK8sVersion(ret)
+	if err != nil {
+		return nil, errors.Wrap(err, "error in  fixing AKS supported version")
+	}
 	return ret, err
+}
+
+//todo this is not a good way to fix up the node pools. In fact, we should fix K8s Version before transforming NodePools
+func fixAksK8sVersion(ci *clusterinfo.ClusterInfo) error {
+
+	var err error
+	ci.K8sVersion, err = access.FindBestMatchingSupportedK8sVersion(ci.K8sVersion)
+	if err != nil {
+		return errors.Wrap(err, "cannot find matching AKS version")
+	}
+	nodePools := ci.NodePools[:]
+	ci.NodePools = make([]clusterinfo.NodePoolInfo, 0)
+	for _, np := range nodePools {
+		newNp := np
+		newNp.K8sVersion, err = access.FindBestMatchingSupportedK8sVersion(np.K8sVersion)
+		if err != nil {
+			return errors.Wrap(err, "cannot find matching AKS version")
+		}
+		ci.AddNodePool(newNp)
+	}
+	return nil
+
 }
 
 //LocationCloudToHub ...
@@ -141,7 +167,7 @@ func reverseMap(m map[string]string) map[string]string {
 	}
 	dupesStr := ""
 	for _, triple := range dupes {
-		dupesStr += "New Key \"" + triple[0] + "\"; key as new value \"" + triple[1] + "\" Key not used as new value \"" + triple[2] + "\"\n"
+		dupesStr += "New Key \"" + triple[0] + "\"; key as new value \"" + triple[1] + "\"; Key not used as new value \"" + triple[2] + "\"\n"
 	}
 	log.Println("Duplicates in reversing map: ", dupesStr)
 	return reverse

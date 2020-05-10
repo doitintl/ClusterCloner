@@ -44,18 +44,21 @@ func TestTransformHubToAzure(t *testing.T) {
 		Cloud:       clusterinfo.HUB,
 		Location:    "us-central1",
 		Scope:       "",
-		K8sVersion:  "1.14.0",
+		K8sVersion:  "1.14.6",
 		GeneratedBy: clusterinfo.MOCK,
 	}
 	tr := AKSTransformer{}
-	std, err := tr.HubToCloud(ci, "")
+	az, err := tr.HubToCloud(ci, "")
 	if err != nil {
 		t.Error(err)
 	}
-	if std.Location != "centralus" {
-		t.Error(std.Location)
+	if az.Location != "centralus" {
+		t.Error(az.Location)
 	}
-	if std.Cloud != clusterinfo.AZURE {
-		t.Errorf("Not the expected cloud %s", std.Cloud)
+	if az.Cloud != clusterinfo.AZURE {
+		t.Errorf("Not the expected cloud %s", az.Cloud)
+	}
+	if az.K8sVersion != "1.14.7" {
+		t.Errorf("Bad K8s Version for Azure based on input: %s", az.K8sVersion)
 	}
 }

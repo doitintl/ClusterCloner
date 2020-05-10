@@ -3,6 +3,7 @@ package transform
 import (
 	"clustercloner/clusters/clouds/gke/access"
 	"clustercloner/clusters/clusterinfo"
+	util2 "clustercloner/clusters/transformation/nodes/util"
 	transformutil "clustercloner/clusters/transformation/util"
 	"clustercloner/clusters/util"
 	"encoding/csv"
@@ -33,12 +34,12 @@ func (tr *GKETransformer) CloudToHub(in *clusterinfo.ClusterInfo) (*clusterinfo.
 	if err != nil {
 		return nil, errors.Wrap(err, "error in converting locations")
 	}
-	k8sVersion, err := transformutil.MajorMinorPatchVersion(in.K8sVersion)
+	clusterK8sVersion, err := util2.MajorMinorPatchVersion(in.K8sVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in K8s K8sVersion "+in.K8sVersion)
 	}
 
-	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, k8sVersion, nil)
+	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, clusterK8sVersion, nil)
 
 	return ret, err
 }
