@@ -1,8 +1,8 @@
 package access
 
 import (
-	container "cloud.google.com/go/container/apiv1"
-	"clustercloner/clusters/clusterinfo"
+	containerv1 "cloud.google.com/go/container/apiv1"
+	"clustercloner/clusters"
 	clusterutil "clustercloner/clusters/util"
 	"context"
 	"encoding/csv"
@@ -20,12 +20,12 @@ type GKEClusterAccess struct {
 }
 
 // ListClusters lists clusters; location param can be region or zone
-func (GKEClusterAccess) ListClusters(project, location string) (ret []*clusterinfo.ClusterInfo, err error) {
+func (GKEClusterAccess) ListClusters(project, location string) (ret []*clusters.ClusterInfo, err error) {
 
-	ret = make([]*clusterinfo.ClusterInfo, 0)
+	ret = make([]*clusters.ClusterInfo, 0)
 
 	bkgdCtx := context.Background()
-	client, err := container.NewClusterManagerClient(bkgdCtx)
+	client, err := containerv1.NewClusterManagerClient(bkgdCtx)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.Wrap(err, "cannot make client")
@@ -36,29 +36,29 @@ func (GKEClusterAccess) ListClusters(project, location string) (ret []*clusterin
 	resp, err := client.ListClusters(bkgdCtx, req)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.Wrap(err, "cannot list ")
+		return nil, errors.Wrap(err, "cannot list")
 	}
 
 	for _, clus := range resp.GetClusters() {
-		var nodePools = clus.GetNodePools()
-		//var nodeCount int32 = 0
-		foundCluster := &clusterinfo.ClusterInfo{Scope: project,
+
+		foundCluster := &clusters.ClusterInfo{Scope: project,
 			Location:    clus.Location,
 			Name:        clus.Name,
 			K8sVersion:  clus.CurrentMasterVersion,
-			GeneratedBy: clusterinfo.READ,
-			Cloud:       clusterinfo.GCP,
+			GeneratedBy: clusters.READ,
+			Cloud:       clusters.GCP,
 		}
-		for _, np := range nodePools {
 
-			nodePool := clusterinfo.NodePoolInfo{
+		var nodePools = clus.GetNodePools()
+		for _, np := range nodePools {
+			nodePool := clusters.NodePoolInfo{
 				Name:        np.GetName(),
 				NodeCount:   np.GetInitialNodeCount(),
 				MachineType: MachineTypeByName(np.GetConfig().MachineType),
 				K8sVersion:  np.GetVersion(),
 				DiskSizeGB:  np.GetConfig().GetDiskSizeGb(),
 			}
-			zero := clusterinfo.MachineType{}
+			zero := clusters.MachineType{}
 			if nodePool.MachineType == zero {
 				panic("cannot read " + np.GetConfig().MachineType)
 			}
@@ -71,21 +71,59 @@ func (GKEClusterAccess) ListClusters(project, location string) (ret []*clusterin
 
 }
 
-// MachineTypeByName ...
-func MachineTypeByName(machineType string) clusterinfo.MachineType {
-	ret := MachineTypes[machineType]
-	return ret //return zero object if not found
+// CreateCluster ...
+func (GKEClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+
+	path := fmt.Sprintf("projects/%s/locations/%s", createThis.Scope, createThis.Location)
+
+	var nodePools []*containerpb.NodePool = make([]*containerpb.NodePool, len(createThis.NodePools))
+	for i, npi := range createThis.NodePools {
+		var nodeConfig containerpb.NodeConfig = containerpb.NodeConfig{
+			MachineType: npi.MachineType.Name,
+			DiskSizeGb:  npi.DiskSizeGB,
+		}
+		np := containerpb.NodePool{
+			Name:             npi.Name,
+			Config:           &nodeConfig,
+			InitialNodeCount: npi.NodeCount,
+			Version:          npi.K8sVersion,
+		}
+		nodePools[i] = &np
+	}
+	cluster := containerpb.Cluster{
+		Name:                  createThis.Name + "copy2",
+		InitialClusterVersion: createThis.K8sVersion,
+		NodePools:             nodePools,
+	}
+	req := &containerpb.CreateClusterRequest{Parent: path, Cluster: &cluster}
+
+	backgroundCtx := context.Background()
+	clustMgrClient, _ := containerv1.NewClusterManagerClient(backgroundCtx)
+	resp, err := clustMgrClient.CreateCluster(backgroundCtx, req)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.Wrap(err, "cannot create")
+	}
+	//todo check status in a loops so that this is synchronous
+	createThis.GeneratedBy = clusters.CREATED
+	log.Println(resp)
+	return createThis, err
+}
+
+// MachineTypeByName ... //todo inline this and other MacineTypeByName
+func MachineTypeByName(machineType string) clusters.MachineType {
+	return MachineTypes[machineType] //return zero object if not found
 }
 
 // MachineTypes ...
-var MachineTypes map[string]clusterinfo.MachineType
+var MachineTypes map[string]clusters.MachineType
 
 func init() {
 	MachineTypes, _ = loadMachineTypes()
 
 }
-func loadMachineTypes() (map[string]clusterinfo.MachineType, error) {
-	ret := make(map[string]clusterinfo.MachineType)
+func loadMachineTypes() (map[string]clusters.MachineType, error) {
+	ret := make(map[string]clusters.MachineType)
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
@@ -133,33 +171,7 @@ func loadMachineTypes() (map[string]clusterinfo.MachineType, error) {
 		}
 		ramInt := int32(ramFlt)
 
-		ret[name] = clusterinfo.MachineType{Name: name, CPU: cpuInt, RAMGB: ramInt}
+		ret[name] = clusters.MachineType{Name: name, CPU: cpuInt, RAMGB: ramInt}
 	}
 	return ret, nil
-}
-
-// CreateCluster ...
-func (GKEClusterAccess) CreateCluster(createThis *clusterinfo.ClusterInfo) (*clusterinfo.ClusterInfo, error) {
-
-	initialNodeCountdeprecated := int32(1)
-
-	path := fmt.Sprintf("projects/%s/locations/%s", createThis.Scope, createThis.Location)
-
-	cluster := containerpb.Cluster{
-		Name:                  createThis.Name + "suffix",
-		InitialNodeCount:      initialNodeCountdeprecated,
-		InitialClusterVersion: createThis.K8sVersion,
-	}
-	req := &containerpb.CreateClusterRequest{Parent: path, Cluster: &cluster}
-	backgroundCtx := context.Background()
-	clustMgrClient, _ := container.NewClusterManagerClient(backgroundCtx)
-	resp, err := clustMgrClient.CreateCluster(backgroundCtx, req)
-	if err != nil {
-		log.Print(err)
-		return nil, err
-	}
-	var created = createThis
-	created.GeneratedBy = clusterinfo.CREATED
-	log.Print(resp)
-	return created, err
 }

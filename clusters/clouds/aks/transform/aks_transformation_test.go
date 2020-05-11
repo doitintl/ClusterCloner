@@ -1,18 +1,18 @@
 package transform
 
 import (
-	"clustercloner/clusters/clusterinfo"
+	"clustercloner/clusters"
 	"testing"
 )
 
 func TestTransformAzureToHub(t *testing.T) {
-	ci := &clusterinfo.ClusterInfo{
+	ci := &clusters.ClusterInfo{
 		Name:        "c",
-		Cloud:       clusterinfo.AZURE,
+		Cloud:       clusters.AZURE,
 		Location:    "westus2",
 		Scope:       "joshua-playground",
 		K8sVersion:  "1.14.0",
-		GeneratedBy: clusterinfo.MOCK}
+		GeneratedBy: clusters.MOCK}
 	tr := AKSTransformer{}
 	std, err := tr.CloudToHub(ci)
 	if err != nil {
@@ -21,16 +21,16 @@ func TestTransformAzureToHub(t *testing.T) {
 	if std.Location != "us-west1" {
 		t.Error(std.Location)
 	}
-	if std.Cloud != clusterinfo.HUB {
+	if std.Cloud != clusters.HUB {
 		t.Errorf("not the standard cloud %s", std.Cloud)
 	}
 }
 func TestTransformAzureToHubBadLoc(t *testing.T) {
-	ci := &clusterinfo.ClusterInfo{Name: "c",
-		Cloud: clusterinfo.AZURE, Location: "westus1",
+	ci := &clusters.ClusterInfo{Name: "c",
+		Cloud: clusters.AZURE, Location: "westus1",
 		Scope:       "joshua-playground",
 		K8sVersion:  "1.15.0",
-		GeneratedBy: clusterinfo.MOCK}
+		GeneratedBy: clusters.MOCK}
 	tr := AKSTransformer{}
 	_, err := tr.CloudToHub(ci)
 	if err == nil {
@@ -39,13 +39,13 @@ func TestTransformAzureToHubBadLoc(t *testing.T) {
 }
 
 func TestTransformHubToAzure(t *testing.T) {
-	ci := &clusterinfo.ClusterInfo{
+	ci := &clusters.ClusterInfo{
 		Name:        "c",
-		Cloud:       clusterinfo.HUB,
+		Cloud:       clusters.HUB,
 		Location:    "us-central1",
 		Scope:       "",
 		K8sVersion:  "1.14.6",
-		GeneratedBy: clusterinfo.MOCK,
+		GeneratedBy: clusters.MOCK,
 	}
 	tr := AKSTransformer{}
 	az, err := tr.HubToCloud(ci, "")
@@ -55,7 +55,7 @@ func TestTransformHubToAzure(t *testing.T) {
 	if az.Location != "centralus" {
 		t.Error(az.Location)
 	}
-	if az.Cloud != clusterinfo.AZURE {
+	if az.Cloud != clusters.AZURE {
 		t.Errorf("Not the expected cloud %s", az.Cloud)
 	}
 	if az.K8sVersion != "1.14.7" {

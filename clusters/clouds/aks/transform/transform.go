@@ -1,9 +1,8 @@
 package transform
 
 import (
+	"clustercloner/clusters"
 	"clustercloner/clusters/clouds/aks/access"
-	"clustercloner/clusters/clusterinfo"
-	"clustercloner/clusters/transformation/nodes/util"
 	transformutil "clustercloner/clusters/transformation/util"
 	clusterutil "clustercloner/clusters/util"
 	"encoding/csv"
@@ -18,29 +17,29 @@ import (
 type AKSTransformer struct{}
 
 // CloudToHub ...
-func (tr *AKSTransformer) CloudToHub(in *clusterinfo.ClusterInfo) (*clusterinfo.ClusterInfo, error) {
+func (tr *AKSTransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
 	loc, err := tr.LocationCloudToHub(in.Location)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in converting locations")
 	}
 
-	clusterK8sVersion, err := util.MajorMinorPatchVersion(in.K8sVersion)
+	clusterK8sVersion, err := clusterutil.MajorMinorPatchVersion(in.K8sVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in K8s K8sVersion "+in.K8sVersion)
 	}
 
-	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, clusterK8sVersion, nil)
+	ret := transformutil.TransformSpoke(in, "", clusters.HUB, loc, clusterK8sVersion, nil)
 
 	return ret, err
 }
 
 // HubToCloud ...
-func (tr *AKSTransformer) HubToCloud(in *clusterinfo.ClusterInfo, outputScope string) (*clusterinfo.ClusterInfo, error) {
+func (tr *AKSTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope string) (*clusters.ClusterInfo, error) {
 	loc, err := tr.LocationHubToCloud(in.Location)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in converting location")
 	}
-	ret := transformutil.TransformSpoke(in, outputScope, clusterinfo.AZURE, loc, in.K8sVersion, access.MachineTypes)
+	ret := transformutil.TransformSpoke(in, outputScope, clusters.AZURE, loc, in.K8sVersion, access.MachineTypes)
 	err = fixAksK8sVersion(ret)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in  fixing AKS supported version")
@@ -49,7 +48,7 @@ func (tr *AKSTransformer) HubToCloud(in *clusterinfo.ClusterInfo, outputScope st
 }
 
 //todo this is not a good way to fix up the node pools. In fact, we should fix K8s Version before transforming NodePools
-func fixAksK8sVersion(ci *clusterinfo.ClusterInfo) error {
+func fixAksK8sVersion(ci *clusters.ClusterInfo) error {
 
 	var err error
 	ci.K8sVersion, err = access.FindBestMatchingSupportedK8sVersion(ci.K8sVersion)
@@ -57,7 +56,7 @@ func fixAksK8sVersion(ci *clusterinfo.ClusterInfo) error {
 		return errors.Wrap(err, "cannot find matching AKS version")
 	}
 	nodePools := ci.NodePools[:]
-	ci.NodePools = make([]clusterinfo.NodePoolInfo, 0)
+	ci.NodePools = make([]clusters.NodePoolInfo, 0)
 	for _, np := range nodePools {
 		newNp := np
 		newNp.K8sVersion, err = access.FindBestMatchingSupportedK8sVersion(np.K8sVersion)
@@ -115,7 +114,7 @@ func getAzureToHubLocations() (map[string]string, error) {
 			continue
 		}
 		if len(record) == 1 {
-			log.Print("Short record ", record)
+			log.Println("Short record ", record)
 		}
 		azRegion := record[3]
 		hubRegion := record[5]

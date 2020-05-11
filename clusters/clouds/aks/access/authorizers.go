@@ -1,7 +1,6 @@
-package iam
+package access
 
 import (
-	"clustercloner/clusters/clouds/aks/access/config"
 	"fmt"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -37,7 +36,7 @@ func GetResourceManagementAuthorizer() (autorest.Authorizer, error) {
 	var err error
 
 	a, err = getAuthorizerForResource(
-		grantType(), config.Environment().ResourceManagerEndpoint)
+		grantType(), Environment().ResourceManagerEndpoint)
 
 	if err == nil {
 		// cache
@@ -57,20 +56,20 @@ func getAuthorizerForResource(grantType OAuthGrantType, resource string) (autore
 
 	case OAuthGrantTypeServicePrincipal:
 		oauthConfig, err := adal.NewOAuthConfig(
-			config.Environment().ActiveDirectoryEndpoint, config.TenantID())
+			Environment().ActiveDirectoryEndpoint, TenantID())
 		if err != nil {
 			return nil, err
 		}
 
 		token, err := adal.NewServicePrincipalToken(
-			*oauthConfig, config.ClientID(), config.ClientSecret(), resource)
+			*oauthConfig, ClientID(), ClientSecret(), resource)
 		if err != nil {
 			return nil, err
 		}
 		a = autorest.NewBearerAuthorizer(token)
 
 	case OAuthGrantTypeDeviceFlow:
-		deviceconfig := auth.NewDeviceFlowConfig(config.ClientID(), config.TenantID())
+		deviceconfig := auth.NewDeviceFlowConfig(ClientID(), TenantID())
 		deviceconfig.Resource = resource
 		a, err = deviceconfig.Authorizer()
 		if err != nil {

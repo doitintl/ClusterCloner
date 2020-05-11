@@ -1,7 +1,7 @@
 package access
 
 import (
-	"clustercloner/clusters/clusterinfo"
+	"clustercloner/clusters"
 	"clustercloner/clusters/util"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
@@ -16,12 +16,12 @@ type EKSClusterAccess struct {
 }
 
 // CreateCluster ...
-func (ca EKSClusterAccess) CreateCluster(info clusterinfo.ClusterInfo) (clusterinfo.ClusterInfo, error) {
+func (ca EKSClusterAccess) CreateCluster(info clusters.ClusterInfo) (clusters.ClusterInfo, error) {
 	panic("implement me")
 }
 
 // DescribeCluster ...
-func (ca EKSClusterAccess) DescribeCluster(clusterName string, region string) (clusterinfo.ClusterInfo, error) {
+func (ca EKSClusterAccess) DescribeCluster(clusterName string, region string) (clusters.ClusterInfo, error) {
 
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
 	svc := eks.New(sess)
@@ -33,25 +33,25 @@ func (ca EKSClusterAccess) DescribeCluster(clusterName string, region string) (c
 	result, err := svc.DescribeCluster(input)
 	if err != nil {
 		printAwsErr(err)
-		return clusterinfo.ClusterInfo{}, err
+		return clusters.ClusterInfo{}, err
 	}
 	log.Println(util.MarshallToJSONString(result))
-	return clusterinfo.ClusterInfo{Scope: "", Location: region, Name: clusterName, GeneratedBy: clusterinfo.READ}, nil
+	return clusters.ClusterInfo{Scope: "", Location: region, Name: clusterName, GeneratedBy: clusters.READ}, nil
 }
 
 // ListClusters ...
-func (ca EKSClusterAccess) ListClusters(_ string, location string) ([]clusterinfo.ClusterInfo, error) {
+func (ca EKSClusterAccess) ListClusters(_ string, location string) ([]clusters.ClusterInfo, error) {
 	clusterNames, err := clusterNames(location)
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]clusterinfo.ClusterInfo, 0)
+	ret := make([]clusters.ClusterInfo, 0)
 
 	for _, s := range clusterNames {
-		log.Print(*s)
+		log.Println(*s)
 		var clusterInfo, err = ca.DescribeCluster(location, *s)
 		if err != nil {
-			log.Print("Error ", err)
+			log.Println("Error ", err)
 			return nil, err
 		}
 		ret = append(ret, clusterInfo)

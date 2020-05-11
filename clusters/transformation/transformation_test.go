@@ -1,8 +1,9 @@
 package transformation
 
 import (
-	"clustercloner/clusters/clouds/aks/access"
-	"clustercloner/clusters/clusterinfo"
+	"clustercloner/clusters"
+	accessaks "clustercloner/clusters/clouds/aks/access"
+	accessgke "clustercloner/clusters/clouds/gke/access"
 	"clustercloner/clusters/util"
 	"github.com/stretchr/testify/assert"
 	"strings"
@@ -12,39 +13,39 @@ import (
 func TestTransformAzureToGCP(t *testing.T) {
 	scope := "joshua-playground"
 	machineType := "Standard_M64ms"
-	npi := clusterinfo.NodePoolInfo{
+	npi := clusters.NodePoolInfo{
 		Name:        "NP",
-		MachineType: access.MachineTypeByName(machineType),
+		MachineType: accessaks.MachineTypeByName(machineType),
 		NodeCount:   1,
 		K8sVersion:  "1.14.0",
 		DiskSizeGB:  10}
-	npi2 := clusterinfo.NodePoolInfo{
+	npi2 := clusters.NodePoolInfo{
 		Name:        "NP2",
-		MachineType: access.MachineTypeByName("Standard_A1"),
+		MachineType: accessaks.MachineTypeByName("Standard_A1"),
 		NodeCount:   2,
 		K8sVersion:  "1.15.0",
 		DiskSizeGB:  20}
 
-	npis := []clusterinfo.NodePoolInfo{npi, npi2}
+	npis := []clusters.NodePoolInfo{npi, npi2}
 	nodePools := npis[:]
 
-	azure := &clusterinfo.ClusterInfo{
+	azure := &clusters.ClusterInfo{
 		Name:        "c",
-		Cloud:       clusterinfo.AZURE,
+		Cloud:       clusters.AZURE,
 		Location:    "westus2",
 		Scope:       scope,
 		K8sVersion:  "1.14.0",
 		NodePools:   nodePools,
-		GeneratedBy: clusterinfo.MOCK,
+		GeneratedBy: clusters.MOCK,
 	}
-	gcp, err := transformCloudToCloud(azure, clusterinfo.GCP, scope)
+	gcp, err := transformCloudToCloud(azure, clusters.GCP, scope)
 	if err != nil {
 		t.Error(err)
 	}
 	if !strings.HasPrefix(gcp.Location, "us-west1") {
 		t.Error(gcp.Location)
 	}
-	if gcp.Cloud != clusterinfo.GCP {
+	if gcp.Cloud != clusters.GCP {
 		t.Errorf("Not the right cloud %s", gcp.Cloud)
 	}
 	if gcp.Scope != scope ||
@@ -60,18 +61,17 @@ func TestTransformAzureToGCP(t *testing.T) {
 	for i := range gcp.NodePools {
 		azureNP := azure.NodePools[i]
 		//Machine types will not match, so comparing NodePools with zero Machine Types
-		azureNP.MachineType = clusterinfo.MachineType{}
+		azureNP.MachineType = clusters.MachineType{}
 		gcpNP := gcp.NodePools[i]
-		gcpNP.MachineType = clusterinfo.MachineType{}
+		gcpNP.MachineType = clusters.MachineType{}
 		assert.Equal(t, gcpNP, azureNP)
 	}
 
 	mtGcp := gcp.NodePools[0].MachineType
 
-	// Can vary because map is not determinstically ordered
-	machineA := clusterinfo.MachineType{Name: "m1-ultramem-80", CPU: 80, RAMGB: 1922}
-	machineB := clusterinfo.MachineType{Name: "n1-ultramem-80", CPU: 80, RAMGB: 1922}
-	if mtGcp != machineA && mtGcp != machineB {
+	// Can vary because map is not deterministically ordered
+	machineA := accessgke.MachineTypeByName("f1-micro")
+	if mtGcp != machineA {
 		t.Error(mtGcp)
 	}
 }
@@ -79,39 +79,39 @@ func TestTransformAzureToGCP(t *testing.T) {
 func TestTransformGCPToAzure(t *testing.T) {
 	scope := "joshua-playground"
 	machineType := "e2-highcpu-16"
-	npi := clusterinfo.NodePoolInfo{
+	npi := clusters.NodePoolInfo{
 		Name:        "NP",
-		MachineType: access.MachineTypeByName(machineType),
+		MachineType: accessaks.MachineTypeByName(machineType),
 		NodeCount:   1,
 		K8sVersion:  "1.14.3",
 		DiskSizeGB:  10}
-	npi2 := clusterinfo.NodePoolInfo{
+	npi2 := clusters.NodePoolInfo{
 		Name:        "NP2",
-		MachineType: access.MachineTypeByName("Standard_A1"),
+		MachineType: accessaks.MachineTypeByName("Standard_A1"),
 		NodeCount:   2,
 		K8sVersion:  "1.15.2",
 		DiskSizeGB:  20}
 
-	npis := []clusterinfo.NodePoolInfo{npi, npi2}
+	npis := []clusters.NodePoolInfo{npi, npi2}
 	nodePools := npis[:]
 
-	gcpIn := &clusterinfo.ClusterInfo{
+	gcpIn := &clusters.ClusterInfo{
 		Name:        "c",
-		Cloud:       clusterinfo.GCP,
+		Cloud:       clusters.GCP,
 		Location:    "us-central1-c",
 		Scope:       scope,
 		K8sVersion:  "1.14.0",
 		NodePools:   nodePools,
-		GeneratedBy: clusterinfo.MOCK,
+		GeneratedBy: clusters.MOCK,
 	}
-	azOut, err := transformCloudToCloud(gcpIn, clusterinfo.AZURE, scope)
+	azOut, err := transformCloudToCloud(gcpIn, clusters.AZURE, scope)
 	if err != nil {
 		t.Error(err)
 	}
 	if !strings.HasPrefix(azOut.Location, "centralus") {
 		t.Error(azOut.Location)
 	}
-	if azOut.Cloud != clusterinfo.AZURE {
+	if azOut.Cloud != clusters.AZURE {
 		t.Errorf("Not the right cloud %s", azOut.Cloud)
 	}
 	if azOut.Scope != scope ||
@@ -128,9 +128,9 @@ func TestTransformGCPToAzure(t *testing.T) {
 		//Zeroing out fields that are not expected to match
 		npIn := gcpIn.NodePools[i]
 		npIn.K8sVersion = ""
-		npIn.MachineType = clusterinfo.MachineType{}
+		npIn.MachineType = clusters.MachineType{}
 		npOut := azOut.NodePools[i]
-		npOut.MachineType = clusterinfo.MachineType{}
+		npOut.MachineType = clusters.MachineType{}
 		if npOut.K8sVersion != "1.15.7" && npOut.K8sVersion != "1.14.7" {
 			t.Error(npOut.K8sVersion)
 		}
@@ -142,16 +142,13 @@ func TestTransformGCPToAzure(t *testing.T) {
 	mtOut := azOut.NodePools[0].MachineType
 
 	// Can vary because map is not deterministically ordered
-	mTypeNames := []string{"Standard_B1s",
-		"Basic_A1",
-		"Basic_A0",
-		"Standard_A1",
-		"Standard_A0",
-		"Standard_B1ls",
+	mTypeNames := []string{
+
+		"Standard_DS1_v2",
 	}
 	found := false
 	for _, mTypeName := range mTypeNames {
-		mType := access.MachineTypeByName(mTypeName)
+		mType := accessaks.MachineTypeByName(mTypeName)
 		if mType == mtOut {
 			found = true
 		}

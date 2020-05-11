@@ -36,7 +36,7 @@ func TestSupportedK8sVersion(t *testing.T) {
 
 func TestSupportedK8sVersionError(t *testing.T) {
 
-	_, err := FindBestMatchingSupportedK8sVersion("1.14.1000")
+	_, err := FindBestMatchingSupportedK8sVersion("1.214.10")
 	if err == nil {
 		t.Error(err)
 	}

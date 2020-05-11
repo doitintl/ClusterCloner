@@ -1,11 +1,10 @@
 package transform
 
 import (
+	"clustercloner/clusters"
 	"clustercloner/clusters/clouds/gke/access"
-	"clustercloner/clusters/clusterinfo"
-	util2 "clustercloner/clusters/transformation/nodes/util"
 	transformutil "clustercloner/clusters/transformation/util"
-	"clustercloner/clusters/util"
+	baseutil "clustercloner/clusters/util"
 	"encoding/csv"
 	"github.com/pkg/errors"
 
@@ -29,28 +28,28 @@ type GKETransformer struct {
 }
 
 // CloudToHub ...
-func (tr *GKETransformer) CloudToHub(in *clusterinfo.ClusterInfo) (*clusterinfo.ClusterInfo, error) {
+func (tr *GKETransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
 	loc, err := tr.LocationCloudToHub(in.Location)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in converting locations")
 	}
-	clusterK8sVersion, err := util2.MajorMinorPatchVersion(in.K8sVersion)
+	clusterK8sVersion, err := baseutil.MajorMinorPatchVersion(in.K8sVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in K8s K8sVersion "+in.K8sVersion)
 	}
 
-	ret := transformutil.TransformSpoke(in, "", clusterinfo.HUB, loc, clusterK8sVersion, nil)
+	ret := transformutil.TransformSpoke(in, "", clusters.HUB, loc, clusterK8sVersion, nil)
 
 	return ret, err
 }
 
 // HubToCloud ...
-func (tr *GKETransformer) HubToCloud(in *clusterinfo.ClusterInfo, outputScope string) (*clusterinfo.ClusterInfo, error) {
+func (tr *GKETransformer) HubToCloud(in *clusters.ClusterInfo, outputScope string) (*clusters.ClusterInfo, error) {
 	loc, err := tr.LocationHubToCloud(in.Location)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in converting location")
 	}
-	ret := transformutil.TransformSpoke(in, outputScope, clusterinfo.GCP, loc, in.K8sVersion, access.MachineTypes)
+	ret := transformutil.TransformSpoke(in, outputScope, clusters.GCP, loc, in.K8sVersion, access.MachineTypes)
 
 	return ret, err
 }
@@ -73,7 +72,7 @@ func (tr *GKETransformer) LocationCloudToHub(zone string) (string, error) {
 		endRegion = secondHyphenIdx
 	}
 	region := string(runes[0:endRegion])
-	if !util.ContainsStr(locs, region) {
+	if !baseutil.ContainsStr(locs, region) {
 		msg := fmt.Sprintf("Zone %s is not in a legal region for GCP", zone)
 		log.Println(msg)
 		return "", errors.New(msg)
@@ -122,7 +121,7 @@ func getGcpLocations() ([]string, error) {
 	}
 	fmt.Println("PWD", dir)
 	ret := make([]string, 20, 20)
-	fn := util.RootPath() + "/locations/gcp_locations.csv"
+	fn := baseutil.RootPath() + "/locations/gcp_locations.csv"
 	csvfile, err := os.Open(fn)
 	if err != nil {
 		wd, _ := os.Getwd()

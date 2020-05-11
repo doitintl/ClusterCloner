@@ -1,7 +1,7 @@
 package access
 
 import (
-	"clustercloner/clusters/clusterinfo"
+	"clustercloner/clusters"
 	"testing"
 )
 
@@ -35,7 +35,7 @@ func TestParseMachineType2(t *testing.T) {
 func TestParseMissingMachineType2(t *testing.T) {
 	name := "xx-xx-40"
 	mt := MachineTypeByName(name)
-	zero := clusterinfo.MachineType{}
+	zero := clusters.MachineType{}
 	if mt != zero {
 		t.Error(mt.Name)
 	}

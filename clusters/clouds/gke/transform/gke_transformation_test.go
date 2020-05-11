@@ -1,8 +1,8 @@
 package transform
 
 import (
+	"clustercloner/clusters"
 	"clustercloner/clusters/clouds/gke/access"
-	"clustercloner/clusters/clusterinfo"
 	"clustercloner/clusters/util"
 	"strings"
 	"testing"
@@ -11,7 +11,7 @@ import (
 func TestTransformGcpToHubAndBack(t *testing.T) {
 	scope := "joshua-playground"
 	mt := access.MachineTypeByName("e2-highcpu-8")
-	var npi1 = clusterinfo.NodePoolInfo{
+	var npi1 = clusters.NodePoolInfo{
 		Name:        "NPName",
 		NodeCount:   2,
 		K8sVersion:  "1.15.2-gke27",
@@ -20,14 +20,14 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	}
 	npi2 := npi1 //copy
 	npi2.Name = "yyy"
-	nodePools := [2]clusterinfo.NodePoolInfo{npi1, npi2}
-	input := &clusterinfo.ClusterInfo{
+	nodePools := [2]clusters.NodePoolInfo{npi1, npi2}
+	input := &clusters.ClusterInfo{
 		Name:        "c",
-		Cloud:       clusterinfo.GCP,
+		Cloud:       clusters.GCP,
 		Location:    "us-east1-a",
 		K8sVersion:  "1.14.1-gke27",
 		Scope:       scope,
-		GeneratedBy: clusterinfo.MOCK,
+		GeneratedBy: clusters.MOCK,
 		NodePools:   nodePools[:],
 	}
 	tr := GKETransformer{}
@@ -38,7 +38,7 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	if !strings.HasPrefix(input.Location, hub.Location) {
 		t.Error(hub.Location)
 	}
-	if hub.Cloud != clusterinfo.HUB {
+	if hub.Cloud != clusters.HUB {
 		t.Errorf("Not the standard cloud %s", hub.Cloud)
 	}
 
@@ -58,12 +58,12 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	}
 }
 func TestTransformGcpToHubBadLoc(t *testing.T) {
-	ci := &clusterinfo.ClusterInfo{Name: "c",
-		Cloud:       clusterinfo.GCP,
+	ci := &clusters.ClusterInfo{Name: "c",
+		Cloud:       clusters.GCP,
 		Location:    "westus2",
 		K8sVersion:  "1.14.1-gke-27",
 		Scope:       "joshua-playground",
-		GeneratedBy: clusterinfo.MOCK,
+		GeneratedBy: clusters.MOCK,
 	}
 	tr := GKETransformer{}
 	_, err := tr.CloudToHub(ci)

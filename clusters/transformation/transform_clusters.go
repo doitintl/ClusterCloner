@@ -1,13 +1,12 @@
 package transformation
 
 import (
+	"clustercloner/clusters"
 	accessaks "clustercloner/clusters/clouds/aks/access"
 	transformaks "clustercloner/clusters/clouds/aks/transform"
 	//accesseks "clustercloner/clusters/clouds/eks/access"
 	accessgke "clustercloner/clusters/clouds/gke/access"
 	transformgke "clustercloner/clusters/clouds/gke/transform"
-	"clustercloner/clusters/clusteraccess"
-	"clustercloner/clusters/clusterinfo"
 	"clustercloner/clusters/util"
 	"fmt"
 	"github.com/pkg/errors"
@@ -18,9 +17,9 @@ import (
 
 // Transformer ...
 type Transformer interface {
-	CloudToHub(in *clusterinfo.ClusterInfo) (*clusterinfo.ClusterInfo, error)
+	CloudToHub(in *clusters.ClusterInfo) (*clusters.ClusterInfo, error)
 	//	HubToCloud///
-	HubToCloud(in *clusterinfo.ClusterInfo, outputScope string) (*clusterinfo.ClusterInfo, error)
+	HubToCloud(in *clusters.ClusterInfo, outputScope string) (*clusters.ClusterInfo, error)
 	// LocationHubToCloud ...
 	LocationHubToCloud(loc string) (string, error)
 	// LocationCloudToHub ...
@@ -28,7 +27,7 @@ type Transformer interface {
 }
 
 // Clone ...
-func Clone(cliCtx *cli.Context) ([]*clusterinfo.ClusterInfo, error) {
+func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 	inputCloud := cliCtx.String("inputcloud")
 	outputCloud := cliCtx.String("outputcloud")
 	inputLocation := cliCtx.String("inputlocation")
@@ -47,15 +46,15 @@ func Clone(cliCtx *cli.Context) ([]*clusterinfo.ClusterInfo, error) {
 
 }
 
-func clone(inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, create bool) ([]*clusterinfo.ClusterInfo, error) {
-	var clusterAccessor clusteraccess.ClusterAccess
+func clone(inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, create bool) ([]*clusters.ClusterInfo, error) {
+	var clusterAccessor clusters.ClusterAccess
 	switch inputCloud {
-	case clusterinfo.GCP:
+	case clusters.GCP:
 		if inputScope == "" {
 			return nil, errors.New("Must provide inputScope (project) for GCP")
 		}
 		clusterAccessor = accessgke.GKEClusterAccess{}
-	case clusterinfo.AZURE:
+	case clusters.AZURE:
 		if inputScope == "" {
 			return nil, errors.New("Must provide inputScope (Resource Group) for Azure")
 		}
@@ -67,7 +66,7 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 	if err != nil {
 		return nil, err
 	}
-	transformationOutput := make([]*clusterinfo.ClusterInfo, 0)
+	transformationOutput := make([]*clusters.ClusterInfo, 0)
 	for _, inputClusterInfo := range inputClusterInfos {
 		outputClusterInfo, err := transformCloudToCloud(inputClusterInfo, outputCloud, outputScope)
 		transformationOutput = append(transformationOutput, outputClusterInfo)
@@ -79,7 +78,7 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 	if create {
 		createdClusters, createdIndexes, _ := createClusters(transformationOutput)
 		//replaced each ClusterInfo that was created; left the ones that were not
-		var transformedClustersCreatedOrNot = make([]*clusterinfo.ClusterInfo, len(transformationOutput))
+		var transformedClustersCreatedOrNot = make([]*clusters.ClusterInfo, len(transformationOutput))
 		if len(createdClusters) != len(transformationOutput) {
 			panic(fmt.Sprintf("%d!=%d", len(createdClusters), len(transformationOutput)))
 		}
@@ -98,9 +97,9 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 }
 
 // 'created' return param may be partly populated as some clusters have been successfully populated and some have not
-func createClusters( /*immutable*/ createThese []*clusterinfo.ClusterInfo) (createdClusters []*clusterinfo.ClusterInfo, createdIndexes []int, err error) {
+func createClusters( /*immutable*/ createThese []*clusters.ClusterInfo) (createdClusters []*clusters.ClusterInfo, createdIndexes []int, err error) {
 	createdIndexes = make([]int, 0)
-	createdClusters = make([]*clusterinfo.ClusterInfo, len(createThese))
+	createdClusters = make([]*clusters.ClusterInfo, len(createThese))
 	log.Println("Creating", len(createThese), "target clusters")
 	for idx, createThis := range createThese {
 		created, err := CreateCluster(createThis)
@@ -115,14 +114,14 @@ func createClusters( /*immutable*/ createThese []*clusterinfo.ClusterInfo) (crea
 }
 
 // CreateCluster ...
-func CreateCluster(createThis *clusterinfo.ClusterInfo) (createdClusterInfo *clusterinfo.ClusterInfo, err error) {
-	var ca clusteraccess.ClusterAccess
+func CreateCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *clusters.ClusterInfo, err error) {
+	var ca clusters.ClusterAccess
 	switch createThis.Cloud {
-	case clusterinfo.AZURE:
+	case clusters.AZURE:
 		ca = accessaks.AKSClusterAccess{}
-	case clusterinfo.AWS:
+	case clusters.AWS:
 		panic("AWS not implemented")
-	case clusterinfo.GCP:
+	case clusters.GCP:
 		ca = accessgke.GKEClusterAccess{}
 	default:
 		return nil, errors.New("Unsupported Cloud for creating a cluster: " + createThis.Cloud)
@@ -135,7 +134,7 @@ func CreateCluster(createThis *clusterinfo.ClusterInfo) (createdClusterInfo *clu
 	return created, err
 }
 
-func transformCloudToCloud(clusterInfo *clusterinfo.ClusterInfo, toCloud string, outputScope string) (c *clusterinfo.ClusterInfo, err error) {
+func transformCloudToCloud(clusterInfo *clusters.ClusterInfo, toCloud string, outputScope string) (c *clusters.ClusterInfo, err error) {
 	if clusterInfo.Cloud == "" {
 		return c, errors.New("No cloud name found in input cluster")
 	}
@@ -151,22 +150,22 @@ func transformCloudToCloud(clusterInfo *clusterinfo.ClusterInfo, toCloud string,
 		// Maybe self-to-self transformation shoud not go thru hub format.
 		target.Name = target.Name + "-copy"
 	}
-	target.GeneratedBy = clusterinfo.TRANSFORMATION
+	target.GeneratedBy = clusters.TRANSFORMATION
 	return target, nil
 }
-func toHubFormat(input *clusterinfo.ClusterInfo) (c *clusterinfo.ClusterInfo, err error) {
+func toHubFormat(input *clusters.ClusterInfo) (c *clusters.ClusterInfo, err error) {
 	err = nil
-	var ret *clusterinfo.ClusterInfo
+	var ret *clusters.ClusterInfo
 	var transformer Transformer
 	switch cloud := input.Cloud; cloud {
-	case clusterinfo.GCP:
+	case clusters.GCP:
 		transformer = &transformgke.GKETransformer{}
-	case clusterinfo.AZURE:
+	case clusters.AZURE:
 		transformer = &transformaks.AKSTransformer{}
-	case clusterinfo.AWS:
+	case clusters.AWS:
 		return c, errors.New(fmt.Sprintf("Unsupported %s", cloud))
-	case clusterinfo.HUB:
-		log.Print("From CloudToHub , no changes")
+	case clusters.HUB:
+		log.Println("From CloudToHub , no changes")
 		ret = input
 		return ret, nil
 	default:
@@ -175,22 +174,22 @@ func toHubFormat(input *clusterinfo.ClusterInfo) (c *clusterinfo.ClusterInfo, er
 	ret, err = transformer.CloudToHub(input)
 	return ret, err
 }
-func fromHubFormat(hub *clusterinfo.ClusterInfo, toCloud string, outputScope string) (c *clusterinfo.ClusterInfo, err error) {
-	if hub.Cloud != clusterinfo.HUB {
+func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string) (c *clusters.ClusterInfo, err error) {
+	if hub.Cloud != clusters.HUB {
 		return nil, errors.New(fmt.Sprintf("Wrong Cloud %s", hub.Cloud))
 	}
 	var transformer Transformer
 	err = nil
-	var ret *clusterinfo.ClusterInfo
+	var ret *clusters.ClusterInfo
 	switch toCloud { //  We do not expect more than  these 3 clouds so not splitting out dynamically loaded adapters
-	case clusterinfo.GCP:
+	case clusters.GCP:
 		transformer = &transformgke.GKETransformer{}
-	case clusterinfo.AZURE:
+	case clusters.AZURE:
 		transformer = &transformaks.AKSTransformer{}
-	case clusterinfo.AWS:
+	case clusters.AWS:
 		return c, errors.New(fmt.Sprintf("Unsupported %s", toCloud))
-	case clusterinfo.HUB:
-		log.Print("to Hub , no changes")
+	case clusters.HUB:
+		log.Println("to Hub , no changes")
 		ret = hub //todo implement IdentityTransformer for this, and remove duplication from toHubFormat
 		return ret, nil
 	default:

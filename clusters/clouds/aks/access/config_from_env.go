@@ -1,8 +1,10 @@
-package config
+package access
 
 import (
-	"errors"
+	"clustercloner/clusters/util"
 	"fmt"
+	"github.com/joho/godotenv"
+	"github.com/pkg/errors"
 	"log"
 	"os"
 	"strconv"
@@ -26,6 +28,23 @@ var (
 	userAgent       string
 	environment     *azure.Environment
 )
+
+// ReadEnv ...
+func ReadEnv() error {
+	var err error
+
+	rootPath := util.RootPath()
+	envFile := rootPath + "/.env"
+	if err := godotenv.Load(envFile); err != nil {
+		log.Println("No .env file found at ", envFile)
+	}
+	if err = ParseEnvironment(); err != nil {
+		log.Println("Error parsing environment: ", err)
+		return errors.Wrap(err, "")
+
+	}
+	return nil
+}
 
 // ClientID is the OAuth client ID.
 func ClientID() string {
@@ -135,6 +154,6 @@ func ParseEnvironment() error {
 	}
 	// subscriptionID (ARM)
 	subscriptionID = os.Getenv("AZURE_SUBSCRIPTION_ID")
-	log.Print("Read Environment")
+	log.Println("Read Environment")
 	return nil
 }

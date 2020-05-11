@@ -10,7 +10,7 @@ import (
 func MarshallToJSONString(props interface{}) string {
 	jsonByteArr, err := json.MarshalIndent(props, "", "  ")
 	if err != nil {
-		log.Print(err)
+		log.Println(err)
 		return "<ERROR>"
 	}
 	jsonStr := string(jsonByteArr)

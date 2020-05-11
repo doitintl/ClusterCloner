@@ -39,7 +39,7 @@ func printFlags(cliCtx *cli.Context) {
 		value := cliCtx.String(flagName)
 		s += fmt.Sprintf("\t\t%s: %s\n", flagName, value)
 	}
-	log.Print(s)
+	log.Println(s)
 }
 
 func init() {
@@ -67,7 +67,7 @@ func handleSignals() context.Context {
 }
 
 func main() {
-	log.Print("Starting")
+	log.Println("Starting")
 
 	flags := launcher.CLIFlags()
 	app := &cli.App{

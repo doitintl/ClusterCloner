@@ -9,8 +9,8 @@ import (
 func TestFindMatchingMachineTypeGkeToAks(t *testing.T) {
 	gkeMachine := "n2d-highcpu-8"
 	mt := accessgke.MachineTypeByName(gkeMachine)
-	matching := FindMatchingMachineType(mt, accessaks.MachineTypesNoPromo)
-	if matching.CPU != 8 || matching.RAMGB != 14 {
+	matching := FindMatchingMachineType(mt, accessaks.MachineTypes)
+	if matching.CPU != 8 || matching.RAMGB != 16 {
 		t.Errorf("No match: %v", matching)
 	}
 }

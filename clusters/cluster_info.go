@@ -1,4 +1,4 @@
-package clusterinfo
+package clusters
 
 // ClusterInfo ...
 type ClusterInfo struct {

@@ -1,10 +1,7 @@
 package access
 
 import (
-	"clustercloner/clusters/clouds/aks/access/config"
-	"clustercloner/clusters/clouds/aks/access/iam"
-	"clustercloner/clusters/clusterinfo"
-	"clustercloner/clusters/transformation/nodes/util"
+	"clustercloner/clusters"
 	clusterutil "clustercloner/clusters/util"
 	"context"
 	"encoding/csv"
@@ -33,7 +30,10 @@ var (
 )
 
 func init() {
-	_ = clusterutil.ReadEnv()
+	err := ReadEnv()
+	if err != nil {
+		panic("Cannot read environment, aborting")
+	}
 }
 
 //AKSClusterAccess ...
@@ -43,54 +43,41 @@ type AKSClusterAccess struct {
 func createGroup(ctx context.Context, groupName string, region string) (resources.Group, error) {
 	groupsClient := getGroupsClient()
 	log.Println(fmt.Sprintf("Creating resource group '%s' on location: %v", groupName, region))
-	return groupsClient.CreateOrUpdate(
-		ctx,
-		groupName,
-		resources.Group{
-			Location: to.StringPtr(config.DefaultLocation()),
-		})
+	group := resources.Group{Location: to.StringPtr(DefaultLocation())}
+	return groupsClient.CreateOrUpdate(ctx, groupName, group)
 }
 
 //CreateCluster ...
-func (ca AKSClusterAccess) CreateCluster(createThis *clusterinfo.ClusterInfo) (*clusterinfo.ClusterInfo, error) {
-	grpName := createThis.Scope
-	log.Printf("Create Cluster: Group %s, Cluster %s, Location %s", grpName, createThis.Name, createThis.Location)
+func (ca AKSClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
+
+	groupName := createThis.Scope
+	log.Printf("Create Cluster: Group %s, Cluster %s, Location %s", groupName, createThis.Name, createThis.Location)
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
-
-	_, err := createGroup(ctx, grpName, createThis.Location)
+	_, err = createGroup(ctx, groupName, createThis.Location)
 	if err != nil {
 		errS := err.Error()
-		if strings.Contains(errS, "already exists") {
-			log.Printf("Group %s already exists", grpName)
+		if strings.Contains(errS, "already exists, proceeding") ||
+			(strings.Contains(errS, "Invalid resource group location") &&
+				strings.Contains(errS, "The Resource group already exists in location")) {
+			log.Printf("Group %s already exists: %v", groupName, err)
 		} else {
 			return nil, err
 		}
 	}
-	var agentPoolCount int32 = 1
-	_, err = createAKSCluster(ctx,
-		createThis.Name,
-		createThis.Location,
-		grpName, aksUsername,
-		aksSSHPublicKeyPath,
-		config.ClientID(),
-		config.ClientSecret(),
-		createThis.K8sVersion,
-		agentPoolCount,
-	)
+
+	createdCluster, err := createAKSCluster(ctx, createThis, groupName, aksUsername, aksSSHPublicKeyPath, ClientID(), ClientSecret())
+	_ = createdCluster //todo read this and return it instead of createThis
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, errors.Wrap(err, "cannot create cluster")
 	}
-	created := createThis
-	created.GeneratedBy = clusterinfo.CREATED
-
-	log.Println("Retrieved AKS cluster")
-	return created, nil
+	createThis.GeneratedBy = clusters.CREATED
+	return createThis, nil
 }
 
 // createAKSCluster creates a new managed Kubernetes cluster
-func createAKSCluster(ctx context.Context, resourceName, location, resourceGroupName, username, sshPublicKeyPath, clientID, clientSecret, k8sVersion string, agentPoolCount int32) (c containerservice.ManagedCluster, err error) {
+func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo, resourceGroupName, username, sshPublicKeyPath, clientID, clientSecret string) (c containerservice.ManagedCluster, err error) {
 	var sshKeyData string
 	if _, err = os.Stat(sshPublicKeyPath); err == nil {
 		sshBytes, err := ioutil.ReadFile(sshPublicKeyPath)
@@ -99,8 +86,7 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 		}
 		sshKeyData = string(sshBytes)
 	} else {
-		log.Printf("Cannot load: %s", sshPublicKeyPath)
-		sshKeyData = "fakepubkey"
+		panic(fmt.Sprintf("cannot load: %s", sshPublicKeyPath))
 	}
 
 	aksClient, err := getManagedClustersClient()
@@ -108,13 +94,21 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 		return c, fmt.Errorf("cannot get AKS client: %v", err)
 	}
 
-	agentPoolProfiles := &[]containerservice.AgentPoolProfile{
-		{
-			Count:  to.Int32Ptr(agentPoolCount),
-			Name:   to.StringPtr("agentpool1"),
-			VMSize: containerservice.StandardD2sV3, //todo correct create AgentP
-		},
+	agPoolProfiles := make([]containerservice.AgentPoolProfile, 0)
+	for _, nodePool := range createThis.NodePools {
+		agPoolName := strings.ReplaceAll(nodePool.Name, "-", "")
+		agPoolProfile := containerservice.AgentPoolProfile{
+			Count:        to.Int32Ptr(nodePool.NodeCount),
+			Name:         to.StringPtr(agPoolName),
+			VMSize:       containerservice.VMSizeTypes(nodePool.MachineType.Name),
+			OsDiskSizeGB: to.Int32Ptr(nodePool.DiskSizeGB),
+			//todo use the nodePool.K8sVersion. Does Az support that?
+		}
+		agPoolProfiles = append(agPoolProfiles, agPoolProfile)
 	}
+
+	agentPoolProfiles := &agPoolProfiles
+
 	servicePrincipalProfile := &containerservice.ServicePrincipalProfile{
 		ClientID: to.StringPtr(clientID),
 		Secret:   to.StringPtr(clientSecret),
@@ -127,23 +121,23 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 		},
 	}
 	managedCluster := containerservice.ManagedCluster{
-		Name:     &resourceName,
-		Location: &location,
+		Name:     &createThis.Name,
+		Location: &createThis.Location,
 		ManagedClusterProperties: &containerservice.ManagedClusterProperties{
-			DNSPrefix: &resourceName,
+			DNSPrefix: &createThis.Name,
 			LinuxProfile: &containerservice.LinuxProfile{
 				AdminUsername: to.StringPtr(username),
 				SSH:           sshConfiguration,
 			},
 			AgentPoolProfiles:       agentPoolProfiles,
 			ServicePrincipalProfile: servicePrincipalProfile,
-			KubernetesVersion:       &k8sVersion,
+			KubernetesVersion:       &createThis.K8sVersion,
 		},
 	}
 	future, err := aksClient.CreateOrUpdate(
 		ctx,
 		resourceGroupName,
-		resourceName,
+		createThis.Name,
 		managedCluster,
 	)
 	if err != nil {
@@ -160,7 +154,7 @@ func createAKSCluster(ctx context.Context, resourceName, location, resourceGroup
 }
 
 //ListClusters ...
-func (ca AKSClusterAccess) ListClusters(subscription string, location string) (ci []*clusterinfo.ClusterInfo, err error) {
+func (ca AKSClusterAccess) ListClusters(subscription string, location string) (ci []*clusters.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
 	var aksClient, err2 = getManagedClustersClient()
@@ -168,23 +162,23 @@ func (ca AKSClusterAccess) ListClusters(subscription string, location string) (c
 		return ci, errors.New("cannot get AKS client")
 	}
 
-	ret := make([]*clusterinfo.ClusterInfo, 0)
+	ret := make([]*clusters.ClusterInfo, 0)
 
 	clusterList, _ := aksClient.List(ctx)
 	for _, managedCluster := range clusterList.Values() {
 		var props = managedCluster.ManagedClusterProperties
 
-		foundCluster := &clusterinfo.ClusterInfo{
+		foundCluster := &clusters.ClusterInfo{
 			Scope:       subscription,
 			Location:    location,
 			Name:        *managedCluster.Name,
 			K8sVersion:  *props.KubernetesVersion,
-			GeneratedBy: clusterinfo.READ,
-			Cloud:       clusterinfo.AZURE,
+			GeneratedBy: clusters.READ,
+			Cloud:       clusters.AZURE,
 		}
 
 		for _, agentPoolProfile := range *props.AgentPoolProfiles {
-			nodePool := clusterinfo.NodePoolInfo{
+			nodePool := clusters.NodePoolInfo{
 				Name:        *agentPoolProfile.Name,
 				NodeCount:   *agentPoolProfile.Count,
 				MachineType: MachineTypeByName(fmt.Sprintf("%v", agentPoolProfile.VMSize)),
@@ -192,7 +186,7 @@ func (ca AKSClusterAccess) ListClusters(subscription string, location string) (c
 				K8sVersion:  "",
 			}
 			foundCluster.AddNodePool(nodePool)
-			zero := clusterinfo.MachineType{}
+			zero := clusters.MachineType{}
 			if nodePool.MachineType == zero {
 				panic("cannot read " + agentPoolProfile.VMSize)
 			}
@@ -230,28 +224,20 @@ func GetSupportedVersions() []string {
 }
 
 // MachineTypeByName ...
-func MachineTypeByName(machineType string) clusterinfo.MachineType {
-	return MachineTypesNoPromo[machineType] //return zero object if not found
+func MachineTypeByName(machineType string) clusters.MachineType {
+	return MachineTypes[machineType] //return zero object if not found
 }
 
 // MachineTypes ...
-var MachineTypes map[string]clusterinfo.MachineType
-
-// MachineTypesNoPromo ...
-var MachineTypesNoPromo map[string]clusterinfo.MachineType
+var MachineTypes map[string]clusters.MachineType
 
 func init() {
 	MachineTypes, _ = loadMachineTypes()
-	MachineTypesNoPromo = make(map[string]clusterinfo.MachineType)
-	for k, v := range MachineTypes {
-		if !strings.HasSuffix(k, "Promo") {
-			MachineTypesNoPromo[k] = v
-		}
-	}
+
 }
 
-func loadMachineTypes() (map[string]clusterinfo.MachineType, error) {
-	ret := make(map[string]clusterinfo.MachineType)
+func loadMachineTypes() (map[string]clusters.MachineType, error) {
+	ret := make(map[string]clusters.MachineType)
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
@@ -305,65 +291,68 @@ func loadMachineTypes() (map[string]clusterinfo.MachineType, error) {
 			ramGBInt = 1 // todo switch all RAM to MB to avoidthis and get more precision
 		}
 
-		ret[name] = clusterinfo.MachineType{Name: name, CPU: cpuInt, RAMGB: ramGBInt}
+		ret[name] = clusters.MachineType{Name: name, CPU: cpuInt, RAMGB: ramGBInt}
 	}
 	return ret, nil
 }
 
 //
 func getManagedClustersClient() (mcc containerservice.ManagedClustersClient, err error) {
-	client := containerservice.NewManagedClustersClient(config.SubscriptionID())
-	auth, err := iam.GetResourceManagementAuthorizer()
+	client := containerservice.NewManagedClustersClient(SubscriptionID())
+	auth, err := GetResourceManagementAuthorizer()
 	if err != nil {
 		return mcc, err
 	}
 	client.Authorizer = auth
-	_ = client.AddToUserAgent(config.UserAgent())
+	_ = client.AddToUserAgent(UserAgent())
 	return client, nil
 }
 
 func getGroupsClient() resources.GroupsClient {
-	client := resources.NewGroupsClient(config.SubscriptionID())
-	auth, err := iam.GetResourceManagementAuthorizer()
+	client := resources.NewGroupsClient(SubscriptionID())
+	auth, err := GetResourceManagementAuthorizer()
 	if err != nil {
 		log.Fatalf("failed to initialize authorizer: %v\n", err)
 	}
 	client.Authorizer = auth
-	_ = client.AddToUserAgent(config.UserAgent())
+	_ = client.AddToUserAgent(UserAgent())
 	return client
 }
 func getContainerServicesClient() containerservice.ContainerServicesClient {
 
-	client := containerservice.NewContainerServicesClient(config.SubscriptionID())
-	auth, err := iam.GetResourceManagementAuthorizer()
+	client := containerservice.NewContainerServicesClient(SubscriptionID())
+	auth, err := GetResourceManagementAuthorizer()
 	if err != nil {
 		log.Fatalf("failed to initialize authorizer: %v\n", err)
 	}
 	client.Authorizer = auth
-	_ = client.AddToUserAgent(config.UserAgent())
+	_ = client.AddToUserAgent(UserAgent())
 	return client
 }
 
-// FindBestMatchingSupportedK8sVersion ...
+/*FindBestMatchingSupportedK8sVersion  find the least patch version that is
+greater or equal to  the supplied vers, but has the same major-minor version.
+If that not possible, get the largest patch version that has the same major-minor version
+*/
 func FindBestMatchingSupportedK8sVersion(vers string) (string, error) {
 	var potentialMatchPatchVersion = math.MaxInt32
 	supportedVersions := GetSupportedVersions()
-	majorMinor, err := util.MajorMinorVersion(vers)
+	majorMinor, err := clusterutil.MajorMinorVersion(vers)
 	if err != nil {
 		return "", errors.Wrap(err, "cannot parse versions")
 	}
-	patchV, err := util.PatchVersion(vers)
+	patchV, err := clusterutil.PatchVersion(vers)
 	if err != nil {
 		return "", errors.Wrap(err, "cannot parse versions")
 	}
 	for _, supported := range supportedVersions {
-		majorMinorSupported, err := util.MajorMinorVersion(supported)
+		majorMinorSupported, err := clusterutil.MajorMinorVersion(supported)
 		if err != nil {
 			return "", errors.Wrap(err, "cannot parse versions")
 		}
 		if majorMinor == majorMinorSupported {
 			var patchSupported int
-			patchSupported, err = util.PatchVersion(supported)
+			patchSupported, err = clusterutil.PatchVersion(supported)
 			if err != nil {
 				panic(err) //should not happen
 			}
@@ -373,9 +362,33 @@ func FindBestMatchingSupportedK8sVersion(vers string) (string, error) {
 		}
 	}
 	if potentialMatchPatchVersion == math.MaxInt32 {
-		//todo try for the next major-minor version
-		return "", errors.New("cannot match to patch version: " + vers)
+		potentialMatchPatchVersion = math.MinInt32
+		//get largest patch version in this major-minor
+		for _, supported := range supportedVersions {
+			majorMinorSupported, err := clusterutil.MajorMinorVersion(supported)
+			if err != nil {
+				return "", errors.Wrap(err, "cannot parse versions")
+			}
+			if majorMinor == majorMinorSupported {
+				var patchSupported int
+				patchSupported, err = clusterutil.PatchVersion(supported)
+				if err != nil {
+					panic(err) //should not happen
+				}
+				if patchSupported > potentialMatchPatchVersion {
+					if patchSupported >= patchV {
+						panic(fmt.Sprintf("In this part of the search, we have already found"+
+							" no supported patch versions greater than"+
+							" the current patch version %d", patchSupported))
+					}
+					potentialMatchPatchVersion = patchSupported
+				}
+			}
+		}
+		if potentialMatchPatchVersion == math.MaxInt32 || potentialMatchPatchVersion == math.MinInt32 {
+			return "", errors.New("cannot match to patch version: " + vers)
 
+		}
 	}
 	ret := fmt.Sprintf("%s.%d", majorMinor, potentialMatchPatchVersion)
 	return ret, nil
