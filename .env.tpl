@@ -14,5 +14,3 @@ AZURE_SUBSCRIPTION_ID=
 # sp must have Contributor role on subscription
 AZURE_AUTH_LOCATION=$HOME/.azure/sdk_auth.json
 
-AZURE_STORAGE_ACCOUNT_NAME=
-AZURE_STORAGE_ACCOUNT_GROUP_NAME=

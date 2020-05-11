@@ -151,48 +151,89 @@ func transformCloudToCloud(clusterInfo *clusters.ClusterInfo, toCloud string, ou
 	target.GeneratedBy = clusters.TRANSFORMATION
 	return target, nil
 }
+
+// IdentityTransformer ...
+type IdentityTransformer struct{}
+
+// CloudToHub ...
+func (it *IdentityTransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+	ret := clusters.ClusterInfo{
+		Cloud:         clusters.HUB,
+		Scope:         in.Scope,
+		Location:      in.Location,
+		Name:          in.Name,
+		K8sVersion:    in.K8sVersion,
+		GeneratedBy:   clusters.TRANSFORMATION,
+		NodePools:     in.NodePools[:],
+		SourceCluster: in,
+	}
+	return &ret, nil
+}
+
+//	HubToCloud...
+func (it *IdentityTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope string) (*clusters.ClusterInfo, error) {
+	ret := clusters.ClusterInfo{
+		Cloud:         clusters.HUB,
+		Scope:         outputScope,
+		Location:      in.Location,
+		Name:          in.Name,
+		K8sVersion:    in.K8sVersion,
+		GeneratedBy:   clusters.TRANSFORMATION,
+		NodePools:     in.NodePools[:],
+		SourceCluster: in,
+	}
+	return &ret, nil
+}
+
+// LocationHubToCloud ...
+func (it *IdentityTransformer) LocationHubToCloud(loc string) (string, error) {
+	return loc, nil
+}
+
+// LocationCloudToHub ...
+func (it *IdentityTransformer) LocationCloudToHub(loc string) (string, error) {
+	return loc, nil
+}
+
 func toHubFormat(input *clusters.ClusterInfo) (c *clusters.ClusterInfo, err error) {
 	err = nil
 	var ret *clusters.ClusterInfo
+	cloud := input.Cloud
+	transformer := getTransformer(cloud)
+	if transformer == nil {
+		return nil, errors.New("cannot transform")
+	}
+	ret, err = transformer.CloudToHub(input)
+	return ret, err
+}
+
+func getTransformer(cloud string) Transformer {
 	var transformer Transformer
-	switch cloud := input.Cloud; cloud {
+	switch cloud {
 	case clusters.GCP:
 		transformer = &transformgke.GKETransformer{}
 	case clusters.AZURE:
 		transformer = &transformaks.AKSTransformer{}
-	case clusters.AWS:
-		return c, errors.New(fmt.Sprintf("Unsupported %s", cloud))
 	case clusters.HUB:
-		log.Println("From CloudToHub , no changes")
-		ret = input
-		return ret, nil
+		transformer = &IdentityTransformer{}
 	default:
-		return c, errors.New(fmt.Sprintf("Unknown %s", cloud))
+		transformer = nil
+		log.Printf("Unknown %s", cloud)
 	}
-	ret, err = transformer.CloudToHub(input)
-	return ret, err
+	return transformer
 }
 func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string) (c *clusters.ClusterInfo, err error) {
 	if hub.Cloud != clusters.HUB {
 		return nil, errors.New(fmt.Sprintf("Wrong Cloud %s", hub.Cloud))
 	}
-	var transformer Transformer
-	err = nil
+
 	var ret *clusters.ClusterInfo
-	switch toCloud { //  We do not expect more than  these 3 clouds so not splitting out dynamically loaded adapters
-	case clusters.GCP:
-		transformer = &transformgke.GKETransformer{}
-	case clusters.AZURE:
-		transformer = &transformaks.AKSTransformer{}
-	case clusters.AWS:
-		return c, errors.New(fmt.Sprintf("Unsupported %s", toCloud))
-	case clusters.HUB:
-		log.Println("to Hub , no changes")
-		ret = hub //todo implement IdentityTransformer for this, and remove duplication from toHubFormat
-		return ret, nil
-	default:
-		return c, errors.New(fmt.Sprintf("Unknown %s", toCloud))
-	}
+	err = nil
+	var transformer = getTransformer(toCloud)
 	ret, err = transformer.HubToCloud(hub, outputScope)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot convert HubToCloud")
+	}
+	//err := OnlySupportedK8sVersions(getClusterAccess(ci))
 	return ret, err
 }
