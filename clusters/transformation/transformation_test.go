@@ -144,7 +144,9 @@ func TestTransformGCPToAzure(t *testing.T) {
 	// Can vary because map is not deterministically ordered
 	mTypeNames := []string{
 
+		"Standard_DS1",
 		"Standard_DS1_v2",
+		"Standard_D1_v2",
 	}
 	found := false
 	for _, mTypeName := range mTypeNames {

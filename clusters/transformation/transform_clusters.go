@@ -135,11 +135,9 @@ func CreateCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *cluste
 }
 
 func transformCloudToCloud(clusterInfo *clusters.ClusterInfo, toCloud string, outputScope string) (c *clusters.ClusterInfo, err error) {
-	if clusterInfo.Cloud == "" {
-		return c, errors.New("No cloud name found in input cluster")
-	}
+
 	hub, err1 := toHubFormat(clusterInfo)
-	if err1 != nil {
+	if err1 != nil || hub == nil {
 		return nil, errors.Wrap(err1, "Error in transforming to CloudToHub Format")
 	}
 	target, err2 := fromHubFormat(hub, toCloud, outputScope)

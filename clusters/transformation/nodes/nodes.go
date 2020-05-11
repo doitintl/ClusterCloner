@@ -3,6 +3,7 @@ package nodes
 import (
 	"clustercloner/clusters"
 	"clustercloner/clusters/util"
+	"github.com/pkg/errors"
 	"math"
 )
 
@@ -10,10 +11,10 @@ import (
 type MachineTypeConverter func(mt clusters.MachineType) clusters.MachineType
 
 // TransformNodePool ...
-func TransformNodePool(np clusters.NodePoolInfo, machineTypes map[string]clusters.MachineType) clusters.NodePoolInfo {
+func TransformNodePool(np clusters.NodePoolInfo, machineTypes map[string]clusters.MachineType) (clusters.NodePoolInfo, error) {
 	nodePoolK8sVersion, err := util.MajorMinorPatchVersion(np.K8sVersion)
 	if err != nil {
-		panic(err) //todo fix
+		return clusters.NodePoolInfo{}, errors.New("cannot convert K8s Version \"" + np.K8sVersion + "\" for node pool")
 	}
 	ret := clusters.NodePoolInfo{
 		Name:        np.Name,
@@ -22,7 +23,7 @@ func TransformNodePool(np clusters.NodePoolInfo, machineTypes map[string]cluster
 		MachineType: FindMatchingMachineType(np.MachineType, machineTypes),
 		DiskSizeGB:  np.DiskSizeGB,
 	}
-	return ret
+	return ret, nil
 }
 
 // FindMatchingMachineType chooses the weakest machine wgich equals or exceeeds in the inputMachineType in CPU amd RAM. If there are several some such, one is chosen arbitrarily

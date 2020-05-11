@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 // GKEClusterAccess ...
@@ -20,7 +21,7 @@ type GKEClusterAccess struct {
 }
 
 // ListClusters lists clusters; location param can be region or zone
-func (GKEClusterAccess) ListClusters(project, location string) (ret []*clusters.ClusterInfo, err error) {
+func (ca GKEClusterAccess) ListClusters(project, location string) (ret []*clusters.ClusterInfo, err error) {
 
 	ret = make([]*clusters.ClusterInfo, 0)
 
@@ -31,7 +32,7 @@ func (GKEClusterAccess) ListClusters(project, location string) (ret []*clusters.
 		return nil, errors.Wrap(err, "cannot make client")
 	}
 
-	path := fmt.Sprintf("projects/%s/locations/%s", project, location)
+	path := projectLocationPath(project, location)
 	req := &containerpb.ListClustersRequest{Parent: path}
 	resp, err := client.ListClusters(bkgdCtx, req)
 	if err != nil {
@@ -71,14 +72,18 @@ func (GKEClusterAccess) ListClusters(project, location string) (ret []*clusters.
 
 }
 
+func projectLocationPath(project string, location string) string {
+	path := fmt.Sprintf("projects/%s/locations/%s", project, location)
+	return path
+}
+
 // CreateCluster ...
 func (GKEClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+	path := projectLocationPath(createThis.Scope, createThis.Location)
 
-	path := fmt.Sprintf("projects/%s/locations/%s", createThis.Scope, createThis.Location)
-
-	var nodePools []*containerpb.NodePool = make([]*containerpb.NodePool, len(createThis.NodePools))
+	var nodePools = make([]*containerpb.NodePool, len(createThis.NodePools))
 	for i, npi := range createThis.NodePools {
-		var nodeConfig containerpb.NodeConfig = containerpb.NodeConfig{
+		var nodeConfig = containerpb.NodeConfig{
 			MachineType: npi.MachineType.Name,
 			DiskSizeGb:  npi.DiskSizeGB,
 		}
@@ -91,7 +96,7 @@ func (GKEClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (*cluste
 		nodePools[i] = &np
 	}
 	cluster := containerpb.Cluster{
-		Name:                  createThis.Name + "copy2",
+		Name:                  createThis.Name + "copy",
 		InitialClusterVersion: createThis.K8sVersion,
 		NodePools:             nodePools,
 	}
@@ -174,4 +179,33 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 		ret[name] = clusters.MachineType{Name: name, CPU: cpuInt, RAMGB: ramInt}
 	}
 	return ret, nil
+}
+
+// supportedVersions ...
+var supportedVersions []string
+
+// GetSupportedVersions ...
+func GetSupportedVersions(project, location string) []string {
+	if supportedVersions == nil {
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
+		defer cancel()
+		client, err := containerv1.NewClusterManagerClient(ctx)
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+
+		supportedVersions = make([]string, 0)
+		req := containerpb.GetServerConfigRequest{
+			Name: projectLocationPath(project, location),
+		}
+		resp, err := client.GetServerConfig(ctx, &req)
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		supportedVersions = resp.ValidMasterVersions[:] //todo use .ValidNodeVersionsto supply versons to nodes
+
+	}
+	return supportedVersions
 }

@@ -20,7 +20,11 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 	ret.K8sVersion = targetClusterK8sVersion
 	ret.NodePools = make([]clusters.NodePoolInfo, 0)
 	for _, nodePoolIn := range in.NodePools {
-		nodePoolOut := nodes.TransformNodePool(nodePoolIn, machineTypes)
+		nodePoolOut, err := nodes.TransformNodePool(nodePoolIn, machineTypes)
+		if err != nil {
+			log.Printf("Error transforming Node Pool %v\n", err)
+			return nil
+		}
 		zero := clusters.NodePoolInfo{}
 		if nodePoolOut == zero {
 			log.Printf("Empty result of converting %v", nodePoolIn)

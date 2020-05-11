@@ -3,13 +3,11 @@ package access
 import (
 	"clustercloner/clusters/util"
 	"fmt"
+	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"log"
 	"os"
-	"strconv"
-
-	"github.com/Azure/go-autorest/autorest/azure"
 )
 
 var (
@@ -127,12 +125,6 @@ func ParseEnvironment() error {
 	if locationDefault == "" {
 		err = errors.New("need AZURE_LOCATION_DEFAULT")
 		return err
-	}
-
-	keepResources, err = strconv.ParseBool(os.Getenv("AZURE_SAMPLES_KEEP_RESOURCES"))
-	if err != nil {
-		log.Printf("invalid value specified for AZURE_SAMPLES_KEEP_RESOURCES, discarding\n")
-		keepResources = false
 	}
 
 	clientID = os.Getenv("AZURE_CLIENT_ID")

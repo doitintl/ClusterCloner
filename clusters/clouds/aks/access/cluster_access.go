@@ -176,14 +176,15 @@ func (ca AKSClusterAccess) ListClusters(subscription string, location string) (c
 			GeneratedBy: clusters.READ,
 			Cloud:       clusters.AZURE,
 		}
-
+		//AgentPoolProfile is not showing AgentPool K8s Version, so copying from the Cluster
+		var nodePoolK8sVersion = foundCluster.K8sVersion
 		for _, agentPoolProfile := range *props.AgentPoolProfiles {
 			nodePool := clusters.NodePoolInfo{
 				Name:        *agentPoolProfile.Name,
 				NodeCount:   *agentPoolProfile.Count,
 				MachineType: MachineTypeByName(fmt.Sprintf("%v", agentPoolProfile.VMSize)),
 				DiskSizeGB:  *agentPoolProfile.OsDiskSizeGB,
-				K8sVersion:  "",
+				K8sVersion:  nodePoolK8sVersion,
 			}
 			foundCluster.AddNodePool(nodePool)
 			zero := clusters.MachineType{}
