@@ -20,13 +20,17 @@ import (
 type GKEClusterAccess struct {
 }
 
-// DescribeCluster ... //  TODO Put this into the ClusterAccess interface. To do that, make status into a standardized part of the ClusterInfo, though it is ephemeral
-func (ca GKEClusterAccess) DescribeCluster(clusterInfo *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
-	cluster, err := getCluster(clusterInfo.Scope, clusterInfo.Location, clusterInfo.Name)
+// DescribeCluster ...
+func (ca GKEClusterAccess) DescribeCluster(findThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+	if findThis.GeneratedBy == "" {
+		findThis.GeneratedBy = clusters.SEARCH_TEMPLATE
+	}
+	cluster, err := getCluster(findThis.Scope, findThis.Location, findThis.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get cluster")
 	}
-	readClusterInfo := clusterObjectToClusterInfo(cluster, clusterInfo.Scope)
+	readClusterInfo := clusterObjectToClusterInfo(cluster, findThis.Scope)
+	readClusterInfo.SourceCluster = findThis
 	return readClusterInfo, nil
 }
 
@@ -154,7 +158,6 @@ func (ca GKEClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (*clu
 
 func (ca GKEClusterAccess) waitForClusterReadiness(createThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
 	var status = containerpb.Cluster_STATUS_UNSPECIFIED
-	var createdCluster *clusters.ClusterInfo = nil
 	var err error
 Waiting:
 	for {
@@ -168,7 +171,7 @@ Waiting:
 		case containerpb.Cluster_STATUS_UNSPECIFIED, containerpb.Cluster_PROVISIONING, containerpb.Cluster_RECONCILING:
 			continue
 		case containerpb.Cluster_RUNNING:
-			log.Printf("Cluster %s now running", createdCluster.Name)
+			log.Printf("Cluster %s now running", createThis.Name)
 			break Waiting
 		case containerpb.Cluster_ERROR, containerpb.Cluster_STOPPING, containerpb.Cluster_DEGRADED:
 			return nil, errors.New(fmt.Sprintf("Cluster in error status %s", status))
@@ -176,7 +179,15 @@ Waiting:
 			panic(fmt.Sprintf("unknown status %s", status))
 		}
 	}
+	createdCluster, err := ca.DescribeCluster(createThis) //redundant call to getCluster above,
+	if err != nil {
+		return nil, errors.Wrap(err, "could not describe cluster after creating it")
+	}
+	if createdCluster == nil {
+		return nil, errors.New("createdCluster nil")
+	}
 	createdCluster.GeneratedBy = clusters.CREATED
+	createdCluster.SourceCluster = createThis
 	return createdCluster, err
 }
 

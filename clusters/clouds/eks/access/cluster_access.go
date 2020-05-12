@@ -31,6 +31,7 @@ func (ca EKSClusterAccess) DescribeCluster(clusterName string, region string) (c
 	}
 
 	result, err := svc.DescribeCluster(input)
+
 	if err != nil {
 		printAwsErr(err)
 		return clusters.ClusterInfo{}, err

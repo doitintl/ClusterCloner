@@ -1,10 +1,9 @@
 package access
 
 import (
-	"context"
+	"clustercloner/clusters"
 	"log"
 	"testing"
-	"time"
 )
 
 func init() {
@@ -12,10 +11,15 @@ func init() {
 }
 
 func TestDescribeCluster(t *testing.T) {
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
-	defer cancel()
-	clus, _ := getCluster(ctx, "joshua-playground", "cluster-2-1havh-paiuq")
-	log.Println(clus)
+	a := AKSClusterAccess{}
+	ci := clusters.ClusterInfo{
+		Scope:    "joshua-playground",
+		Location: "westus2",
+		Name:     "cluster-2",
+	}
+	ciRead, _ := a.DescribeCluster(&ci)
+	log.Println(ciRead)
+	log.Println(ciRead)
 }
 func TestParseMachineType(t *testing.T) {
 	machineType := "Standard_D1_v2"

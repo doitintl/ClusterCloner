@@ -64,6 +64,9 @@ func createGroup(ctx context.Context, groupName string, region string) (resource
 
 //DescribeCluster ...
 func (ca AKSClusterAccess) DescribeCluster(readThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
+	if readThis.GeneratedBy == "" {
+		readThis.GeneratedBy = clusters.SEARCH_TEMPLATE
+	}
 	groupName := readThis.Scope
 
 	cluster, err := getCluster(groupName, readThis.Name)
@@ -71,6 +74,7 @@ func (ca AKSClusterAccess) DescribeCluster(readThis *clusters.ClusterInfo) (crea
 		return nil, errors.Wrap(err, "cannot get cluster")
 	}
 	clusterInfo := clusterObjectToClusterInfo(cluster, readThis.Scope)
+	clusterInfo.SourceCluster = readThis
 	return clusterInfo, nil
 }
 
@@ -100,6 +104,7 @@ func (ca AKSClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (crea
 	}
 	createdClusterInfo := clusterObjectToClusterInfo(createdCluster, createThis.Scope)
 	createdClusterInfo.GeneratedBy = clusters.CREATED
+	createdClusterInfo.SourceCluster = createThis
 	return createThis, nil
 }
 
@@ -179,6 +184,9 @@ func createAKSCluster(
 		return zero, fmt.Errorf("cannot get the AKS  create or update future response: %v", err)
 	}
 	clusterCreated, err := future.Result(aksClient)
+	if err != nil {
+		return zero, errors.Wrap(err, "error waiting for result")
+	}
 	clusterProperties := clusterCreated.ManagedClusterProperties
 	state := *clusterProperties.ProvisioningState
 	if state != "Succeeded" {

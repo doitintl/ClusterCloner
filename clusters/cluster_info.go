@@ -45,6 +45,8 @@ var (
 	CREATED = "Created"
 	// TRANSFORMATION ...
 	TRANSFORMATION = "Transformation"
+	// SEARCH_TEMPLATE ...
+	SEARCH_TEMPLATE = "SearchTemplate"
 )
 
 var (
