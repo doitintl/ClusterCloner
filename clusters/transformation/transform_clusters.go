@@ -2,12 +2,12 @@ package transformation
 
 import (
 	"clustercloner/clusters"
-	accessaks "clustercloner/clusters/clouds/aks/access"
 	transformaks "clustercloner/clusters/clouds/aks/transform"
-	//accesseks "clustercloner/clusters/clouds/eks/access"
-	accessgke "clustercloner/clusters/clouds/gke/access"
+	"clustercloner/clusters/clusteraccess"
+	"math"
+
 	transformgke "clustercloner/clusters/clouds/gke/transform"
-	"clustercloner/clusters/util"
+	clusterutil "clustercloner/clusters/util"
 	"fmt"
 	"github.com/pkg/errors"
 
@@ -47,20 +47,9 @@ func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 }
 
 func clone(inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, create bool) ([]*clusters.ClusterInfo, error) {
-	var clusterAccessor clusters.ClusterAccess
-	switch inputCloud {
-	case clusters.GCP:
-		if inputScope == "" {
-			return nil, errors.New("Must provide inputScope (project) for GCP")
-		}
-		clusterAccessor = accessgke.GKEClusterAccess{}
-	case clusters.AZURE:
-		if inputScope == "" {
-			return nil, errors.New("Must provide inputScope (Resource Group) for Azure")
-		}
-		clusterAccessor = accessaks.AKSClusterAccess{}
-	default:
-		return nil, errors.New(fmt.Sprintf("Invalid inputcloud \"%s\"", inputCloud))
+	clusterAccessor := clusteraccess.GetClusterAccessor(inputCloud)
+	if clusterAccessor == nil {
+		return nil, errors.New("cannot get accessor for " + inputCloud)
 	}
 	inputClusterInfos, err := clusterAccessor.ListClusters(inputScope, inputLocation)
 	if err != nil {
@@ -83,7 +72,7 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 			panic(fmt.Sprintf("%d!=%d", len(createdClusters), len(transformationOutput)))
 		}
 		for i := 0; i < len(transformationOutput); i++ {
-			if util.ContainsInt(createdIndexes, i) {
+			if clusterutil.ContainsInt(createdIndexes, i) {
 				transformedClustersCreatedOrNot[i] = createdClusters[i]
 			} else {
 				transformedClustersCreatedOrNot[i] = transformationOutput[i]
@@ -102,7 +91,7 @@ func createClusters( /*immutable*/ createThese []*clusters.ClusterInfo) (created
 	createdClusters = make([]*clusters.ClusterInfo, len(createThese))
 	log.Println("Creating", len(createThese), "target clusters")
 	for idx, createThis := range createThese {
-		created, err := CreateCluster(createThis)
+		created, err := createCluster(createThis)
 		if err != nil {
 			log.Printf("Error creating %v: %v", createThis, err)
 		} else {
@@ -113,19 +102,11 @@ func createClusters( /*immutable*/ createThese []*clusters.ClusterInfo) (created
 	return createdClusters, createdIndexes, nil
 }
 
-// CreateCluster ...
-func CreateCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *clusters.ClusterInfo, err error) {
-	var ca clusters.ClusterAccess
-	switch createThis.Cloud {
-	case clusters.AZURE:
-		ca = accessaks.AKSClusterAccess{}
-	case clusters.AWS:
-		panic("AWS not implemented")
-	case clusters.GCP:
-		ca = accessgke.GKEClusterAccess{}
-	default:
-		return nil, errors.New("Unsupported Cloud for creating a cluster: " + createThis.Cloud)
-
+// createCluster ...
+func createCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *clusters.ClusterInfo, err error) {
+	var ca clusteraccess.ClusterAccess = clusteraccess.GetClusterAccessor(createThis.Cloud)
+	if ca == nil {
+		return nil, errors.New("cannot creeate ClusterAccess")
 	}
 	created, err := ca.CreateCluster(createThis)
 	if err != nil {
@@ -150,49 +131,6 @@ func transformCloudToCloud(clusterInfo *clusters.ClusterInfo, toCloud string, ou
 	}
 	target.GeneratedBy = clusters.TRANSFORMATION
 	return target, nil
-}
-
-// IdentityTransformer ...
-type IdentityTransformer struct{}
-
-// CloudToHub ...
-func (it *IdentityTransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
-	ret := clusters.ClusterInfo{
-		Cloud:         clusters.HUB,
-		Scope:         in.Scope,
-		Location:      in.Location,
-		Name:          in.Name,
-		K8sVersion:    in.K8sVersion,
-		GeneratedBy:   clusters.TRANSFORMATION,
-		NodePools:     in.NodePools[:],
-		SourceCluster: in,
-	}
-	return &ret, nil
-}
-
-//	HubToCloud...
-func (it *IdentityTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope string) (*clusters.ClusterInfo, error) {
-	ret := clusters.ClusterInfo{
-		Cloud:         clusters.HUB,
-		Scope:         outputScope,
-		Location:      in.Location,
-		Name:          in.Name,
-		K8sVersion:    in.K8sVersion,
-		GeneratedBy:   clusters.TRANSFORMATION,
-		NodePools:     in.NodePools[:],
-		SourceCluster: in,
-	}
-	return &ret, nil
-}
-
-// LocationHubToCloud ...
-func (it *IdentityTransformer) LocationHubToCloud(loc string) (string, error) {
-	return loc, nil
-}
-
-// LocationCloudToHub ...
-func (it *IdentityTransformer) LocationCloudToHub(loc string) (string, error) {
-	return loc, nil
 }
 
 func toHubFormat(input *clusters.ClusterInfo) (c *clusters.ClusterInfo, err error) {
@@ -234,6 +172,101 @@ func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot convert HubToCloud")
 	}
-	//err := OnlySupportedK8sVersions(getClusterAccess(ci))
+	err = fixK8sVersion(ret) //should not fix version post-facto like this
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot fix K8s versions")
+	}
 	return ret, err
+}
+
+//todo this is not a good way to fix up the node pools. In fact, we should fix K8s Version before transforming NodePools
+func fixK8sVersion(ci *clusters.ClusterInfo) error {
+	ca := clusteraccess.GetClusterAccessor(ci.Cloud)
+	if ca == nil {
+		return errors.New("cannot get cluster accessor for " + ci.Cloud)
+	}
+	supportedVersions := ca.GetSupportedK8sVersions(ci.Scope, ci.Location)
+	if supportedVersions == nil {
+		return errors.New("cannot find supported K8s versions")
+	}
+	var err error
+	ci.K8sVersion, err = findBestMatchingSupportedK8sVersion(ci.K8sVersion, supportedVersions)
+	if err != nil {
+		return errors.Wrap(err, "cannot find matching AKS version")
+	}
+	nodePools := ci.NodePools[:]
+	ci.NodePools = make([]clusters.NodePoolInfo, 0)
+	for _, np := range nodePools {
+		newNp := np
+		newNp.K8sVersion, err = findBestMatchingSupportedK8sVersion(np.K8sVersion, supportedVersions)
+		if err != nil {
+			return errors.Wrap(err, "cannot find matching AKS version")
+		}
+		ci.AddNodePool(newNp)
+	}
+	return nil
+
+}
+
+/*FindBestMatchingSupportedK8sVersion  find the least patch version that is
+greater or equal to  the supplied vers, but has the same major-minor version.
+If that not possible, get the largest patch version that has the same major-minor version
+*/
+func findBestMatchingSupportedK8sVersion(vers string, supportedVersions []string) (string, error) {
+	var potentialMatchPatchVersion = math.MaxInt32
+	majorMinor, err := clusterutil.MajorMinorVersion(vers)
+	if err != nil {
+		return "", errors.Wrap(err, "cannot parse versions")
+	}
+	patchV, err := clusterutil.PatchVersion(vers)
+	if err != nil {
+		return "", errors.Wrap(err, "cannot parse versions")
+	}
+	for _, supported := range supportedVersions {
+		majorMinorSupported, err := clusterutil.MajorMinorVersion(supported)
+		if err != nil {
+			return "", errors.Wrap(err, "cannot parse versions")
+		}
+		if majorMinor == majorMinorSupported {
+			var patchSupported int
+			patchSupported, err = clusterutil.PatchVersion(supported)
+			if err != nil {
+				panic(err) //should not happen
+			}
+			if patchSupported < potentialMatchPatchVersion && patchSupported >= patchV {
+				potentialMatchPatchVersion = patchSupported
+			}
+		}
+	}
+	if potentialMatchPatchVersion == math.MaxInt32 {
+		potentialMatchPatchVersion = math.MinInt32
+		//get largest patch version in this major-minor
+		for _, supported := range supportedVersions {
+			majorMinorSupported, err := clusterutil.MajorMinorVersion(supported)
+			if err != nil {
+				return "", errors.Wrap(err, "cannot parse versions")
+			}
+			if majorMinor == majorMinorSupported {
+				var patchSupported int
+				patchSupported, err = clusterutil.PatchVersion(supported)
+				if err != nil {
+					panic(err) //should not happen
+				}
+				if patchSupported > potentialMatchPatchVersion {
+					if patchSupported >= patchV {
+						panic(fmt.Sprintf("In this part of the search, we have already found"+
+							" no supported patch versions greater than"+
+							" the current patch version %d", patchSupported))
+					}
+					potentialMatchPatchVersion = patchSupported
+				}
+			}
+		}
+		if potentialMatchPatchVersion == math.MaxInt32 || potentialMatchPatchVersion == math.MinInt32 {
+			return "", errors.New("cannot match to patch version: " + vers)
+
+		}
+	}
+	ret := fmt.Sprintf("%s.%d", majorMinor, potentialMatchPatchVersion)
+	return ret, nil
 }

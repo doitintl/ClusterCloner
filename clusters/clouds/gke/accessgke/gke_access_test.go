@@ -1,4 +1,4 @@
-package access
+package accessgke
 
 import (
 	"clustercloner/clusters"

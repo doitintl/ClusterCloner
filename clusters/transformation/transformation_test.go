@@ -3,7 +3,7 @@ package transformation
 import (
 	"clustercloner/clusters"
 	accessaks "clustercloner/clusters/clouds/aks/access"
-	accessgke "clustercloner/clusters/clouds/gke/access"
+	accessgke "clustercloner/clusters/clouds/gke/accessgke"
 	"clustercloner/clusters/util"
 	"github.com/stretchr/testify/assert"
 	"strings"
@@ -51,8 +51,8 @@ func TestTransformAzureToGCP(t *testing.T) {
 	if gcp.Scope != scope ||
 		gcp.Name != azure.Name ||
 		!strings.HasPrefix(gcp.Location, "us-west1") ||
-		gcp.K8sVersion != azure.K8sVersion ||
 		len(gcp.NodePools) != len(azure.NodePools) {
+
 		outputStr := util.MarshallToJSONString(gcp)
 		inputStr := util.MarshallToJSONString(azure)
 		t.Error(outputStr + "!=" + inputStr)
@@ -60,10 +60,12 @@ func TestTransformAzureToGCP(t *testing.T) {
 
 	for i := range gcp.NodePools {
 		azureNP := azure.NodePools[i]
-		//Machine types will not match, so comparing NodePools with zero Machine Types
+		//Machine types and K8s versions will not match, so comparing NodePools with zeroed  Machine Types and K8s version
 		azureNP.MachineType = clusters.MachineType{}
+		azureNP.K8sVersion=""
 		gcpNP := gcp.NodePools[i]
 		gcpNP.MachineType = clusters.MachineType{}
+		gcpNP.K8sVersion=""
 		assert.Equal(t, gcpNP, azureNP)
 	}
 

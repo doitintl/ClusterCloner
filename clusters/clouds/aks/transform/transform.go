@@ -40,33 +40,7 @@ func (tr *AKSTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope strin
 		return nil, errors.Wrap(err, "error in converting location")
 	}
 	ret := transformutil.TransformSpoke(in, outputScope, clusters.AZURE, loc, in.K8sVersion, access.MachineTypes)
-	err = fixAksK8sVersion(ret)
-	if err != nil {
-		return nil, errors.Wrap(err, "error in  fixing AKS supported version")
-	}
 	return ret, err
-}
-
-//todo this is not a good way to fix up the node pools. In fact, we should fix K8s Version before transforming NodePools
-func fixAksK8sVersion(ci *clusters.ClusterInfo) error {
-
-	var err error
-	ci.K8sVersion, err = access.FindBestMatchingSupportedK8sVersion(ci.K8sVersion)
-	if err != nil {
-		return errors.Wrap(err, "cannot find matching AKS version")
-	}
-	nodePools := ci.NodePools[:]
-	ci.NodePools = make([]clusters.NodePoolInfo, 0)
-	for _, np := range nodePools {
-		newNp := np
-		newNp.K8sVersion, err = access.FindBestMatchingSupportedK8sVersion(np.K8sVersion)
-		if err != nil {
-			return errors.Wrap(err, "cannot find matching AKS version")
-		}
-		ci.AddNodePool(newNp)
-	}
-	return nil
-
 }
 
 //LocationCloudToHub ...

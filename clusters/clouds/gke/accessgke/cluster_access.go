@@ -1,4 +1,4 @@
-package access
+package accessgke
 
 import (
 	containerv1 "cloud.google.com/go/container/apiv1"
@@ -184,8 +184,9 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 // supportedVersions ...
 var supportedVersions []string
 
-// GetSupportedVersions ...
-func GetSupportedVersions(project, location string) []string {
+// GetSupportedK8sVersions ...
+func (ca GKEClusterAccess) GetSupportedK8sVersions(scope, location string) []string {
+
 	if supportedVersions == nil {
 		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 		defer cancel()
@@ -197,14 +198,14 @@ func GetSupportedVersions(project, location string) []string {
 
 		supportedVersions = make([]string, 0)
 		req := containerpb.GetServerConfigRequest{
-			Name: projectLocationPath(project, location),
+			Name: projectLocationPath(scope, location),
 		}
 		resp, err := client.GetServerConfig(ctx, &req)
 		if err != nil {
 			log.Println(err)
 			return nil
 		}
-		supportedVersions = resp.ValidMasterVersions[:] //todo use .ValidNodeVersionsto supply versons to nodes
+		supportedVersions = resp.ValidMasterVersions[:] //todo use .ValidNodeVersionsto supply versions to nodes
 
 	}
 	return supportedVersions

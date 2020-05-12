@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"io"
-	"math"
 	"strconv"
 
 	//"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
@@ -201,14 +200,15 @@ func (ca AKSClusterAccess) ListClusters(subscription string, location string) (c
 // supportedVersions ...
 var supportedVersions []string
 
-// GetSupportedVersions ...
-func GetSupportedVersions() []string {
+// GetSupportedK8sVersions ...
+func (ca AKSClusterAccess) GetSupportedK8sVersions(scope, location string) []string {
+
 	if supportedVersions == nil {
 		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 		defer cancel()
 		supportedVersions = make([]string, 0)
 
-		listOrch, err := getContainerServicesClient().ListOrchestrators(ctx, "westus", "")
+		listOrch, err := getContainerServicesClient().ListOrchestrators(ctx, location, "")
 		if err != nil {
 			log.Println(err)
 		} else {
@@ -329,68 +329,4 @@ func getContainerServicesClient() containerservice.ContainerServicesClient {
 	client.Authorizer = auth
 	_ = client.AddToUserAgent(UserAgent())
 	return client
-}
-
-/*FindBestMatchingSupportedK8sVersion  find the least patch version that is
-greater or equal to  the supplied vers, but has the same major-minor version.
-If that not possible, get the largest patch version that has the same major-minor version
-*/
-func FindBestMatchingSupportedK8sVersion(vers string) (string, error) {
-	var potentialMatchPatchVersion = math.MaxInt32
-	supportedVersions := GetSupportedVersions()
-	majorMinor, err := clusterutil.MajorMinorVersion(vers)
-	if err != nil {
-		return "", errors.Wrap(err, "cannot parse versions")
-	}
-	patchV, err := clusterutil.PatchVersion(vers)
-	if err != nil {
-		return "", errors.Wrap(err, "cannot parse versions")
-	}
-	for _, supported := range supportedVersions {
-		majorMinorSupported, err := clusterutil.MajorMinorVersion(supported)
-		if err != nil {
-			return "", errors.Wrap(err, "cannot parse versions")
-		}
-		if majorMinor == majorMinorSupported {
-			var patchSupported int
-			patchSupported, err = clusterutil.PatchVersion(supported)
-			if err != nil {
-				panic(err) //should not happen
-			}
-			if patchSupported < potentialMatchPatchVersion && patchSupported >= patchV {
-				potentialMatchPatchVersion = patchSupported
-			}
-		}
-	}
-	if potentialMatchPatchVersion == math.MaxInt32 {
-		potentialMatchPatchVersion = math.MinInt32
-		//get largest patch version in this major-minor
-		for _, supported := range supportedVersions {
-			majorMinorSupported, err := clusterutil.MajorMinorVersion(supported)
-			if err != nil {
-				return "", errors.Wrap(err, "cannot parse versions")
-			}
-			if majorMinor == majorMinorSupported {
-				var patchSupported int
-				patchSupported, err = clusterutil.PatchVersion(supported)
-				if err != nil {
-					panic(err) //should not happen
-				}
-				if patchSupported > potentialMatchPatchVersion {
-					if patchSupported >= patchV {
-						panic(fmt.Sprintf("In this part of the search, we have already found"+
-							" no supported patch versions greater than"+
-							" the current patch version %d", patchSupported))
-					}
-					potentialMatchPatchVersion = patchSupported
-				}
-			}
-		}
-		if potentialMatchPatchVersion == math.MaxInt32 || potentialMatchPatchVersion == math.MinInt32 {
-			return "", errors.New("cannot match to patch version: " + vers)
-
-		}
-	}
-	ret := fmt.Sprintf("%s.%d", majorMinor, potentialMatchPatchVersion)
-	return ret, nil
 }

@@ -2,7 +2,7 @@ package nodes
 
 import (
 	accessaks "clustercloner/clusters/clouds/aks/access"
-	accessgke "clustercloner/clusters/clouds/gke/access"
+	accessgke "clustercloner/clusters/clouds/gke/accessgke"
 	"testing"
 )
 

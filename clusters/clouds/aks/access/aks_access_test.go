@@ -22,34 +22,3 @@ func TestParseMachineType(t *testing.T) {
 		t.Error(mt.RAMGB)
 	}
 }
-
-func TestSupportedK8sVersion(t *testing.T) {
-
-	matchingSupported, err := FindBestMatchingSupportedK8sVersion("1.14.1")
-	if err != nil {
-		t.Error(err)
-	}
-	if matchingSupported != "1.14.8" {
-		t.Error(matchingSupported)
-	}
-}
-
-func TestSupportedK8sVersionError(t *testing.T) {
-
-	_, err := FindBestMatchingSupportedK8sVersion("1.214.10")
-	if err == nil {
-		t.Error(err)
-	}
-
-}
-
-func TestSupportedK8sVersion3(t *testing.T) {
-
-	supported, err := FindBestMatchingSupportedK8sVersion("1.14.10")
-	if err != nil {
-		t.Error(err)
-	}
-	if supported != "1.14.11" {
-		t.Error(supported)
-	}
-}
