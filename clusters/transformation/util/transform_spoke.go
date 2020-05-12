@@ -54,9 +54,9 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 
 // fixK8sVersion ...
 func fixK8sVersion(ci *clusters.ClusterInfo) error {
-	ca := clusteraccess.GetClusterAccessor(ci.Cloud)
+	ca := clusteraccess.GetClusterAccess(ci.Cloud)
 	if ca == nil {
-		return errors.New("cannot get cluster accessor for " + ci.Cloud)
+		return errors.New("cannot get cluster access for " + ci.Cloud)
 	}
 	supportedVersions := ca.GetSupportedK8sVersions(ci.Scope, ci.Location)
 	if supportedVersions == nil {

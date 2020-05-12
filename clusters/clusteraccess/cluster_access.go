@@ -17,8 +17,8 @@ type ClusterAccess interface {
 	GetSupportedK8sVersions(scope, location string) []string
 }
 
-// GetClusterAccessor ...
-func GetClusterAccessor(cloud string) ClusterAccess {
+// GetClusterAccess ...
+func GetClusterAccess(cloud string) ClusterAccess {
 	var clusterAccessor ClusterAccess
 	switch cloud {
 	case clusters.GCP:

@@ -45,7 +45,7 @@ func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 }
 
 func clone(inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, create bool) ([]*clusters.ClusterInfo, error) {
-	clusterAccessor := clusteraccess.GetClusterAccessor(inputCloud)
+	clusterAccessor := clusteraccess.GetClusterAccess(inputCloud)
 	if clusterAccessor == nil {
 		return nil, errors.New("cannot get accessor for " + inputCloud)
 	}
@@ -102,7 +102,7 @@ func createClusters( /*immutable*/ createThese []*clusters.ClusterInfo) (created
 
 // createCluster ...
 func createCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *clusters.ClusterInfo, err error) {
-	var ca = clusteraccess.GetClusterAccessor(createThis.Cloud)
+	var ca = clusteraccess.GetClusterAccess(createThis.Cloud)
 	if ca == nil {
 		return nil, errors.New("cannot creeate ClusterAccess")
 	}
