@@ -42,7 +42,7 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 		ret.AddNodePool(nodePoolOut)
 	}
 	if adjustK8sVersions {
-		err := FixK8sVersion(ret) //should not fix version post-facto like this
+		err := fixK8sVersion(ret) //should not fix version post-facto like this
 		if err != nil {
 			log.Println(err, "cannot fix K8s versions")
 			return nil
@@ -52,8 +52,8 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 
 }
 
-//todo this is not a good way to fix up the node pools. In fact, we should fix K8s Version before transforming NodePools
-func FixK8sVersion(ci *clusters.ClusterInfo) error {
+// fixK8sVersion ...
+func fixK8sVersion(ci *clusters.ClusterInfo) error {
 	ca := clusteraccess.GetClusterAccessor(ci.Cloud)
 	if ca == nil {
 		return errors.New("cannot get cluster accessor for " + ci.Cloud)
