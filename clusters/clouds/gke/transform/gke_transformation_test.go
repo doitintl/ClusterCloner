@@ -27,7 +27,7 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 		Location:    "us-east1-a",
 		K8sVersion:  "1.14.1-gke27",
 		Scope:       scope,
-		GeneratedBy: clusters.MOCK,
+		GeneratedBy: clusters.Mock,
 		NodePools:   nodePools[:],
 	}
 	tr := GKETransformer{}
@@ -38,7 +38,7 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	if !strings.HasPrefix(input.Location, hub.Location) {
 		t.Error(hub.Location)
 	}
-	if hub.Cloud != clusters.HUB {
+	if hub.Cloud != clusters.Hub {
 		t.Errorf("Not the Hub: %s", hub.Cloud)
 	}
 
@@ -63,7 +63,7 @@ func TestTransformGcpToHubBadLoc(t *testing.T) {
 		Location:    "westus2",
 		K8sVersion:  "1.14.1-gke-27",
 		Scope:       "sample-project",
-		GeneratedBy: clusters.MOCK,
+		GeneratedBy: clusters.Mock,
 	}
 	tr := GKETransformer{}
 	_, err := tr.CloudToHub(ci)

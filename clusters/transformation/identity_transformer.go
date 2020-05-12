@@ -25,15 +25,17 @@ func copyClusterInfo(in *clusters.ClusterInfo) clusters.ClusterInfo {
 // CloudToHub ...
 func (it *IdentityTransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
 	ret := copyClusterInfo(in)
-	ret.Cloud = clusters.HUB
-	ret.GeneratedBy = clusters.TRANSFORMATION
+	ret.SourceCluster = in
+	ret.Cloud = clusters.Hub
+	ret.GeneratedBy = clusters.Transformation
 	return &ret, nil
 }
 
 // HubToCloud ...
 func (it *IdentityTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope string) (*clusters.ClusterInfo, error) {
 	ret := copyClusterInfo(in)
-	ret.GeneratedBy = clusters.TRANSFORMATION
+	ret.SourceCluster = in
+	ret.GeneratedBy = clusters.Transformation
 	if it.TargetCloud == "" {
 		return nil, errors.New("No TargetCloud specified in IdentityTransformer")
 	}

@@ -32,12 +32,12 @@ func TestTransformAzureToGCP(t *testing.T) {
 
 	azure := &clusters.ClusterInfo{
 		Name:        "c",
-		Cloud:       clusters.AZURE,
+		Cloud:       clusters.Azure,
 		Location:    "westus2",
 		Scope:       scope,
 		K8sVersion:  "1.14.0",
 		NodePools:   nodePools,
-		GeneratedBy: clusters.MOCK,
+		GeneratedBy: clusters.Mock,
 	}
 	gcp, err := transformCloudToCloud(azure, clusters.GCP, scope, false)
 	if err != nil {
@@ -105,16 +105,16 @@ func TestTransformGCPToAzure(t *testing.T) {
 		Scope:       scope,
 		K8sVersion:  "1.14.0",
 		NodePools:   nodePools,
-		GeneratedBy: clusters.MOCK,
+		GeneratedBy: clusters.Mock,
 	}
-	azOut, err := transformCloudToCloud(gcpIn, clusters.AZURE, scope, false)
+	azOut, err := transformCloudToCloud(gcpIn, clusters.Azure, scope, false)
 	if err != nil {
 		t.Error(err)
 	}
 	if !strings.HasPrefix(azOut.Location, "centralus") {
 		t.Error(azOut.Location)
 	}
-	if azOut.Cloud != clusters.AZURE {
+	if azOut.Cloud != clusters.Azure {
 		t.Errorf("Not the right cloud %s", azOut.Cloud)
 	}
 	if azOut.Scope != scope ||

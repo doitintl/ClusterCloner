@@ -21,16 +21,16 @@ type GKEClusterAccess struct {
 }
 
 // DescribeCluster ...
-func (ca GKEClusterAccess) DescribeCluster(findThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
-	if findThis.GeneratedBy == "" {
-		findThis.GeneratedBy = clusters.SEARCH_TEMPLATE
+func (ca GKEClusterAccess) DescribeCluster(describeThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+	if describeThis.GeneratedBy == "" {
+		describeThis.GeneratedBy = clusters.SearchTemplate
 	}
-	cluster, err := getCluster(findThis.Scope, findThis.Location, findThis.Name)
+	cluster, err := getCluster(describeThis.Scope, describeThis.Location, describeThis.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get cluster")
 	}
-	readClusterInfo := clusterObjectToClusterInfo(cluster, findThis.Scope)
-	readClusterInfo.SourceCluster = findThis
+	readClusterInfo := clusterObjectToClusterInfo(cluster, describeThis.Scope)
+	readClusterInfo.SourceCluster = describeThis
 	return readClusterInfo, nil
 }
 
@@ -84,7 +84,7 @@ func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) *clus
 		Location:    clus.Location,
 		Name:        clus.Name,
 		K8sVersion:  clus.CurrentMasterVersion,
-		GeneratedBy: clusters.READ,
+		GeneratedBy: clusters.Read,
 		Cloud:       clusters.GCP,
 	}
 
@@ -186,7 +186,7 @@ Waiting:
 	if createdCluster == nil {
 		return nil, errors.New("createdCluster nil")
 	}
-	createdCluster.GeneratedBy = clusters.CREATED
+	createdCluster.GeneratedBy = clusters.Created
 	createdCluster.SourceCluster = createThis
 	return createdCluster, err
 }

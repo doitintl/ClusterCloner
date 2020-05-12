@@ -29,10 +29,10 @@ func getTransformer(cloud string) Transformer {
 	switch cloud {
 	case clusters.GCP:
 		transformer = &transformgke.GKETransformer{}
-	case clusters.AZURE:
+	case clusters.Azure:
 		transformer = &transformaks.AKSTransformer{}
-	case clusters.HUB:
-		transformer = &IdentityTransformer{clusters.HUB}
+	case clusters.Hub:
+		transformer = &IdentityTransformer{clusters.Hub}
 	default:
 		transformer = nil
 		log.Printf("Unknown %s", cloud)
@@ -154,7 +154,7 @@ func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string
 	if err2 != nil {
 		return nil, errors.Wrap(err2, "cannot convert from Hub format")
 	}
-	out.GeneratedBy = clusters.TRANSFORMATION
+	out.GeneratedBy = clusters.Transformation
 	return out, nil
 
 }
@@ -174,7 +174,7 @@ func toHubFormat(input *clusters.ClusterInfo) (ret *clusters.ClusterInfo, err er
 }
 
 func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string, randSuffix bool) (ret *clusters.ClusterInfo, err error) {
-	if hub.Cloud != clusters.HUB {
+	if hub.Cloud != clusters.Hub {
 		return nil, errors.New(fmt.Sprintf("Wrong Cloud %s", hub.Cloud))
 	}
 

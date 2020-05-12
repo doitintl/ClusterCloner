@@ -19,7 +19,7 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 	var ret = &clusters.ClusterInfo{
 		Name:          in.Name,
 		SourceCluster: in,
-		GeneratedBy:   clusters.TRANSFORMATION,
+		GeneratedBy:   clusters.Transformation,
 		Cloud:         targetCloud,
 		Scope:         outputScope,
 		Location:      targetLoc,

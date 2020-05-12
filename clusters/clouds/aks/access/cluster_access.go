@@ -63,18 +63,18 @@ func createGroup(ctx context.Context, groupName string, region string) (resource
 }
 
 //DescribeCluster ...
-func (ca AKSClusterAccess) DescribeCluster(readThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
-	if readThis.GeneratedBy == "" {
-		readThis.GeneratedBy = clusters.SEARCH_TEMPLATE
+func (ca AKSClusterAccess) DescribeCluster(describeThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
+	if describeThis.GeneratedBy == "" {
+		describeThis.GeneratedBy = clusters.SearchTemplate
 	}
-	groupName := readThis.Scope
+	groupName := describeThis.Scope
 
-	cluster, err := getCluster(groupName, readThis.Name)
+	cluster, err := getCluster(groupName, describeThis.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get cluster")
 	}
-	clusterInfo := clusterObjectToClusterInfo(cluster, readThis.Scope)
-	clusterInfo.SourceCluster = readThis
+	clusterInfo := clusterObjectToClusterInfo(cluster, describeThis.Scope)
+	clusterInfo.SourceCluster = describeThis
 	return clusterInfo, nil
 }
 
@@ -103,7 +103,7 @@ func (ca AKSClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (crea
 		return nil, errors.Wrap(err, "cannot create cluster")
 	}
 	createdClusterInfo := clusterObjectToClusterInfo(createdCluster, createThis.Scope)
-	createdClusterInfo.GeneratedBy = clusters.CREATED
+	createdClusterInfo.GeneratedBy = clusters.Created
 	createdClusterInfo.SourceCluster = createThis
 	return createThis, nil
 }
@@ -222,8 +222,8 @@ func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, 
 		Location:    *managedCluster.Location,
 		Name:        *managedCluster.Name,
 		K8sVersion:  *props.KubernetesVersion,
-		GeneratedBy: clusters.READ,
-		Cloud:       clusters.AZURE,
+		GeneratedBy: clusters.Read,
+		Cloud:       clusters.Azure,
 	}
 	//AgentPoolProfile is not showing AgentPool K8s Version, so copying from the Cluster
 	var nodePoolK8sVersion = foundCluster.K8sVersion

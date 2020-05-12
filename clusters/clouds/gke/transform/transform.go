@@ -38,7 +38,7 @@ func (tr *GKETransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.Cluste
 		return nil, errors.Wrap(err, "error in K8s K8sVersion "+in.K8sVersion)
 	}
 
-	ret := transformutil.TransformSpoke(in, "", clusters.HUB, loc, clusterK8sVersion, nil, false)
+	ret := transformutil.TransformSpoke(in, "", clusters.Hub, loc, clusterK8sVersion, nil, false)
 
 	return ret, err
 }
