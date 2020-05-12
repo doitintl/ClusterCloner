@@ -9,7 +9,7 @@ import (
 )
 
 func TestTransformGcpToHubAndBack(t *testing.T) {
-	scope := "joshua-playground"
+	scope := "sample-project"
 	mt := access.MachineTypeByName("e2-highcpu-8")
 	var npi1 = clusters.NodePoolInfo{
 		Name:        "NPName",
@@ -62,7 +62,7 @@ func TestTransformGcpToHubBadLoc(t *testing.T) {
 		Cloud:       clusters.GCP,
 		Location:    "westus2",
 		K8sVersion:  "1.14.1-gke-27",
-		Scope:       "joshua-playground",
+		Scope:       "sample-project",
 		GeneratedBy: clusters.MOCK,
 	}
 	tr := GKETransformer{}

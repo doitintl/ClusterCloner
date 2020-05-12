@@ -32,7 +32,7 @@ func getTransformer(cloud string) Transformer {
 	case clusters.AZURE:
 		transformer = &transformaks.AKSTransformer{}
 	case clusters.HUB:
-		transformer = &IdentityTransformer{}
+		transformer = &IdentityTransformer{clusters.HUB}
 	default:
 		transformer = nil
 		log.Printf("Unknown %s", cloud)
@@ -130,22 +130,33 @@ func createCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *cluste
 	return created, err
 }
 
-func transformCloudToCloud(clusterInfo *clusters.ClusterInfo, toCloud, outputScope string, randSfx bool) (c *clusters.ClusterInfo, err error) {
-
-	hub, err1 := toHubFormat(clusterInfo)
+func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string, randSfx bool) (c *clusters.ClusterInfo, err error) {
+	if in.Cloud == toCloud {
+		t := IdentityTransformer{toCloud}
+		out, err := t.HubToCloud(in, outputScope)
+		if err != nil || out == nil {
+			return nil, errors.Wrap(err, "Error in transforming to same cloud")
+		}
+		var sfx string
+		if randSfx {
+			sfx = clusterutil.RandomAlphaNumSequence(5, false, true, true)
+		} else {
+			sfx = "copy"
+		}
+		out.Name = out.Name + "-" + sfx
+		return out, nil
+	}
+	hub, err1 := toHubFormat(in)
 	if err1 != nil || hub == nil {
-		return nil, errors.Wrap(err1, "Error in transforming to CloudToHub Format")
+		return nil, errors.Wrap(err1, "Error in transforming toHubFormat")
 	}
-	target, err2 := fromHubFormat(hub, toCloud, outputScope, randSfx)
+	out, err2 := fromHubFormat(hub, toCloud, outputScope, randSfx)
 	if err2 != nil {
-		return nil, err2
+		return nil, errors.Wrap(err2, "cannot convert from Hub format")
 	}
-	if clusterInfo.Cloud == toCloud {
-		// TODO Maybe self-to-self transformation should not go thru hub format to avoid distortions of the model
-		target.Name = target.Name + "-copy"
-	}
-	target.GeneratedBy = clusters.TRANSFORMATION
-	return target, nil
+	out.GeneratedBy = clusters.TRANSFORMATION
+	return out, nil
+
 }
 
 func toHubFormat(input *clusters.ClusterInfo) (ret *clusters.ClusterInfo, err error) {

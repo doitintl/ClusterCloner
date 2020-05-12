@@ -10,7 +10,7 @@ func TestTransformAzureToHub(t *testing.T) {
 		Name:        "c",
 		Cloud:       clusters.AZURE,
 		Location:    "westus2",
-		Scope:       "joshua-playground",
+		Scope:       "samplescope",
 		K8sVersion:  "1.14.0",
 		GeneratedBy: clusters.MOCK}
 	tr := AKSTransformer{}
@@ -28,7 +28,7 @@ func TestTransformAzureToHub(t *testing.T) {
 func TestTransformAzureToHubBadLoc(t *testing.T) {
 	ci := &clusters.ClusterInfo{Name: "c",
 		Cloud: clusters.AZURE, Location: "westus1",
-		Scope:       "joshua-playground",
+		Scope:       "sampelscope",
 		K8sVersion:  "1.15.0",
 		GeneratedBy: clusters.MOCK}
 	tr := AKSTransformer{}

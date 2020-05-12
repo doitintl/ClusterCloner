@@ -39,6 +39,22 @@ func init() {
 type AKSClusterAccess struct {
 }
 
+// GetAKS ...
+func getCluster(resourceGroupName, resourceName string) (cluster containerservice.ManagedCluster, err error) {
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
+	defer cancel()
+	aksClient, err := getManagedClustersClient()
+	if err != nil {
+		return cluster, fmt.Errorf("cannot get AKS client: %v", err)
+	}
+
+	cluster, err = aksClient.Get(ctx, resourceGroupName, resourceName)
+	if err != nil {
+		return cluster, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %v", resourceName, resourceGroupName, err)
+	}
+
+	return cluster, nil
+}
 func createGroup(ctx context.Context, groupName string, region string) (resources.Group, error) {
 	groupsClient := getGroupsClient()
 	log.Println(fmt.Sprintf("Creating resource group '%s' on location: %v", groupName, region))
@@ -46,7 +62,19 @@ func createGroup(ctx context.Context, groupName string, region string) (resource
 	return groupsClient.CreateOrUpdate(ctx, groupName, group)
 }
 
-//CreateCluster ...
+//DescribeCluster ...
+func (ca AKSClusterAccess) DescribeCluster(readThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
+	groupName := readThis.Scope
+
+	cluster, err := getCluster(groupName, readThis.Name)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get cluster")
+	}
+	clusterInfo := clusterObjectToClusterInfo(cluster, readThis.Scope)
+	return clusterInfo, nil
+}
+
+// CreateCluster ...
 func (ca AKSClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
 
 	groupName := createThis.Scope
@@ -66,19 +94,21 @@ func (ca AKSClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (crea
 	}
 
 	createdCluster, err := createAKSCluster(ctx, createThis, groupName, aksUsername, aksSSHPublicKeyPath, ClientID(), ClientSecret())
-	_ = createdCluster //TODO read the cluster and return that, so that we are returing the actual created cluster,not what we sought to created. Likewise for other clouds
 	if err != nil {
 		log.Println(err)
 		return nil, errors.Wrap(err, "cannot create cluster")
 	}
-	createThis.GeneratedBy = clusters.CREATED
+	createdClusterInfo := clusterObjectToClusterInfo(createdCluster, createThis.Scope)
+	createdClusterInfo.GeneratedBy = clusters.CREATED
 	return createThis, nil
 }
 
 // createAKSCluster creates a new managed Kubernetes cluster
-func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo, resourceGroupName, username, sshPublicKeyPath, clientID, clientSecret string) (c containerservice.ManagedCluster, err error) {
+func createAKSCluster(
+	ctx context.Context, createThis *clusters.ClusterInfo, resourceGroupName, username,
+	sshPublicKeyPath, clientID, clientSecret string) (containerservice.ManagedCluster, error) {
 	var sshKeyData string
-	if _, err = os.Stat(sshPublicKeyPath); err == nil {
+	if _, err := os.Stat(sshPublicKeyPath); err == nil {
 		sshBytes, err := ioutil.ReadFile(sshPublicKeyPath)
 		if err != nil {
 			log.Fatalf("Failed to read SSH key data: %v", err)
@@ -87,10 +117,10 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo, res
 	} else {
 		panic(fmt.Sprintf("cannot load: %s", sshPublicKeyPath))
 	}
-
+	zero := containerservice.ManagedCluster{}
 	aksClient, err := getManagedClustersClient()
 	if err != nil {
-		return c, fmt.Errorf("cannot get AKS client: %v", err)
+		return zero, fmt.Errorf("cannot get AKS client: %v", err)
 	}
 
 	agPoolProfiles := make([]containerservice.AgentPoolProfile, 0)
@@ -119,7 +149,7 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo, res
 			},
 		},
 	}
-	managedCluster := containerservice.ManagedCluster{
+	clusterToCreate := containerservice.ManagedCluster{
 		Name:     &createThis.Name,
 		Location: &createThis.Location,
 		ManagedClusterProperties: &containerservice.ManagedClusterProperties{
@@ -137,19 +167,24 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo, res
 		ctx,
 		resourceGroupName,
 		createThis.Name,
-		managedCluster,
+		clusterToCreate,
 	)
 	if err != nil {
-		return c, fmt.Errorf("cannot create AKS cluster: %v", err)
+		return zero, fmt.Errorf("cannot create AKS cluster: %v", err)
 	}
 
-	log.Println("About to create Azure Cluster; wait for completion")
+	log.Printf("About to create Azure Cluster %s; wait for completion", createThis.Name)
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
-		return c, fmt.Errorf("cannot get the AKS cluster create or update future response: %v", err)
+		return zero, fmt.Errorf("cannot get the AKS  create or update future response: %v", err)
 	}
-
-	return future.Result(aksClient)
+	clusterCreated, err := future.Result(aksClient)
+	clusterProperties := clusterCreated.ManagedClusterProperties
+	state := *clusterProperties.ProvisioningState
+	if state != "Succeeded" {
+		return zero, errors.New("could not created cluster, staate was " + state)
+	}
+	return clusterCreated, err
 }
 
 //ListClusters ...
@@ -165,36 +200,40 @@ func (ca AKSClusterAccess) ListClusters(subscription string, location string) (c
 
 	clusterList, _ := aksClient.List(ctx)
 	for _, managedCluster := range clusterList.Values() {
-		var props = managedCluster.ManagedClusterProperties
-
-		foundCluster := &clusters.ClusterInfo{
-			Scope:       subscription,
-			Location:    location,
-			Name:        *managedCluster.Name,
-			K8sVersion:  *props.KubernetesVersion,
-			GeneratedBy: clusters.READ,
-			Cloud:       clusters.AZURE,
-		}
-		//AgentPoolProfile is not showing AgentPool K8s Version, so copying from the Cluster
-		var nodePoolK8sVersion = foundCluster.K8sVersion
-		for _, agentPoolProfile := range *props.AgentPoolProfiles {
-			nodePool := clusters.NodePoolInfo{
-				Name:        *agentPoolProfile.Name,
-				NodeCount:   *agentPoolProfile.Count,
-				MachineType: MachineTypeByName(fmt.Sprintf("%v", agentPoolProfile.VMSize)),
-				DiskSizeGB:  *agentPoolProfile.OsDiskSizeGB,
-				K8sVersion:  nodePoolK8sVersion,
-			}
-			foundCluster.AddNodePool(nodePool)
-			zero := clusters.MachineType{}
-			if nodePool.MachineType == zero {
-				panic("cannot read " + agentPoolProfile.VMSize)
-			}
-		}
+		foundCluster := clusterObjectToClusterInfo(managedCluster, subscription)
 		ret = append(ret, foundCluster)
 
 	}
 	return ret, nil
+}
+
+func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, subscription string) *clusters.ClusterInfo {
+	var props = managedCluster.ManagedClusterProperties
+	foundCluster := &clusters.ClusterInfo{
+		Scope:       subscription,
+		Location:    *managedCluster.Location,
+		Name:        *managedCluster.Name,
+		K8sVersion:  *props.KubernetesVersion,
+		GeneratedBy: clusters.READ,
+		Cloud:       clusters.AZURE,
+	}
+	//AgentPoolProfile is not showing AgentPool K8s Version, so copying from the Cluster
+	var nodePoolK8sVersion = foundCluster.K8sVersion
+	for _, agentPoolProfile := range *props.AgentPoolProfiles {
+		nodePool := clusters.NodePoolInfo{
+			Name:        *agentPoolProfile.Name,
+			NodeCount:   *agentPoolProfile.Count,
+			MachineType: MachineTypeByName(fmt.Sprintf("%v", agentPoolProfile.VMSize)),
+			DiskSizeGB:  *agentPoolProfile.OsDiskSizeGB,
+			K8sVersion:  nodePoolK8sVersion,
+		}
+		foundCluster.AddNodePool(nodePool)
+		zero := clusters.MachineType{}
+		if nodePool.MachineType == zero {
+			panic("cannot read " + agentPoolProfile.VMSize)
+		}
+	}
+	return foundCluster
 }
 
 // supportedVersions ...

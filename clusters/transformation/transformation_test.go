@@ -12,7 +12,7 @@ import (
 
 // TODO integration test with actual creation of clones
 func TestTransformAzureToGCP(t *testing.T) {
-	scope := "joshua-playground"
+	scope := "sample-scope"
 	machineType := "Standard_M64ms"
 	npi := clusters.NodePoolInfo{
 		Name:        "NP",
@@ -80,7 +80,7 @@ func TestTransformAzureToGCP(t *testing.T) {
 }
 
 func TestTransformGCPToAzure(t *testing.T) {
-	scope := "joshua-playground"
+	scope := "sample-project"
 	machineType := "e2-highcpu-16"
 	npi := clusters.NodePoolInfo{
 		Name:        "NP",

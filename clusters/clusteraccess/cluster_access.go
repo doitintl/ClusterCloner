@@ -14,6 +14,8 @@ type ClusterAccess interface {
 	ListClusters(project, location string) ([]*clusters.ClusterInfo, error)
 	//CreateCluster ...
 	CreateCluster(info *clusters.ClusterInfo) (*clusters.ClusterInfo, error)
+	//DescribeCluster...
+	DescribeCluster(readThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error)
 	//GetSupportedK8sVersions
 	GetSupportedK8sVersions(scope, location string) []string
 }
@@ -26,7 +28,7 @@ func GetClusterAccess(cloud string) ClusterAccess {
 		clusterAccessor = access.GKEClusterAccess{}
 	case clusters.AZURE:
 		clusterAccessor = accessaks.AKSClusterAccess{}
-	default:
+	default: //todo support Amazon
 		log.Println("unsupported cloud ", cloud)
 		clusterAccessor = nil
 	}
