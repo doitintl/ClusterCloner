@@ -96,7 +96,7 @@ func (GKEClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (*cluste
 		nodePools[i] = &np
 	}
 	cluster := containerpb.Cluster{
-		Name:                  createThis.Name + "copy",
+		Name:                  createThis.Name,
 		InitialClusterVersion: createThis.K8sVersion,
 		NodePools:             nodePools,
 	}

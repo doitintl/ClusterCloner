@@ -38,7 +38,7 @@ func TestTransformAzureToGCP(t *testing.T) {
 		NodePools:   nodePools,
 		GeneratedBy: clusters.MOCK,
 	}
-	gcp, err := transformCloudToCloud(azure, clusters.GCP, scope)
+	gcp, err := transformCloudToCloud(azure, clusters.GCP, scope, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -106,7 +106,7 @@ func TestTransformGCPToAzure(t *testing.T) {
 		NodePools:   nodePools,
 		GeneratedBy: clusters.MOCK,
 	}
-	azOut, err := transformCloudToCloud(gcpIn, clusters.AZURE, scope)
+	azOut, err := transformCloudToCloud(gcpIn, clusters.AZURE, scope, false)
 	if err != nil {
 		t.Error(err)
 	}

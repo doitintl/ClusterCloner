@@ -24,6 +24,22 @@ type Transformer interface {
 	LocationCloudToHub(loc string) (string, error)
 }
 
+func getTransformer(cloud string) Transformer {
+	var transformer Transformer
+	switch cloud {
+	case clusters.GCP:
+		transformer = &transformgke.GKETransformer{}
+	case clusters.AZURE:
+		transformer = &transformaks.AKSTransformer{}
+	case clusters.HUB:
+		transformer = &IdentityTransformer{}
+	default:
+		transformer = nil
+		log.Printf("Unknown %s", cloud)
+	}
+	return transformer
+}
+
 // Clone ...
 func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 	inputCloud := cliCtx.String("inputcloud")
@@ -31,6 +47,7 @@ func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 	inputLocation := cliCtx.String("inputlocation")
 	inputScope := cliCtx.String("inputscope")
 	outputScope := cliCtx.String("outputscope")
+	randSfx := cliCtx.Bool("randomsuffix")
 	create := cliCtx.Bool("create")
 	sCreate := ""
 	if !create {
@@ -40,11 +57,11 @@ func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 	if inputCloud == "" || outputCloud == "" || inputLocation == "" || inputScope == "" || outputScope == "" {
 		log.Fatal("Missing flags")
 	}
-	return clone(inputCloud, outputCloud, inputLocation, inputScope, outputScope, create)
+	return clone(inputCloud, outputCloud, inputLocation, inputScope, outputScope, create, randSfx)
 
 }
 
-func clone(inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, create bool) ([]*clusters.ClusterInfo, error) {
+func clone(inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, create bool, randSfx bool) ([]*clusters.ClusterInfo, error) {
 	clusterAccessor := clusteraccess.GetClusterAccess(inputCloud)
 	if clusterAccessor == nil {
 		return nil, errors.New("cannot get accessor for " + inputCloud)
@@ -55,7 +72,7 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 	}
 	transformationOutput := make([]*clusters.ClusterInfo, 0)
 	for _, inputClusterInfo := range inputClusterInfos {
-		outputClusterInfo, err := transformCloudToCloud(inputClusterInfo, outputCloud, outputScope)
+		outputClusterInfo, err := transformCloudToCloud(inputClusterInfo, outputCloud, outputScope, randSfx)
 		transformationOutput = append(transformationOutput, outputClusterInfo)
 		if err != nil {
 			log.Printf("Error processing %v: %v", inputClusterInfo, err)
@@ -113,62 +130,50 @@ func createCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *cluste
 	return created, err
 }
 
-func transformCloudToCloud(clusterInfo *clusters.ClusterInfo, toCloud string, outputScope string) (c *clusters.ClusterInfo, err error) {
+func transformCloudToCloud(clusterInfo *clusters.ClusterInfo, toCloud, outputScope string, randSfx bool) (c *clusters.ClusterInfo, err error) {
 
 	hub, err1 := toHubFormat(clusterInfo)
 	if err1 != nil || hub == nil {
 		return nil, errors.Wrap(err1, "Error in transforming to CloudToHub Format")
 	}
-	target, err2 := fromHubFormat(hub, toCloud, outputScope)
+	target, err2 := fromHubFormat(hub, toCloud, outputScope, randSfx)
 	if err2 != nil {
 		return nil, err2
 	}
 	if clusterInfo.Cloud == toCloud {
-		// Maybe self-to-self transformation shoud not go thru hub format.
+		// TODO Maybe self-to-self transformation should not go thru hub format to avoid distortions of the model
 		target.Name = target.Name + "-copy"
 	}
 	target.GeneratedBy = clusters.TRANSFORMATION
 	return target, nil
 }
 
-func toHubFormat(input *clusters.ClusterInfo) (c *clusters.ClusterInfo, err error) {
-	err = nil
-	var ret *clusters.ClusterInfo
+func toHubFormat(input *clusters.ClusterInfo) (ret *clusters.ClusterInfo, err error) {
 	cloud := input.Cloud
 	transformer := getTransformer(cloud)
 	if transformer == nil {
 		return nil, errors.New("cannot transform")
 	}
 	ret, err = transformer.CloudToHub(input)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot convert CloudToHub")
+	}
+
 	return ret, err
 }
 
-func getTransformer(cloud string) Transformer {
-	var transformer Transformer
-	switch cloud {
-	case clusters.GCP:
-		transformer = &transformgke.GKETransformer{}
-	case clusters.AZURE:
-		transformer = &transformaks.AKSTransformer{}
-	case clusters.HUB:
-		transformer = &IdentityTransformer{}
-	default:
-		transformer = nil
-		log.Printf("Unknown %s", cloud)
-	}
-	return transformer
-}
-func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string) (c *clusters.ClusterInfo, err error) {
+func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string, randSuffix bool) (ret *clusters.ClusterInfo, err error) {
 	if hub.Cloud != clusters.HUB {
 		return nil, errors.New(fmt.Sprintf("Wrong Cloud %s", hub.Cloud))
 	}
 
-	var ret *clusters.ClusterInfo
-	err = nil
 	var transformer = getTransformer(toCloud)
 	ret, err = transformer.HubToCloud(hub, outputScope)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot convert HubToCloud")
+	}
+	if randSuffix {
+		ret.Name = ret.Name + "-" + clusterutil.RandomAlphaNumSequence(5, false, true, true)
 	}
 
 	return ret, err

@@ -7,6 +7,10 @@ type IdentityTransformer struct{}
 
 // CloudToHub ...
 func (it *IdentityTransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+	copyNPs := make([]clusters.NodePoolInfo, len(in.NodePools))
+	for i := range in.NodePools {
+		copyNPs[i] = in.NodePools[i] //copy value
+	}
 	ret := clusters.ClusterInfo{
 		Cloud:         clusters.HUB,
 		Scope:         in.Scope,
@@ -14,7 +18,7 @@ func (it *IdentityTransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.C
 		Name:          in.Name,
 		K8sVersion:    in.K8sVersion,
 		GeneratedBy:   clusters.TRANSFORMATION,
-		NodePools:     in.NodePools[:],
+		NodePools:     copyNPs,
 		SourceCluster: in,
 	}
 	return &ret, nil

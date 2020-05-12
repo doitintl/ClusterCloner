@@ -39,6 +39,10 @@ func CLIFlags() []cli.Flag {
 			Name:  "create",
 			Usage: "true: Create new clusters; default is not to create (dry run)",
 		},
+		&cli.BoolFlag{
+			Name:  "randomsuffix",
+			Usage: "true: add a random suffix to cluster names to prevent collisions",
+		},
 	}
 }
 
