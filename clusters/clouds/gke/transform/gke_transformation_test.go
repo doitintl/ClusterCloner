@@ -2,7 +2,7 @@ package transform
 
 import (
 	"clustercloner/clusters"
-	"clustercloner/clusters/clouds/gke/accessgke"
+	"clustercloner/clusters/clouds/gke/access"
 	"clustercloner/clusters/util"
 	"strings"
 	"testing"
@@ -10,7 +10,7 @@ import (
 
 func TestTransformGcpToHubAndBack(t *testing.T) {
 	scope := "joshua-playground"
-	mt := accessgke.MachineTypeByName("e2-highcpu-8")
+	mt := access.MachineTypeByName("e2-highcpu-8")
 	var npi1 = clusters.NodePoolInfo{
 		Name:        "NPName",
 		NodeCount:   2,

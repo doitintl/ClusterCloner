@@ -110,7 +110,7 @@ func createClusters( /*immutable*/ createThese []*clusters.ClusterInfo) (created
 		if err != nil {
 			log.Printf("Error creating %v: %v", createThis, err)
 		} else {
-			createdClusters[idx] = created //todo read the clusters back from the cloud, where feasible (but async creation may prevent that or require delay)
+			createdClusters[idx] = created //TODO read the clusters back from the cloud, where feasible (but async creation may prevent that or require delay)
 			createdIndexes = append(createdIndexes, idx)
 		}
 	}

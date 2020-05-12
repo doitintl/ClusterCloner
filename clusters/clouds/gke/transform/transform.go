@@ -2,7 +2,7 @@ package transform
 
 import (
 	"clustercloner/clusters"
-	"clustercloner/clusters/clouds/gke/accessgke"
+	"clustercloner/clusters/clouds/gke/access"
 	transformutil "clustercloner/clusters/transformation/util"
 	baseutil "clustercloner/clusters/util"
 	"encoding/csv"
@@ -49,7 +49,7 @@ func (tr *GKETransformer) HubToCloud(in *clusters.ClusterInfo, outputScope strin
 	if err != nil {
 		return nil, errors.Wrap(err, "error in converting location")
 	}
-	ret := transformutil.TransformSpoke(in, outputScope, clusters.GCP, loc, in.K8sVersion, accessgke.MachineTypes, true)
+	ret := transformutil.TransformSpoke(in, outputScope, clusters.GCP, loc, in.K8sVersion, access.MachineTypes, true)
 
 	return ret, err
 }
@@ -115,11 +115,7 @@ func (GKETransformer) LocationHubToCloud(location string) (string, error) {
 }
 
 func getGcpLocations() ([]string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("PWD", dir)
+
 	ret := make([]string, 20, 20)
 	fn := baseutil.RootPath() + "/locations/gcp_locations.csv"
 	csvfile, err := os.Open(fn)

@@ -25,7 +25,7 @@ func CLIFlags() []cli.Flag {
 			Usage:    "GCP region (for regional clusters) or zone (zonal clusters); AWS region; or AKS region",
 			Required: true,
 		},
-		&cli.StringFlag{ //todo allow inputting JSON for inputcloud=Hub
+		&cli.StringFlag{ //TODO allow inputting JSON for inputcloud=Hub
 			Name:     "inputcloud",
 			Usage:    "GCP, Azure, or AWS",
 			Required: true,

@@ -31,10 +31,10 @@ func FindMatchingMachineType(inputMachineType clusters.MachineType, machineTypes
 	if machineTypes == nil { //Transforming to Hub, no change
 		return inputMachineType
 	}
-	leastUpperBound := clusters.MachineType{Name: "<NONE KNOWN>", CPU: math.MaxInt32, RAMGB: math.MaxInt32}
+	leastUpperBound := clusters.MachineType{Name: "<NONE KNOWN>", CPU: math.MaxInt32, RAMMB: math.MaxInt32}
 	for _, candidateMachineType := range machineTypes {
-		if candidateMachineType.RAMGB >= inputMachineType.RAMGB && candidateMachineType.CPU >= inputMachineType.CPU {
-			if candidateMachineType.RAMGB <= leastUpperBound.RAMGB && candidateMachineType.CPU <= leastUpperBound.CPU {
+		if candidateMachineType.RAMMB >= inputMachineType.RAMMB && candidateMachineType.CPU >= inputMachineType.CPU {
+			if candidateMachineType.RAMMB <= leastUpperBound.RAMMB && candidateMachineType.CPU <= leastUpperBound.CPU {
 				leastUpperBound = candidateMachineType
 			}
 		}

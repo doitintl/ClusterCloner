@@ -1,4 +1,4 @@
-package accessgke
+package access
 
 import (
 	containerv1 "cloud.google.com/go/container/apiv1"
@@ -109,13 +109,13 @@ func (GKEClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (*cluste
 		log.Println(err)
 		return nil, errors.Wrap(err, "cannot create")
 	}
-	//todo check status in a loops so that this is synchronous
+	//TODO synchronous: Wait until the cluster is created
 	createThis.GeneratedBy = clusters.CREATED
 	log.Println(resp)
 	return createThis, err
 }
 
-// MachineTypeByName ... //todo inline this and other MacineTypeByName
+// MachineTypeByName ... //TODO inline this and other MacineTypeByName
 func MachineTypeByName(machineType string) clusters.MachineType {
 	return MachineTypes[machineType] //return zero object if not found
 }
@@ -124,16 +124,14 @@ func MachineTypeByName(machineType string) clusters.MachineType {
 var MachineTypes map[string]clusters.MachineType
 
 func init() {
-	MachineTypes, _ = loadMachineTypes()
-
+	var err error
+	MachineTypes, err = loadMachineTypes()
+	if MachineTypes == nil || len(MachineTypes) == 0 || err != nil {
+		panic(fmt.Sprintf("cannot load machine types %v", err))
+	}
 }
 func loadMachineTypes() (map[string]clusters.MachineType, error) {
 	ret := make(map[string]clusters.MachineType)
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("PWD", dir)
 	fn := clusterutil.RootPath() + "/machine-types/gke-machine-types.csv"
 	csvfile, err := os.Open(fn)
 	if err != nil {
@@ -162,21 +160,19 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 			log.Println("Short record ", record)
 		}
 		name := record[0]
-		cpu := record[1]
-		cpuFloat, err := strconv.ParseFloat(cpu, 32)
-		if err != nil {
-			return nil, err
+		cpus := record[1]
+		cpuInteger, err := strconv.ParseInt(cpus, 10, 32)
+		if err != nil || cpuInteger == 0 {
+			return nil, errors.Wrap(err, "cannot parse cpus "+cpus)
 		}
-		cpuInt := int32(cpuFloat)
-
-		ram := record[2]
-		ramFlt, err := strconv.ParseFloat(ram, 32)
+		ramGBStr := record[2]
+		ramGbFlt, err := strconv.ParseFloat(ramGBStr, 32)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "cannot parse "+ramGBStr)
 		}
-		ramInt := int32(ramFlt)
+		ramMB := int32(ramGbFlt * 1000)
 
-		ret[name] = clusters.MachineType{Name: name, CPU: cpuInt, RAMGB: ramInt}
+		ret[name] = clusters.MachineType{Name: name, CPU: int32(cpuInteger), RAMMB: ramMB}
 	}
 	return ret, nil
 }
@@ -205,7 +201,7 @@ func (ca GKEClusterAccess) GetSupportedK8sVersions(scope, location string) []str
 			log.Println(err)
 			return nil
 		}
-		supportedVersions = resp.ValidMasterVersions[:] //todo use .ValidNodeVersionsto supply versions to nodes
+		supportedVersions = resp.ValidMasterVersions[:] //TODO use .ValidNodeVersionsto supply versions to nodes
 
 	}
 	return supportedVersions

@@ -58,11 +58,7 @@ func (*AKSTransformer) LocationCloudToHub(loc string) (string, error) {
 
 func getAzureToHubLocations() (map[string]string, error) {
 	ret := make(map[string]string)
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("PWD", dir)
+
 	fn := clusterutil.RootPath() + "/locations/azure_locations.csv"
 	csvfile, err := os.Open(fn)
 	if err != nil {

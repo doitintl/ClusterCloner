@@ -11,7 +11,7 @@ import (
 	"strconv"
 
 	//"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
-	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice" //todo upgrade API
+	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice" //TODO upgrade API
 
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -66,7 +66,7 @@ func (ca AKSClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (crea
 	}
 
 	createdCluster, err := createAKSCluster(ctx, createThis, groupName, aksUsername, aksSSHPublicKeyPath, ClientID(), ClientSecret())
-	_ = createdCluster //todo read this and return it instead of createThis
+	_ = createdCluster //TODO read the cluster and return that, so that we are returing the actual created cluster,not what we sought to created. Likewise for other clouds
 	if err != nil {
 		log.Println(err)
 		return nil, errors.Wrap(err, "cannot create cluster")
@@ -101,7 +101,7 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo, res
 			Name:         to.StringPtr(agPoolName),
 			VMSize:       containerservice.VMSizeTypes(nodePool.MachineType.Name),
 			OsDiskSizeGB: to.Int32Ptr(nodePool.DiskSizeGB),
-			//todo use the nodePool.K8sVersion. Does Az support that?
+			//TODO use the nodePool.K8sVersion. Does Az support that?
 		}
 		agPoolProfiles = append(agPoolProfiles, agPoolProfile)
 	}
@@ -233,24 +233,21 @@ func MachineTypeByName(machineType string) clusters.MachineType {
 var MachineTypes map[string]clusters.MachineType
 
 func init() {
-	MachineTypes, _ = loadMachineTypes()
-
+	var err error
+	MachineTypes, err = loadMachineTypes()
+	if MachineTypes == nil || len(MachineTypes) == 0 || err != nil {
+		panic(fmt.Sprintf("cannot load machine types %v", err))
+	}
 }
 
 func loadMachineTypes() (map[string]clusters.MachineType, error) {
 	ret := make(map[string]clusters.MachineType)
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("PWD", dir)
 
 	fn := clusterutil.RootPath() + "/machine-types/aks-vm-sizes.csv"
 	csvfile, err := os.Open(fn)
 	if err != nil {
 		wd, _ := os.Getwd()
-		log.Println("At ", wd, ":", err)
-		return nil, err
+		return nil, errors.Wrap(err, fmt.Sprintf("At %s: %v", wd, err))
 	}
 
 	r := csv.NewReader(csvfile)
@@ -275,24 +272,17 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 		name := record[0]
 
 		cpus := record[1]
-		cpuFloat, err := strconv.ParseFloat(cpus, 32)
-		if err != nil {
-			return nil, err
+		cpuInteger, err := strconv.ParseInt(cpus, 10, 32)
+		if err != nil || cpuInteger == 0 {
+			return nil, errors.Wrap(err, "cannot parse cpus "+cpus)
 		}
-		cpuInt := int32(cpuFloat)
 
 		ramMBString := record[2]
-		ramMBFloat, err := strconv.ParseFloat(ramMBString, 32)
+		ramMBInt, err := strconv.ParseInt(ramMBString, 10, 32)
 		if err != nil {
 			return nil, err
 		}
-		ramGBFloat := ramMBFloat / 1000
-		ramGBInt := int32(ramGBFloat)
-		if ramGBInt == 0 {
-			ramGBInt = 1 // todo switch all RAM to MB to avoidthis and get more precision
-		}
-
-		ret[name] = clusters.MachineType{Name: name, CPU: cpuInt, RAMGB: ramGBInt}
+		ret[name] = clusters.MachineType{Name: name, CPU: int32(cpuInteger), RAMMB: int32(ramMBInt)}
 	}
 	return ret, nil
 }

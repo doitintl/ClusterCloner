@@ -1,4 +1,4 @@
-package accessgke
+package access
 
 import (
 	"clustercloner/clusters"
@@ -15,8 +15,8 @@ func TestParseMachineType(t *testing.T) {
 		t.Error(mt.CPU)
 
 	}
-	if mt.RAMGB != 8 {
-		t.Error(mt.RAMGB)
+	if mt.RAMMB != 8000 {
+		t.Error(mt.RAMMB)
 	}
 }
 func TestParseMachineType2(t *testing.T) {
@@ -28,8 +28,8 @@ func TestParseMachineType2(t *testing.T) {
 	if mt.CPU != 40 {
 		t.Error(mt.CPU)
 	}
-	if mt.RAMGB != 961 {
-		t.Error(mt.RAMGB)
+	if mt.RAMMB != 961000 {
+		t.Error(mt.RAMMB)
 	}
 }
 func TestParseMissingMachineType2(t *testing.T) {

@@ -18,7 +18,7 @@ func TestParseMachineType(t *testing.T) {
 		t.Error(mt.CPU)
 
 	}
-	if mt.RAMGB != 3 {
-		t.Error(mt.RAMGB)
+	if mt.RAMMB != 3584 {
+		t.Error(mt.RAMMB)
 	}
 }

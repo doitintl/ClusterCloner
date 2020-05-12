@@ -44,7 +44,7 @@ FROM scratch
 
 # copy CA certificates
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-# todo  1. store externally 2. specify narrowest permissions needed
+# TODO  1. store externally 2. specify narrowest permissions needed
 COPY credentials-cluster-manager.json  /
 COPY  .env  /
 

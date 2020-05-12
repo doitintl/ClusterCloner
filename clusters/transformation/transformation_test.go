@@ -3,13 +3,14 @@ package transformation
 import (
 	"clustercloner/clusters"
 	accessaks "clustercloner/clusters/clouds/aks/access"
-	"clustercloner/clusters/clouds/gke/accessgke"
+	"clustercloner/clusters/clouds/gke/access"
 	"clustercloner/clusters/util"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 )
 
+// TODO integration test with actual creation of clones
 func TestTransformAzureToGCP(t *testing.T) {
 	scope := "joshua-playground"
 	machineType := "Standard_M64ms"
@@ -72,7 +73,7 @@ func TestTransformAzureToGCP(t *testing.T) {
 	mtGcp := gcp.NodePools[0].MachineType
 
 	// Can vary because map is not deterministically ordered
-	machineA := accessgke.MachineTypeByName("f1-micro")
+	machineA := access.MachineTypeByName("f1-micro")
 	if mtGcp != machineA {
 		t.Error(mtGcp)
 	}
