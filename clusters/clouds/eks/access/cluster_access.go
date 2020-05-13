@@ -36,7 +36,7 @@ func (ca EKSClusterAccess) DescribeCluster(clusterName string, region string) (c
 		printAwsErr(err)
 		return clusters.ClusterInfo{}, err
 	}
-	log.Println(util.MarshallToJSONString(result))
+	log.Println(util.ToJSON(result))
 	return clusters.ClusterInfo{Scope: "", Location: region, Name: clusterName, GeneratedBy: clusters.Read}, nil
 }
 

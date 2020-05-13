@@ -67,13 +67,16 @@ func (ca AKSClusterAccess) DescribeCluster(describeThis *clusters.ClusterInfo) (
 	if describeThis.GeneratedBy == "" {
 		describeThis.GeneratedBy = clusters.SearchTemplate
 	}
+	if describeThis.GeneratedBy != clusters.SearchTemplate {
+		panic(fmt.Sprintf("Wrong GeneratedBy: %s" + describeThis.GeneratedBy))
+	}
 	groupName := describeThis.Scope
 
 	cluster, err := getCluster(groupName, describeThis.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get cluster")
 	}
-	clusterInfo := clusterObjectToClusterInfo(cluster, describeThis.Scope)
+	clusterInfo := clusterObjectToClusterInfo(cluster, describeThis.Scope, clusters.Read)
 	clusterInfo.SourceCluster = describeThis
 	return clusterInfo, nil
 }
@@ -102,10 +105,9 @@ func (ca AKSClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (crea
 		log.Println(err)
 		return nil, errors.Wrap(err, "cannot create cluster")
 	}
-	createdClusterInfo := clusterObjectToClusterInfo(createdCluster, createThis.Scope)
-	createdClusterInfo.GeneratedBy = clusters.Created
+	createdClusterInfo := clusterObjectToClusterInfo(createdCluster, createThis.Scope, clusters.Created)
 	createdClusterInfo.SourceCluster = createThis
-	return createThis, nil
+	return createdClusterInfo, nil
 }
 
 // createAKSCluster creates a new managed Kubernetes cluster
@@ -181,7 +183,7 @@ func createAKSCluster(
 	log.Printf("About to create Azure Cluster %s; wait for completion", createThis.Name)
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
-		return zero, fmt.Errorf("cannot get the AKS  create or update future response: %v", err)
+		return zero, fmt.Errorf("cannot get the AKS create or update future response: %v", err)
 	}
 	clusterCreated, err := future.Result(aksClient)
 	if err != nil {
@@ -208,21 +210,21 @@ func (ca AKSClusterAccess) ListClusters(subscription string, location string) (c
 
 	clusterList, _ := aksClient.List(ctx)
 	for _, managedCluster := range clusterList.Values() {
-		foundCluster := clusterObjectToClusterInfo(managedCluster, subscription)
+		foundCluster := clusterObjectToClusterInfo(managedCluster, subscription, clusters.Read)
 		ret = append(ret, foundCluster)
 
 	}
 	return ret, nil
 }
 
-func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, subscription string) *clusters.ClusterInfo {
+func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, subscription string, generatedBy string) *clusters.ClusterInfo {
 	var props = managedCluster.ManagedClusterProperties
 	foundCluster := &clusters.ClusterInfo{
 		Scope:       subscription,
 		Location:    *managedCluster.Location,
 		Name:        *managedCluster.Name,
 		K8sVersion:  *props.KubernetesVersion,
-		GeneratedBy: clusters.Read,
+		GeneratedBy: generatedBy,
 		Cloud:       clusters.Azure,
 	}
 	//AgentPoolProfile is not showing AgentPool K8s Version, so copying from the Cluster

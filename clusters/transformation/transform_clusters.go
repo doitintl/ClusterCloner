@@ -49,11 +49,12 @@ func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 	outputScope := cliCtx.String("outputscope")
 	randSfx := cliCtx.Bool("randomsuffix")
 	create := cliCtx.Bool("create")
-	sCreate := ""
-	if !create {
-		sCreate = "not "
+	if create {
+		log.Printf("Will create target clusters")
+	} else {
+		log.Printf("Dry run; will not reate target clusters")
 	}
-	log.Printf("Will %screate target clusters", sCreate)
+
 	if inputCloud == "" || outputCloud == "" || inputLocation == "" || inputScope == "" || outputScope == "" {
 		log.Fatal("Missing flags")
 	}
@@ -72,15 +73,17 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 	}
 	transformationOutput := make([]*clusters.ClusterInfo, 0)
 	for _, inputClusterInfo := range inputClusterInfos {
+		assertSourceCluster(inputClusterInfo, clusters.Read)
 		outputClusterInfo, err := transformCloudToCloud(inputClusterInfo, outputCloud, outputScope, randSfx)
+		assertSourceCluster(outputClusterInfo, clusters.Transformation)
 		transformationOutput = append(transformationOutput, outputClusterInfo)
 		if err != nil {
-			log.Printf("Error processing %v: %v", inputClusterInfo, err)
+			return nil, errors.Wrap(err, fmt.Sprintf("Error processing %v: %v", inputClusterInfo, err))
 		}
 	}
 
 	if create {
-		createdClusters, createdIndexes, _ := createClusters(transformationOutput)
+		createdClusters, createdIndexes := createClusters(transformationOutput)
 		//replaced each ClusterInfo that was created; left the ones that were not
 		var transformedClustersCreatedOrNot = make([]*clusters.ClusterInfo, len(transformationOutput))
 		if len(createdClusters) != len(transformationOutput) {
@@ -101,33 +104,74 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 }
 
 // 'created' return param may be partly populated as some clusters have been successfully populated and some have not
-func createClusters( /*immutable*/ createThese []*clusters.ClusterInfo) (createdClusters []*clusters.ClusterInfo, createdIndexes []int, err error) {
+func createClusters( /*immutable*/ createThese []*clusters.ClusterInfo) (createdClusters []*clusters.ClusterInfo, createdIndexes []int) {
 	createdIndexes = make([]int, 0)
 	createdClusters = make([]*clusters.ClusterInfo, len(createThese))
 	log.Println("Creating", len(createThese), "target clusters")
 	for idx, createThis := range createThese {
 		created, err := createCluster(createThis)
 		if err != nil {
-			log.Printf("Error creating %v: %v", createThis, err)
+			log.Printf("error creating cluster %s: %v", createThis.Name, err)
 		} else {
-			createdClusters[idx] = created //TODO read the clusters back from the cloud, where feasible (but async creation may prevent that or require delay)
+			createdClusters[idx] = created
 			createdIndexes = append(createdIndexes, idx)
 		}
 	}
-	return createdClusters, createdIndexes, nil
+	return createdClusters, createdIndexes
 }
 
 // createCluster ...
 func createCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *clusters.ClusterInfo, err error) {
 	var ca = clusteraccess.GetClusterAccess(createThis.Cloud)
 	if ca == nil {
-		return nil, errors.New("cannot creeate ClusterAccess")
+		return nil, errors.New("cannot create ClusterAccess")
 	}
 	created, err := ca.CreateCluster(createThis)
 	if err != nil {
-		log.Println("Error creating cluster", err)
+		log.Println("error creating cluster", err)
+	} else {
+		assertSourceCluster(created, clusters.Created)
 	}
 	return created, err
+}
+
+func assertSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster string) {
+	var expectedGenByForSource []string = nil
+	if ci.GeneratedBy != expectedGenByForCluster {
+		panic(fmt.Sprintf("Actual %s != expected %s", ci.GeneratedBy, expectedGenByForCluster))
+	}
+	switch ci.GeneratedBy {
+	case clusters.Mock:
+		expectedGenByForSource = []string{""}
+	case clusters.Read:
+		expectedGenByForSource = []string{clusters.SearchTemplate, ""}
+	case clusters.Created:
+		expectedGenByForSource = []string{clusters.Transformation}
+	case clusters.Transformation:
+		expectedGenByForSource = []string{clusters.Transformation, clusters.Read}
+	case clusters.SearchTemplate:
+		expectedGenByForSource = []string{""}
+	default:
+		panic("unknown " + ci.GeneratedBy)
+	}
+
+	var actual string
+	sourceCluster := ci.SourceCluster
+	if sourceCluster == nil {
+		actual = ""
+	} else {
+		actual = sourceCluster.GeneratedBy
+	}
+
+	actualIsExpected := clusterutil.ContainsStr(expectedGenByForSource, actual)
+	if !actualIsExpected {
+		panic(fmt.Sprintf("unexpected GeneratedBy for SourceCluster: \"%s\"!=\"%s\"\n%s", expectedGenByForSource, actual, clusterutil.ToJSON(ci)))
+	} else {
+		if sourceCluster != nil {
+			assertSourceCluster(sourceCluster, sourceCluster.GeneratedBy)
+		}
+	}
+
 }
 
 func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string, randSfx bool) (c *clusters.ClusterInfo, err error) {
@@ -139,7 +183,7 @@ func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string
 		}
 		var sfx string
 		if randSfx {
-			sfx = clusterutil.RandomAlphaNumSequence(5, false, true, true)
+			sfx = clusterutil.RandomAlphaNumSequence(5, false, true, false)
 		} else {
 			sfx = "copy"
 		}
@@ -148,7 +192,7 @@ func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string
 	}
 	hub, err1 := toHubFormat(in)
 	if err1 != nil || hub == nil {
-		return nil, errors.Wrap(err1, "Error in transforming toHubFormat")
+		return nil, errors.Wrap(err1, "error in transforming toHubFormat")
 	}
 	out, err2 := fromHubFormat(hub, toCloud, outputScope, randSfx)
 	if err2 != nil {

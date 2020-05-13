@@ -6,8 +6,8 @@ import (
 	"log"
 )
 
-// MarshallToJSONString ...
-func MarshallToJSONString(props interface{}) string {
+// ToJSON ...
+func ToJSON(props interface{}) string {
 	jsonByteArr, err := json.MarshalIndent(props, "", "  ")
 	if err != nil {
 		log.Println(err)

@@ -28,7 +28,7 @@ func GetClusterAccess(cloud string) ClusterAccess {
 		clusterAccessor = access.GKEClusterAccess{}
 	case clusters.Azure:
 		clusterAccessor = accessaks.AKSClusterAccess{}
-	default: //todo support Amazon
+	default: //TODO support Amazon
 		log.Println("unsupported cloud ", cloud)
 		clusterAccessor = nil
 	}

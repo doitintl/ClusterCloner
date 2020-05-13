@@ -54,8 +54,8 @@ func TestTransformAzureToGCP(t *testing.T) {
 		!strings.HasPrefix(gcp.Location, "us-west1") ||
 		len(gcp.NodePools) != len(azure.NodePools) {
 
-		outputStr := util.MarshallToJSONString(gcp)
-		inputStr := util.MarshallToJSONString(azure)
+		outputStr := util.ToJSON(gcp)
+		inputStr := util.ToJSON(azure)
 		t.Error(outputStr + "!=" + inputStr)
 	}
 
@@ -122,8 +122,8 @@ func TestTransformGCPToAzure(t *testing.T) {
 		azOut.Location != "centralus" ||
 		//			azOut.K8sVersion != gcpIn.K8sVersion ||
 		len(azOut.NodePools) != len(gcpIn.NodePools) {
-		outputStr := util.MarshallToJSONString(azOut)
-		inputStr := util.MarshallToJSONString(gcpIn)
+		outputStr := util.ToJSON(azOut)
+		inputStr := util.ToJSON(gcpIn)
 		t.Error(outputStr + "!=" + inputStr)
 	}
 

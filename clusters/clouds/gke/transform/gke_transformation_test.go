@@ -49,8 +49,8 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 
 	if output.Scope != scope || output.Name != input.Name ||
 		output.Cloud != input.Cloud {
-		outputStr := util.MarshallToJSONString(output)
-		inputStr := util.MarshallToJSONString(input)
+		outputStr := util.ToJSON(output)
+		inputStr := util.ToJSON(input)
 		t.Error(outputStr + "!=" + inputStr)
 	}
 	if output.NodePools[0].DiskSizeGB != input.NodePools[0].DiskSizeGB {

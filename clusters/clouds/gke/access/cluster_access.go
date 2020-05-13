@@ -25,6 +25,10 @@ func (ca GKEClusterAccess) DescribeCluster(describeThis *clusters.ClusterInfo) (
 	if describeThis.GeneratedBy == "" {
 		describeThis.GeneratedBy = clusters.SearchTemplate
 	}
+	if describeThis.GeneratedBy != clusters.SearchTemplate &&
+		describeThis.GeneratedBy != clusters.Transformation { //In CreateCluster, we describe the created cluster based on the info used to create the cluster.
+		panic(fmt.Sprintf("Wrong GeneratedBy: %s", describeThis.GeneratedBy))
+	}
 	cluster, err := getCluster(describeThis.Scope, describeThis.Location, describeThis.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get cluster")

@@ -136,7 +136,7 @@ func reverseMap(m map[string]string) map[string]string {
 	}
 	dupesStr := ""
 	for _, triple := range dupes {
-		dupesStr += "Key \"" + triple[0] + "\"; using value \"" + triple[1] + "\"; dropping value \"" + triple[2] + "\"\n"
+		dupesStr += "Key \"" + triple[0] + "\"; using value \"" + triple[1] + "\"; dropping value \"" + triple[2] + "\"; "
 	}
 	log.Println("Duplicates in reversing map: ", dupesStr)
 	return reverse

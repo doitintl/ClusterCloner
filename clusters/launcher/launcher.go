@@ -55,7 +55,7 @@ func Launch(cliCtx *cli.Context) {
 	}
 	var outputString string
 
-	outputString = util.MarshallToJSONString(outputClusters)
+	outputString = util.ToJSON(outputClusters)
 
 	log.Println(outputString)
 
