@@ -23,10 +23,9 @@ For just the Docker build, run  `DOCKER_BUILDKIT=1 docker build -t <TAG> .`
 
 ## Docker
 This uses Docker both as a CI tool and for releasing a final Docker image.
-(Our image is based on `scratch` with updated `ca-credentials` package).
 
 ## Continuous Integration
-GitHub action `Docker CI` is used.
+Th GitHub `Docker CI` action is used.
 
 # Credits
-This project was started from the  [goapp](https://github.com/alexei-led/goapp), template as a bootstrap project for Go CLI application.
+This project was started from the [goapp](https://github.com/alexei-led/goapp) template, a bootstrap project for Go CLI applications.

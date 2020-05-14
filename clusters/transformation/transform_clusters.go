@@ -42,12 +42,19 @@ func getTransformer(cloud string) Transformer {
 
 // Clone ...
 func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
+	inputFile := cliCtx.String("inputfile")
 	inputCloud := cliCtx.String("inputcloud")
 	outputCloud := cliCtx.String("outputcloud")
 	inputLocation := cliCtx.String("inputlocation")
 	inputScope := cliCtx.String("inputscope")
 	outputScope := cliCtx.String("outputscope")
 	randSfx := cliCtx.Bool("randomsuffix")
+	if (inputFile != "") != (inputCloud != "" || inputLocation != "" || inputScope != "") {
+		return nil, errors.New("Must read either from file or from cloud, not both")
+	}
+	// We could validate that if we read from cloud, all relevant input CLI params must be there,
+	// and likewise if create is true, then all output CLI params are there.
+
 	create := cliCtx.Bool("create")
 	if create {
 		log.Printf("Will create target clusters")
@@ -55,22 +62,42 @@ func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 		log.Printf("Dry run; will not create target clusters")
 	}
 
-	if inputCloud == "" || outputCloud == "" || inputLocation == "" || inputScope == "" || outputScope == "" {
-		log.Fatal("Missing flags")
-	}
-	return clone(inputCloud, outputCloud, inputLocation, inputScope, outputScope, create, randSfx)
+	return clone(inputFile, inputCloud, outputCloud, inputLocation, inputScope, outputScope, create, randSfx)
 
 }
 
-func clone(inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, create bool, randSfx bool) ([]*clusters.ClusterInfo, error) {
-	clusterAccessor := clusteraccess.GetClusterAccess(inputCloud)
-	if clusterAccessor == nil {
-		return nil, errors.New("cannot get accessor for " + inputCloud)
-	}
-	inputClusterInfos, err := clusterAccessor.ListClusters(inputScope, inputLocation)
+func clone(inputFile string,
+	inputCloud string,
+	outputCloud string,
+	inputLocation string,
+	inputScope string,
+	outputScope string,
+	shouldCreate bool,
+	randSfx bool) (transformedOrCreated []*clusters.ClusterInfo, err error) {
+
+	inputClusterInfos, err := getInputClusters(inputFile, inputCloud, err, inputScope, inputLocation)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "cannot get input clusters")
 	}
+	transformationOutput, err := transform(inputClusterInfos, outputCloud, outputScope, randSfx)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot transform clusters")
+	}
+
+	if !shouldCreate {
+		log.Println("Dry run, not creating", len(transformationOutput), "target clusters")
+		return transformationOutput, nil
+	}
+
+	transformedClustersCreatedOrNot, err := createClusters(transformationOutput)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot shouldCreate")
+	}
+	return transformedClustersCreatedOrNot, nil
+
+}
+
+func transform(inputClusterInfos []*clusters.ClusterInfo, outputCloud string, outputScope string, randSfx bool) ([]*clusters.ClusterInfo, error) {
 	transformationOutput := make([]*clusters.ClusterInfo, 0)
 	for _, inputClusterInfo := range inputClusterInfos {
 		assertSourceCluster(inputClusterInfo, clusters.Read)
@@ -81,30 +108,46 @@ func clone(inputCloud string, outputCloud string, inputLocation string, inputSco
 			return nil, errors.Wrap(err, fmt.Sprintf("Error processing %v: %v", inputClusterInfo, err))
 		}
 	}
-
-	if create {
-		createdClusters, createdIndexes := createClusters(transformationOutput)
-		//replaced each ClusterInfo that was created; left the ones that were not
-		var transformedClustersCreatedOrNot = make([]*clusters.ClusterInfo, len(transformationOutput))
-		if len(createdClusters) != len(transformationOutput) {
-			panic(fmt.Sprintf("%d!=%d", len(createdClusters), len(transformationOutput)))
-		}
-		for i := 0; i < len(transformationOutput); i++ {
-			if clusterutil.ContainsInt(createdIndexes, i) {
-				transformedClustersCreatedOrNot[i] = createdClusters[i]
-			} else {
-				transformedClustersCreatedOrNot[i] = transformationOutput[i]
-			}
-		}
-		return transformedClustersCreatedOrNot, nil
-	}
-	log.Println("Dry run, not creating", len(transformationOutput), "target clusters")
 	return transformationOutput, nil
+}
 
+func getInputClusters(inputFile string, inputCloud string, err error, inputScope string, inputLocation string) ([]*clusters.ClusterInfo, error) {
+	var inputClusterInfos []*clusters.ClusterInfo
+	if inputFile != "" {
+		panic("TODO")
+	} else {
+
+		clusterAccessor := clusteraccess.GetClusterAccess(inputCloud)
+		if clusterAccessor == nil {
+			return nil, errors.New("cannot get accessor for " + inputCloud)
+		}
+		inputClusterInfos, err = clusterAccessor.ListClusters(inputScope, inputLocation)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return inputClusterInfos, nil
+}
+
+func createClusters(transformationOutput []*clusters.ClusterInfo) ([]*clusters.ClusterInfo, error) {
+	createdClusters, createdIndexes := createClusters0(transformationOutput)
+	//replaced each ClusterInfo that was created; left the ones that were not
+	var transformedClustersCreatedOrNot = make([]*clusters.ClusterInfo, len(transformationOutput))
+	if len(createdClusters) != len(transformationOutput) {
+		panic(fmt.Sprintf("%d!=%d", len(createdClusters), len(transformationOutput)))
+	}
+	for i := 0; i < len(transformationOutput); i++ {
+		if clusterutil.ContainsInt(createdIndexes, i) {
+			transformedClustersCreatedOrNot[i] = createdClusters[i]
+		} else {
+			transformedClustersCreatedOrNot[i] = transformationOutput[i]
+		}
+	}
+	return transformedClustersCreatedOrNot, nil
 }
 
 // 'created' return param may be partly populated as some clusters have been successfully populated and some have not
-func createClusters( /*immutable*/ createThese []*clusters.ClusterInfo) (createdClusters []*clusters.ClusterInfo, createdIndexes []int) {
+func createClusters0( /*immutable*/ createThese []*clusters.ClusterInfo) (createdClusters []*clusters.ClusterInfo, createdIndexes []int) {
 	createdIndexes = make([]int, 0)
 	createdClusters = make([]*clusters.ClusterInfo, len(createThese))
 	log.Println("Creating", len(createThese), "target clusters")
@@ -120,7 +163,6 @@ func createClusters( /*immutable*/ createThese []*clusters.ClusterInfo) (created
 	return createdClusters, createdIndexes
 }
 
-// createCluster ...
 func createCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *clusters.ClusterInfo, err error) {
 	var ca = clusteraccess.GetClusterAccess(createThis.Cloud)
 	if ca == nil {

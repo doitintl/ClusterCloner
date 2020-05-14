@@ -12,6 +12,13 @@ import (
 func CLIFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
+			Name: "inputfile",
+			Usage: "Clusters to create in a JSON file. If this switch is used, other input switches (for reading from the cloud) cannot be used. " +
+				"The file should represent an array of ClusterInfo, where these fields are mandatory in the JSON: " +
+				"Cloud, Scope, Location, Name K8sVersion, NodePools. " +
+				"These are optional: GeneratedBy, SourceCluster",
+		},
+		&cli.StringFlag{
 			Name:  "inputscope",
 			Usage: "GCP project or AKS resource group; for AWS value is ignored",
 		},
@@ -53,10 +60,10 @@ func Launch(cliCtx *cli.Context) {
 	if err != nil {
 		log.Fatalf("Error in transformation %v", err)
 	}
-	var outputString string
 
-	outputString = util.ToJSON(outputClusters)
-
-	log.Println(outputString)
-
+	outputString := util.ToJSON(outputClusters)
+	exitCode, err := os.Stdout.WriteString(outputString + "\n")
+	if exitCode != 0 || err != nil {
+		log.Fatalf("Error on exit %v, code %d", err, exitCode)
+	}
 }
