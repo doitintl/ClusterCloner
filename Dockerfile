@@ -46,9 +46,10 @@ FROM scratch
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY credentials-cluster-manager.json  /
 COPY  .env  /
-
+COPY locations/ /locations
+COPY machine-types/ /machine-types
 COPY --from=build /go/src/app/.bin/clustercloner /clustercloner
 
-ENV  GOOGLE_APPLICATION_CREDENTIALS "./credentials-cluster-manager.json"
+ENV GOOGLE_APPLICATION_CREDENTIALS "credentials-cluster-manager.json"
 
 ENTRYPOINT ["/clustercloner"]

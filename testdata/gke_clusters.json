@@ -1,0 +1,66 @@
+[
+  {
+    "Cloud": "GCP",
+    "Scope": "joshua-playground",
+    "Location": "us-central1-c",
+    "Name": "cluster-2-uli8z-dqlgm",
+    "K8sVersion": "1.14.10-gke.27",
+    "GeneratedBy": "Created",
+    "NodePools": [
+      {
+        "Name": "default-pool",
+        "NodeCount": 1,
+        "K8sVersion": "1.14.10-gke.27",
+        "MachineType": {
+          "Name": "e2-micro",
+          "CPU": 2,
+          "RAMMB": 1000
+        },
+        "DiskSizeGB": 33
+      }
+    ],
+    "SourceCluster": {
+      "Cloud": "GCP",
+      "Scope": "joshua-playground",
+      "Location": "us-central1-c",
+      "Name": "cluster-2-uli8z-dqlgm",
+      "K8sVersion": "1.14.10-gke.27",
+      "GeneratedBy": "Transformation",
+      "NodePools": [
+        {
+          "Name": "default-pool",
+          "NodeCount": 1,
+          "K8sVersion": "1.14.10-gke.27",
+          "MachineType": {
+            "Name": "e2-micro",
+            "CPU": 2,
+            "RAMMB": 1000
+          },
+          "DiskSizeGB": 33
+        }
+      ],
+      "SourceCluster": {
+        "Cloud": "GCP",
+        "Scope": "joshua-playground",
+        "Location": "us-central1-c",
+        "Name": "cluster-2-uli8z",
+        "K8sVersion": "1.14.10-gke.27",
+        "GeneratedBy": "Read",
+        "NodePools": [
+          {
+            "Name": "default-pool",
+            "NodeCount": 1,
+            "K8sVersion": "1.14.10-gke.27",
+            "MachineType": {
+              "Name": "e2-micro",
+              "CPU": 2,
+              "RAMMB": 1000
+            },
+            "DiskSizeGB": 33
+          }
+        ],
+        "SourceCluster": null
+      }
+    }
+  }
+]

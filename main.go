@@ -13,6 +13,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+//TODO include exactly the needed files
 var (
 	mainCtx context.Context
 	//Version ...
@@ -25,10 +26,20 @@ var (
 	GitBranch = "master"
 )
 
+func init() {
+	googleCred := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	log.Println("GOOGLE_APPLICATION_CREDENTIALS", googleCred)
+}
+
+func init() {
+	// handle termination signal
+	mainCtx = handleSignals()
+	_ = mainCtx
+}
+
 func mainCmd(cliCtx *cli.Context) error {
 	printFlags(cliCtx)
 	launcher.Launch(cliCtx)
-	//crossCloud.PocLaunch()
 
 	return nil
 }
@@ -40,12 +51,6 @@ func printFlags(cliCtx *cli.Context) {
 		s += fmt.Sprintf("\t\t%s: %s\n", flagName, value)
 	}
 	log.Println(s)
-}
-
-func init() {
-	// handle termination signal
-	mainCtx = handleSignals()
-	_ = mainCtx
 }
 
 func handleSignals() context.Context {

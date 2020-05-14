@@ -52,7 +52,7 @@ func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 	if create {
 		log.Printf("Will create target clusters")
 	} else {
-		log.Printf("Dry run; will not reate target clusters")
+		log.Printf("Dry run; will not create target clusters")
 	}
 
 	if inputCloud == "" || outputCloud == "" || inputLocation == "" || inputScope == "" || outputScope == "" {
