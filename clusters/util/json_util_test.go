@@ -3,20 +3,20 @@ package util
 import (
 	"clustercloner/clusters"
 	"encoding/json"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"testing"
 )
 
 func TestUnmarshall(t *testing.T) {
+
 	fn := RootPath() + "/testdata/gke_clusters.json"
 	dat, err := ioutil.ReadFile(fn)
 
 	var cis []*clusters.ClusterInfo
 	err = json.Unmarshal(dat, &cis)
 	if err != nil {
-		fmt.Println("error:", err)
+		t.Error("error:", err)
 	}
 	assert.Equal(t, 1, len(cis))
 	assert.NotEqual(t, nil, cis[0].SourceCluster)

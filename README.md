@@ -6,7 +6,7 @@ For usage, run  `clustercloner --help`
 # Setup
 ## Supply credentials
 - `export GOOGLE_APPLICATION_CREDENTIALS='xyz.json'`, where `xyz.json` is a filename for a service account with the Kubernetes Cluster Admin role (to read and create clusters)
-- Create `.env` with Azure credentials. Base the file on `.env.tpl` for needed keys
+- Create `.env` with Azure credentials. Use `.env.tpl` as a template.
 
 ## Required GitHub secrets
 (Not needed for local build.)
@@ -25,7 +25,7 @@ For just the Docker build, run  `DOCKER_BUILDKIT=1 docker build -t <TAG> .`
 This uses Docker both as a CI tool and for releasing a final Docker image.
 
 ## Continuous Integration
-Th GitHub `Docker CI` action is used.
+The GitHub `Docker CI` action is used.
 
 # Credits
 This project was started from the [goapp](https://github.com/alexei-led/goapp) template, a bootstrap project for Go CLI applications.

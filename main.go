@@ -13,7 +13,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-//TODO include exactly the needed files
 var (
 	mainCtx context.Context
 	//Version ...
@@ -84,15 +83,16 @@ func main() {
 		Version: Version,
 	}
 	cli.VersionPrinter = func(c *cli.Context) {
-		fmt.Printf("goapp %s\n", Version)
-		fmt.Printf("  Build date: %s\n", BuildDate)
-		fmt.Printf("  Git commit: %s\n", GitCommit)
-		fmt.Printf("  Git branch: %s\n", GitBranch)
-		fmt.Printf("  Built with: %s\n", runtime.Version())
+		log.Printf("goapp %s\n", Version)
+		log.Printf("  Build date: %s\n", BuildDate)
+		log.Printf("  Git commit: %s\n", GitCommit)
+		log.Printf("  Git branch: %s\n", GitBranch)
+		log.Printf("  Built with: %s\n", runtime.Version())
 	}
 
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)
+		//todo check that all output is std err except program output
 	}
 }

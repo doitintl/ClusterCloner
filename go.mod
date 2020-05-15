@@ -12,7 +12,6 @@ require (
 	github.com/Azure/go-autorest/autorest/validation v0.2.0 // indirect
 	github.com/aws/aws-sdk-go v1.30.14
 	github.com/cuonglm/gocmt v0.0.0-20191202104510-7f323a1ee08c // indirect
-	github.com/google/martian v2.1.0+incompatible
 	github.com/hashicorp/hcl/v2 v2.5.0 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/pkg/errors v0.9.1

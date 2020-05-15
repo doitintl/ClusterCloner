@@ -6,8 +6,10 @@ import (
 	transformgke "clustercloner/clusters/clouds/gke/transform"
 	"clustercloner/clusters/clusteraccess"
 	clusterutil "clustercloner/clusters/util"
+	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"io/ioutil"
 
 	"github.com/urfave/cli/v2"
 	"log"
@@ -42,44 +44,19 @@ func getTransformer(cloud string) Transformer {
 
 // Clone ...
 func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
-	inputFile := cliCtx.String("inputfile")
-	inputCloud := cliCtx.String("inputcloud")
-	outputCloud := cliCtx.String("outputcloud")
-	inputLocation := cliCtx.String("inputlocation")
-	inputScope := cliCtx.String("inputscope")
-	outputScope := cliCtx.String("outputscope")
-	randSfx := cliCtx.Bool("randomsuffix")
-	if (inputFile != "") != (inputCloud != "" || inputLocation != "" || inputScope != "") {
-		return nil, errors.New("Must read either from file or from cloud, not both")
+	inputFile, inputCloud, outputCloud, inputLocation, inputScope, outputScope, shouldCreate, randSfx, err := parseCLIParams(cliCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse CLI params")
 	}
-	// We could validate that if we read from cloud, all relevant input CLI params must be there,
-	// and likewise if create is true, then all output CLI params are there.
-
-	create := cliCtx.Bool("create")
-	if create {
-		log.Printf("Will create target clusters")
-	} else {
-		log.Printf("Dry run; will not create target clusters")
-	}
-
-	return clone(inputFile, inputCloud, outputCloud, inputLocation, inputScope, outputScope, create, randSfx)
-
-}
-
-func clone(inputFile string,
-	inputCloud string,
-	outputCloud string,
-	inputLocation string,
-	inputScope string,
-	outputScope string,
-	shouldCreate bool,
-	randSfx bool) (transformedOrCreated []*clusters.ClusterInfo, err error) {
 
 	inputClusterInfos, err := getInputClusters(inputFile, inputCloud, err, inputScope, inputLocation)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get input clusters")
 	}
 	transformationOutput, err := transform(inputClusterInfos, outputCloud, outputScope, randSfx)
+	if len(transformationOutput) != len(inputClusterInfos) {
+		panic(fmt.Sprintf("%d!=%d", len(transformationOutput), len(inputClusterInfos)))
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot transform clusters")
 	}
@@ -97,10 +74,49 @@ func clone(inputFile string,
 
 }
 
+func parseCLIParams(cliCtx *cli.Context) (inputFile string, inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, shouldCreate, randomSuffix bool, err error) {
+	inputFile = cliCtx.String("inputfile")
+	inputCloud = cliCtx.String("inputcloud")
+	outputCloud = cliCtx.String("outputcloud")
+	inputLocation = cliCtx.String("inputlocation")
+	inputScope = cliCtx.String("inputscope")
+	outputScope = cliCtx.String("outputscope")
+	randomSuffix = cliCtx.Bool("randomsuffix")
+
+	shouldCreate = cliCtx.Bool("create")
+	if shouldCreate {
+		log.Printf("Will create target clusters")
+	} else {
+		log.Printf("Dry run; will not create target clusters")
+	}
+	var errS string
+	if inputFile == "" {
+		if inputCloud == "" || inputScope == "" || inputLocation == "" {
+			errS += "some values missing for input from cloud"
+		}
+	} else {
+		if inputCloud != "" || inputScope != "" || inputLocation != "" {
+			errS += "if input file is provided, do not provide input from cloud"
+		}
+	}
+
+	if shouldCreate {
+		if outputCloud == "" || outputScope == "" {
+			errS += "some output values missing"
+		}
+	}
+
+	if errS != "" {
+		err = errors.New(errS)
+	}
+
+	// and likewise if shouldCreate is true, then all output CLI params are there.
+	return inputFile, inputCloud, outputCloud, inputLocation, inputScope, outputScope, shouldCreate, randomSuffix, err
+}
+
 func transform(inputClusterInfos []*clusters.ClusterInfo, outputCloud string, outputScope string, randSfx bool) ([]*clusters.ClusterInfo, error) {
 	transformationOutput := make([]*clusters.ClusterInfo, 0)
 	for _, inputClusterInfo := range inputClusterInfos {
-		assertSourceCluster(inputClusterInfo, clusters.Read)
 		outputClusterInfo, err := transformCloudToCloud(inputClusterInfo, outputCloud, outputScope, randSfx)
 		assertSourceCluster(outputClusterInfo, clusters.Transformation)
 		transformationOutput = append(transformationOutput, outputClusterInfo)
@@ -114,7 +130,28 @@ func transform(inputClusterInfos []*clusters.ClusterInfo, outputCloud string, ou
 func getInputClusters(inputFile string, inputCloud string, err error, inputScope string, inputLocation string) ([]*clusters.ClusterInfo, error) {
 	var inputClusterInfos []*clusters.ClusterInfo
 	if inputFile != "" {
-		panic("TODO")
+		if inputFile[0:1] == "/" {
+			inputFile = inputFile[1:]
+		}
+		fn := clusterutil.RootPath() + "/" + inputFile
+		jsonBytes, err := ioutil.ReadFile(fn)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot load input file "+inputFile)
+		}
+
+		err = json.Unmarshal(jsonBytes, &inputClusterInfos)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot unmarshal "+inputFile)
+		}
+		for _, clusterInfo := range inputClusterInfos {
+			clusterInfo.GeneratedBy = clusters.InputFile
+		}
+		var names []string
+		for _, clusterInfo := range inputClusterInfos {
+			names = append(names, clusterInfo.Name)
+		}
+		log.Printf("Loaded %d clusters: %v. First Cluster is %s (%s, %s, %s)\n", len(inputClusterInfos), names, inputClusterInfos[0].Name, inputClusterInfos[0].Cloud, inputClusterInfos[0].Scope, inputClusterInfos[0].Location)
+
 	} else {
 
 		clusterAccessor := clusteraccess.GetClusterAccess(inputCloud)
@@ -146,7 +183,7 @@ func createClusters(transformationOutput []*clusters.ClusterInfo) ([]*clusters.C
 	return transformedClustersCreatedOrNot, nil
 }
 
-// 'created' return param may be partly populated as some clusters have been successfully populated and some have not
+// 'createdClusters' return param may be partly populated as some clusters have been successfully populated and some have not
 func createClusters0( /*immutable*/ createThese []*clusters.ClusterInfo) (createdClusters []*clusters.ClusterInfo, createdIndexes []int) {
 	createdIndexes = make([]int, 0)
 	createdClusters = make([]*clusters.ClusterInfo, len(createThese))
@@ -190,7 +227,10 @@ func assertSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster strin
 	case clusters.Created:
 		expectedGenByForSource = []string{clusters.Transformation}
 	case clusters.Transformation:
-		expectedGenByForSource = []string{clusters.Transformation, clusters.Read}
+		//Source of Transformation is Transformation when we have transformed twice: to hub and from hub
+		expectedGenByForSource = []string{clusters.Transformation, clusters.Read, clusters.InputFile}
+	case clusters.InputFile:
+		expectedGenByForSource = nil //nil means "don't check"
 	case clusters.SearchTemplate:
 		expectedGenByForSource = []string{""}
 	default:
@@ -204,10 +244,14 @@ func assertSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster strin
 	} else {
 		actual = sourceCluster.GeneratedBy
 	}
-
-	actualIsExpected := clusterutil.ContainsStr(expectedGenByForSource, actual)
+	var actualIsExpected = false
+	if expectedGenByForSource == nil { //nil means "don't check"
+		actualIsExpected = true
+	} else {
+		actualIsExpected = clusterutil.ContainsStr(expectedGenByForSource, actual)
+	}
 	if !actualIsExpected {
-		panic(fmt.Sprintf("unexpected GeneratedBy for SourceCluster: \"%s\"!=\"%s\"\n%s", expectedGenByForSource, actual, clusterutil.ToJSON(ci)))
+		panic(fmt.Sprintf("unexpected GeneratedBy for SourceCluster: \"%s\" is not one of \"%s\"\n%s", actual, expectedGenByForSource, clusterutil.ToJSON(ci)))
 	} else {
 		if sourceCluster != nil {
 			assertSourceCluster(sourceCluster, sourceCluster.GeneratedBy)

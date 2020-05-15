@@ -23,24 +23,20 @@ func CLIFlags() []cli.Flag {
 			Usage: "GCP project or AKS resource group; for AWS value is ignored",
 		},
 		&cli.StringFlag{
-			Name:     "outputscope",
-			Usage:    "GCP project or AKS resource group; for AWS value is ignored ",
-			Required: true,
+			Name:  "outputscope",
+			Usage: "GCP project or AKS resource group; for AWS value is ignored ",
 		},
 		&cli.StringFlag{
-			Name:     "inputlocation",
-			Usage:    "GCP region (for regional clusters) or zone (zonal clusters); AWS region; or AKS region",
-			Required: true,
-		},
-		&cli.StringFlag{ //TODO allow inputting JSON for inputcloud=Hub
-			Name:     "inputcloud",
-			Usage:    "GCP, Azure, or AWS",
-			Required: true,
+			Name:  "inputlocation",
+			Usage: "GCP region (for regional clusters) or zone (zonal clusters); AWS region; or AKS region",
 		},
 		&cli.StringFlag{
-			Name:     "outputcloud",
-			Usage:    "GCP, Azure, AWS, or Hub",
-			Required: true,
+			Name:  "inputcloud",
+			Usage: "GCP, Azure, or AWS",
+		},
+		&cli.StringFlag{
+			Name:  "outputcloud",
+			Usage: "GCP, Azure, AWS, or Hub",
 		},
 		&cli.BoolFlag{
 			Name:  "create",
@@ -58,12 +54,15 @@ func Launch(cliCtx *cli.Context) {
 	log.SetOutput(os.Stderr)
 	outputClusters, err := transformation.Clone(cliCtx)
 	if err != nil {
-		log.Fatalf("Error in transformation %v", err)
+		log.Fatalf("Error in transformation: %v", err)
 	}
 
 	outputString := util.ToJSON(outputClusters)
+	if len(outputClusters) == 0 {
+		panic("no output clusters")
+	}
 	exitCode, err := os.Stdout.WriteString(outputString + "\n")
-	if exitCode != 0 || err != nil {
+	if err != nil {
 		log.Fatalf("Error on exit %v, code %d", err, exitCode)
 	}
 }

@@ -47,6 +47,8 @@ var (
 	Transformation = "Transformation"
 	// SearchTemplate ...
 	SearchTemplate = "SearchTemplate"
+	// InputFile ...
+	InputFile = "InputFile"
 )
 
 var (
