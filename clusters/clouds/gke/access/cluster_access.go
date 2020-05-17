@@ -77,8 +77,9 @@ func (ca GKEClusterAccess) ListClusters(project, location string, labelFilter ma
 
 	for _, cluster := range resp.GetClusters() {
 
-		match := labelMatch(labelFilter, cluster.GetResourceLabels())
+		match := clusterutil.LabelMatch(labelFilter, cluster.GetResourceLabels())
 		if !match {
+			log.Printf("Skipping cluster %s because labels do not match", cluster.GetName())
 			continue
 		}
 		foundClusterInfo := clusterObjectToClusterInfo(cluster, project)
@@ -88,23 +89,15 @@ func (ca GKEClusterAccess) ListClusters(project, location string, labelFilter ma
 
 }
 
-func labelMatch(labelFilter map[string]string, actualLabels map[string]string) bool {
-	for k, v := range labelFilter {
-		actualVal, found := actualLabels[k]
-		if !(found && actualVal == v) {
-			return false
-		}
-	}
-
-	return true
-}
-
 func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) *clusters.ClusterInfo {
-	foundCluster := &clusters.ClusterInfo{Scope: project,
+	labels := clus.GetResourceLabels()
+	foundCluster := &clusters.ClusterInfo{
+		Scope:       project,
 		Location:    clus.Location,
 		Name:        clus.Name,
 		K8sVersion:  clus.CurrentMasterVersion,
 		GeneratedBy: clusters.Read,
+		Labels:      clusterutil.CopyStringMap(labels),
 		Cloud:       clusters.GCP,
 	}
 
@@ -157,6 +150,7 @@ func (ca GKEClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (*clu
 		Name:                  createThis.Name,
 		InitialClusterVersion: createThis.K8sVersion,
 		NodePools:             nodePools,
+		ResourceLabels:        createThis.Labels,
 	}
 	req := &containerpb.CreateClusterRequest{Parent: path, Cluster: &cluster}
 

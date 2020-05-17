@@ -28,6 +28,7 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 		K8sVersion:  "1.14.1-gke27",
 		Scope:       scope,
 		GeneratedBy: clusters.Mock,
+		Labels:      map[string]string{"x": "y"},
 		NodePools:   nodePools[:],
 	}
 	tr := GKETransformer{}
@@ -63,6 +64,7 @@ func TestTransformGcpToHubBadLoc(t *testing.T) {
 		Location:    "westus2",
 		K8sVersion:  "1.14.1-gke-27",
 		Scope:       "sample-project",
+		Labels:      map[string]string{"x": "y"},
 		GeneratedBy: clusters.Mock,
 	}
 	tr := GKETransformer{}

@@ -37,6 +37,7 @@ func TestTransformAzureToGCP(t *testing.T) {
 		Scope:       scope,
 		K8sVersion:  "1.14.0",
 		NodePools:   nodePools,
+		Labels:      map[string]string{"a": "aa", "b": "bb"},
 		GeneratedBy: clusters.Mock,
 	}
 	gcp, err := transformCloudToCloud(azure, clusters.GCP, scope, false)
@@ -104,6 +105,7 @@ func TestTransformGCPToAzure(t *testing.T) {
 		Location:    "us-central1-c",
 		Scope:       scope,
 		K8sVersion:  "1.14.0",
+		Labels:      map[string]string{"a": "aa", "b": "bb"},
 		NodePools:   nodePools,
 		GeneratedBy: clusters.Mock,
 	}

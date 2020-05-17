@@ -221,6 +221,9 @@ func assertSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster strin
 	if ci.GeneratedBy != expectedGenByForCluster {
 		panic(fmt.Sprintf("Actual %s != expected %s", ci.GeneratedBy, expectedGenByForCluster))
 	}
+	if ci.Labels == nil {
+		panic("Must initialize Labels")
+	}
 	switch ci.GeneratedBy {
 	case clusters.Mock:
 		expectedGenByForSource = []string{""}

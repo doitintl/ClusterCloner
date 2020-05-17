@@ -33,10 +33,14 @@ func RandomAlphaNumSequence(length int, includeUpperCase, includeLowerCase, incl
 
 // CommaSeparatedKeyValPairsToMap ...
 func CommaSeparatedKeyValPairsToMap(s string) map[string]string {
+	s = strings.Trim(s, " ")
 
 	entries := strings.Split(s, ",")
 
 	m := make(map[string]string)
+	if s == "" {
+		return m
+	}
 	for _, e := range entries {
 		parts := strings.Split(e, "=")
 		m[parts[0]] = parts[1]

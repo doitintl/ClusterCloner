@@ -37,6 +37,6 @@ func TestParseMissingMachineType2(t *testing.T) {
 	mt := MachineTypeByName(name)
 	zero := clusters.MachineType{}
 	if mt != zero {
-		t.Error(mt.Name)
+		t.Errorf("expect failure with %s", mt.Name)
 	}
 }

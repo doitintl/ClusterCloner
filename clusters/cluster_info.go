@@ -8,6 +8,7 @@ type ClusterInfo struct {
 	Name          string
 	K8sVersion    string
 	GeneratedBy   string
+	Labels        map[string]string
 	NodePools     []NodePoolInfo
 	SourceCluster *ClusterInfo
 }

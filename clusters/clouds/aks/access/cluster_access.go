@@ -9,9 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"strconv"
-
+	//TODO upgrade API
 	//"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
-	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice" //TODO upgrade API
+	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -111,9 +111,8 @@ func (ca AKSClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (crea
 }
 
 // createAKSCluster creates a new managed Kubernetes cluster
-func createAKSCluster(
-	ctx context.Context, createThis *clusters.ClusterInfo, resourceGroupName, username,
-	sshPublicKeyPath, clientID, clientSecret string) (containerservice.ManagedCluster, error) {
+func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
+	resourceGroupName, username, sshPublicKeyPath, clientID, clientSecret string) (clusterCreated containerservice.ManagedCluster, err error) {
 	var sshKeyData string
 	if _, err := os.Stat(sshPublicKeyPath); err == nil {
 		sshBytes, err := ioutil.ReadFile(sshPublicKeyPath)
@@ -124,10 +123,9 @@ func createAKSCluster(
 	} else {
 		panic(fmt.Sprintf("cannot load: %s", sshPublicKeyPath))
 	}
-	zero := containerservice.ManagedCluster{}
 	aksClient, err := getManagedClustersClient()
 	if err != nil {
-		return zero, fmt.Errorf("cannot get AKS client: %v", err)
+		return containerservice.ManagedCluster{}, fmt.Errorf("cannot get AKS client: %v", err)
 	}
 
 	agPoolProfiles := make([]containerservice.AgentPoolProfile, 0)
@@ -143,8 +141,6 @@ func createAKSCluster(
 		agPoolProfiles = append(agPoolProfiles, agPoolProfile)
 	}
 
-	agentPoolProfiles := &agPoolProfiles
-
 	servicePrincipalProfile := &containerservice.ServicePrincipalProfile{
 		ClientID: to.StringPtr(clientID),
 		Secret:   to.StringPtr(clientSecret),
@@ -159,13 +155,14 @@ func createAKSCluster(
 	clusterToCreate := containerservice.ManagedCluster{
 		Name:     &createThis.Name,
 		Location: &createThis.Location,
+		Tags:     clusterutil.StrMapToStrPtrMap(createThis.Labels),
 		ManagedClusterProperties: &containerservice.ManagedClusterProperties{
 			DNSPrefix: &createThis.Name,
 			LinuxProfile: &containerservice.LinuxProfile{
 				AdminUsername: to.StringPtr(username),
 				SSH:           sshConfiguration,
 			},
-			AgentPoolProfiles:       agentPoolProfiles,
+			AgentPoolProfiles:       &agPoolProfiles,
 			ServicePrincipalProfile: servicePrincipalProfile,
 			KubernetesVersion:       &createThis.K8sVersion,
 		},
@@ -177,39 +174,50 @@ func createAKSCluster(
 		clusterToCreate,
 	)
 	if err != nil {
-		return zero, fmt.Errorf("cannot create AKS cluster: %v", err)
+		return containerservice.ManagedCluster{}, fmt.Errorf("cannot create AKS cluster: %v", err)
 	}
 
 	log.Printf("About to create Azure Cluster %s; wait for completion", createThis.Name)
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
-		return zero, fmt.Errorf("cannot get the AKS create or update future response: %v", err)
+		return containerservice.ManagedCluster{}, fmt.Errorf("cannot get the AKS create or update future response: %v", err)
 	}
-	clusterCreated, err := future.Result(aksClient)
+	clusterCreated, err = future.Result(aksClient)
 	if err != nil {
-		return zero, errors.Wrap(err, "error waiting for result")
+		return containerservice.ManagedCluster{}, errors.Wrap(err, "error waiting for result")
 	}
 	clusterProperties := clusterCreated.ManagedClusterProperties
 	state := *clusterProperties.ProvisioningState
 	if state != "Succeeded" {
-		return zero, errors.New("could not created cluster, staate was " + state)
+		return containerservice.ManagedCluster{}, errors.New("could not created cluster, staate was " + state)
 	}
 	return clusterCreated, err
 }
 
 //ListClusters ...
-func (ca AKSClusterAccess) ListClusters(subscription, location string, labels map[string]string) (ci []*clusters.ClusterInfo, err error) {
+func (ca AKSClusterAccess) ListClusters(subscription, location string, labelFilter map[string]string) (listedClusters []*clusters.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
 	var aksClient, err2 = getManagedClustersClient()
 	if err2 != nil {
-		return ci, errors.New("cannot get AKS client")
+		return listedClusters, errors.New("cannot get AKS client")
 	}
 
 	ret := make([]*clusters.ClusterInfo, 0)
 
-	clusterList, _ := aksClient.List(ctx)
+	clusterList, err := aksClient.List(ctx)
+	// TODO check if we need paging
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot list")
+	}
 	for _, managedCluster := range clusterList.Values() {
+		tags := managedCluster.Tags
+		tagsAsStrMap := clusterutil.StrPtrMapToStrMap(tags)
+		match := clusterutil.LabelMatch(labelFilter, tagsAsStrMap)
+		if !match {
+			log.Printf("Skipping cluster %s because labels do not match", managedCluster.Name)
+			continue
+		}
 		foundCluster := clusterObjectToClusterInfo(managedCluster, subscription, clusters.Read)
 		ret = append(ret, foundCluster)
 
@@ -226,6 +234,7 @@ func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, 
 		K8sVersion:  *props.KubernetesVersion,
 		GeneratedBy: generatedBy,
 		Cloud:       clusters.Azure,
+		Labels:      clusterutil.StrPtrMapToStrMap(managedCluster.Tags),
 	}
 	//AgentPoolProfile is not showing AgentPool K8s Version, so copying from the Cluster
 	var nodePoolK8sVersion = foundCluster.K8sVersion

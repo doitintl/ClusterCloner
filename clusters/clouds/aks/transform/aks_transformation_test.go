@@ -12,6 +12,7 @@ func TestTransformAzureToHub(t *testing.T) {
 		Location:    "westus2",
 		Scope:       "samplescope",
 		K8sVersion:  "1.14.0",
+		Labels:      map[string]string{"a": "aa", "b": "bb"},
 		GeneratedBy: clusters.Mock}
 	tr := AKSTransformer{}
 	std, err := tr.CloudToHub(ci)
@@ -30,7 +31,9 @@ func TestTransformAzureToHubBadLoc(t *testing.T) {
 		Cloud: clusters.Azure, Location: "westus1",
 		Scope:       "sampelscope",
 		K8sVersion:  "1.15.0",
-		GeneratedBy: clusters.Mock}
+		GeneratedBy: clusters.Mock,
+		Labels:      map[string]string{"a": "aa", "b": "bb"},
+	}
 	tr := AKSTransformer{}
 	_, err := tr.CloudToHub(ci)
 	if err == nil {
@@ -45,6 +48,7 @@ func TestTransformHubToAzure(t *testing.T) {
 		Location:    "us-central1",
 		Scope:       "",
 		K8sVersion:  "1.14.6",
+		Labels:      map[string]string{"a": "aa", "b": "bb"},
 		GeneratedBy: clusters.Mock,
 	}
 	tr := AKSTransformer{}

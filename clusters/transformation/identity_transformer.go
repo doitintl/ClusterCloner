@@ -2,6 +2,7 @@ package transformation
 
 import (
 	"clustercloner/clusters"
+	"clustercloner/clusters/util"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +18,8 @@ func copyNodePools(in *clusters.ClusterInfo) []clusters.NodePoolInfo {
 }
 
 func copyClusterInfo(in *clusters.ClusterInfo) clusters.ClusterInfo {
-	retVal := *in                        //copy
+	retVal := *in //copy
+	retVal.Labels = util.CopyStringMap(in.Labels)
 	retVal.NodePools = copyNodePools(in) //array isa pointer type, needs copying
 	return retVal
 }

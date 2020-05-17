@@ -24,6 +24,7 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 		Scope:         outputScope,
 		Location:      targetLoc,
 		K8sVersion:    targetClusterK8sVersion,
+		Labels:        clusterutil.CopyStringMap(in.Labels),
 	}
 
 	ret.NodePools = make([]clusters.NodePoolInfo, 0)
