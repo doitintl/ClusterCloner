@@ -215,7 +215,7 @@ func (ca AKSClusterAccess) ListClusters(subscription, location string, labelFilt
 		tagsAsStrMap := clusterutil.StrPtrMapToStrMap(tags)
 		match := clusterutil.LabelMatch(labelFilter, tagsAsStrMap)
 		if !match {
-			log.Printf("Skipping cluster %s because labels do not match", managedCluster.Name)
+			log.Printf("Skipping cluster %s because labels do not match", *managedCluster.Name)
 			continue
 		}
 		foundCluster := clusterObjectToClusterInfo(managedCluster, subscription, clusters.Read)
