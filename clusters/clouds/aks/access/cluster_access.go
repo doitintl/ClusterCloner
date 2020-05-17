@@ -6,12 +6,10 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/pkg/errors"
 	"io"
 	"strconv"
-	//TODO upgrade API
-	//"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
-	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-05-01/resources"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -128,10 +126,10 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 		return containerservice.ManagedCluster{}, fmt.Errorf("cannot get AKS client: %v", err)
 	}
 
-	agPoolProfiles := make([]containerservice.AgentPoolProfile, 0)
+	agPoolProfiles := make([]containerservice.ManagedClusterAgentPoolProfile, 0)
 	for _, nodePool := range createThis.NodePools {
 		agPoolName := strings.ReplaceAll(nodePool.Name, "-", "")
-		agPoolProfile := containerservice.AgentPoolProfile{
+		agPoolProfile := containerservice.ManagedClusterAgentPoolProfile{
 			Count:        to.Int32Ptr(nodePool.NodeCount),
 			Name:         to.StringPtr(agPoolName),
 			VMSize:       containerservice.VMSizeTypes(nodePool.MachineType.Name),
@@ -141,7 +139,7 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 		agPoolProfiles = append(agPoolProfiles, agPoolProfile)
 	}
 
-	servicePrincipalProfile := &containerservice.ServicePrincipalProfile{
+	servicePrincipalProfile := &containerservice.ManagedClusterServicePrincipalProfile{
 		ClientID: to.StringPtr(clientID),
 		Secret:   to.StringPtr(clientSecret),
 	}
@@ -198,8 +196,8 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 func (ca AKSClusterAccess) ListClusters(subscription, location string, labelFilter map[string]string) (listedClusters []*clusters.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
-	var aksClient, err2 = getManagedClustersClient()
-	if err2 != nil {
+	aksClient, err := getManagedClustersClient()
+	if err != nil {
 		return listedClusters, errors.New("cannot get AKS client")
 	}
 

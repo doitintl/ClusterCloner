@@ -163,9 +163,9 @@ func (ca GKEClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (*clu
 		return nil, errors.Wrap(err, "cannot create")
 	}
 
-	createdCluster, err2 := ca.waitForClusterReadiness(createThis)
-	if err2 != nil {
-		return nil, errors.Wrap(err2, "error in waiting for cluster to be ready")
+	createdCluster, err := ca.waitForClusterReadiness(createThis)
+	if err != nil {
+		return nil, errors.Wrap(err, "error in waiting for cluster to be ready")
 	}
 	return createdCluster, err
 }

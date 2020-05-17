@@ -285,9 +285,9 @@ func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string
 	if err1 != nil || hub == nil {
 		return nil, errors.Wrap(err1, "error in transforming toHubFormat")
 	}
-	out, err2 := fromHubFormat(hub, toCloud, outputScope, randSfx)
-	if err2 != nil {
-		return nil, errors.Wrap(err2, "cannot convert from Hub format")
+	out, err := fromHubFormat(hub, toCloud, outputScope, randSfx)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot convert from Hub format")
 	}
 	out.GeneratedBy = clusters.Transformation
 	return out, nil
