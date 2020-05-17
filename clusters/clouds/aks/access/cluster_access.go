@@ -192,7 +192,7 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 	return clusterCreated, err
 }
 
-//ListClusters ...
+// ListClusters ...
 func (ca AKSClusterAccess) ListClusters(subscription, location string, labelFilter map[string]string) (listedClusters []*clusters.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
