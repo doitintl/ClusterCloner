@@ -10,8 +10,9 @@ import (
 // ClusterAccess ...
 type ClusterAccess interface {
 	//TODO allow listing clusters by tag
+	//TODO read labels and add labels to created clusters
 	//ListClusters list all clusters at this location
-	ListClusters(project, location string) ([]*clusters.ClusterInfo, error)
+	ListClusters(project, location string, labels map[string]string) ([]*clusters.ClusterInfo, error)
 	//CreateCluster ...
 	CreateCluster(info *clusters.ClusterInfo) (*clusters.ClusterInfo, error)
 	//DescribeCluster...

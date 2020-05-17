@@ -29,3 +29,11 @@ func RootPath() string {
 	}
 	return wd
 }
+
+// NoopWriter ...
+type NoopWriter struct{}
+
+// Write ...
+func (m NoopWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}

@@ -146,6 +146,5 @@ func ParseEnvironment() error {
 	}
 	// subscriptionID (ARM)
 	subscriptionID = os.Getenv("AZURE_SUBSCRIPTION_ID")
-	log.Println("Read Environment")
 	return nil
 }

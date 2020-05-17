@@ -44,12 +44,12 @@ func getTransformer(cloud string) Transformer {
 
 // Clone ...
 func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
-	inputFile, inputCloud, outputCloud, inputLocation, inputScope, outputScope, shouldCreate, randSfx, err := parseCLIParams(cliCtx)
+	inputFile, inputCloud, outputCloud, inputLocation, inputScope, outputScope, shouldCreate, randSfx, labelFilter, err := parseCLIParams(cliCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse CLI params")
 	}
 
-	inputClusterInfos, err := getInputClusters(inputFile, inputCloud, err, inputScope, inputLocation)
+	inputClusterInfos, err := getInputClusters(inputFile, inputCloud, inputScope, inputLocation, labelFilter)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get input clusters")
 	}
@@ -74,7 +74,7 @@ func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 
 }
 
-func parseCLIParams(cliCtx *cli.Context) (inputFile string, inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, shouldCreate, randomSuffix bool, err error) {
+func parseCLIParams(cliCtx *cli.Context) (inputFile string, inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, shouldCreate, randomSuffix bool, labelFilter map[string]string, err error) {
 	inputFile = cliCtx.String("inputfile")
 	inputCloud = cliCtx.String("inputcloud")
 	outputCloud = cliCtx.String("outputcloud")
@@ -89,6 +89,8 @@ func parseCLIParams(cliCtx *cli.Context) (inputFile string, inputCloud string, o
 	} else {
 		log.Printf("Dry run; will not create target clusters")
 	}
+	labelFilterS := cliCtx.String("labelfilter")
+	labelFilter = clusterutil.CommaSeparatedKeyValPairsToMap(labelFilterS)
 	var errS string
 	if inputFile == "" {
 		if inputCloud == "" || inputScope == "" || inputLocation == "" {
@@ -111,7 +113,7 @@ func parseCLIParams(cliCtx *cli.Context) (inputFile string, inputCloud string, o
 	}
 
 	// and likewise if shouldCreate is true, then all output CLI params are there.
-	return inputFile, inputCloud, outputCloud, inputLocation, inputScope, outputScope, shouldCreate, randomSuffix, err
+	return inputFile, inputCloud, outputCloud, inputLocation, inputScope, outputScope, shouldCreate, randomSuffix, labelFilter, err
 }
 
 func transform(inputClusterInfos []*clusters.ClusterInfo, outputCloud string, outputScope string, randSfx bool) ([]*clusters.ClusterInfo, error) {
@@ -127,7 +129,7 @@ func transform(inputClusterInfos []*clusters.ClusterInfo, outputCloud string, ou
 	return transformationOutput, nil
 }
 
-func getInputClusters(inputFile string, inputCloud string, err error, inputScope string, inputLocation string) ([]*clusters.ClusterInfo, error) {
+func getInputClusters(inputFile string, inputCloud string, inputScope string, inputLocation string, labelFilter map[string]string) (listedClusters []*clusters.ClusterInfo, err error) {
 	var inputClusterInfos []*clusters.ClusterInfo
 	if inputFile != "" {
 		if inputFile[0:1] == "/" {
@@ -158,7 +160,7 @@ func getInputClusters(inputFile string, inputCloud string, err error, inputScope
 		if clusterAccessor == nil {
 			return nil, errors.New("cannot get accessor for " + inputCloud)
 		}
-		inputClusterInfos, err = clusterAccessor.ListClusters(inputScope, inputLocation)
+		inputClusterInfos, err = clusterAccessor.ListClusters(inputScope, inputLocation, labelFilter)
 		if err != nil {
 			return nil, err
 		}

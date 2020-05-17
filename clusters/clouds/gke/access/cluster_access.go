@@ -56,7 +56,7 @@ func getCluster(project, location, name string) (*containerpb.Cluster, error) {
 }
 
 // ListClusters lists clusters; location param can be region or zone
-func (ca GKEClusterAccess) ListClusters(project, location string) (ret []*clusters.ClusterInfo, err error) {
+func (ca GKEClusterAccess) ListClusters(project, location string, labelFilter map[string]string) (ret []*clusters.ClusterInfo, err error) {
 	ret = make([]*clusters.ClusterInfo, 0)
 
 	bkgdCtx := context.Background()
@@ -76,11 +76,27 @@ func (ca GKEClusterAccess) ListClusters(project, location string) (ret []*cluste
 	}
 
 	for _, cluster := range resp.GetClusters() {
+
+		match := labelMatch(labelFilter, cluster.GetResourceLabels())
+		if !match {
+			continue
+		}
 		foundClusterInfo := clusterObjectToClusterInfo(cluster, project)
 		ret = append(ret, foundClusterInfo)
 	}
 	return ret, nil
 
+}
+
+func labelMatch(labelFilter map[string]string, actualLabels map[string]string) bool {
+	for k, v := range labelFilter {
+		actualVal, found := actualLabels[k]
+		if !(found && actualVal == v) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) *clusters.ClusterInfo {

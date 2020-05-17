@@ -46,21 +46,22 @@ func CLIFlags() []cli.Flag {
 			Name:  "randomsuffix",
 			Usage: "true: add a random suffix to cluster names to prevent collisions",
 		},
+		&cli.StringFlag{
+			Name:  "labelfilter",
+			Usage: "comma-separated list of key=value pairs; all must match for a clsuter to be included"},
 	}
 }
 
 // Launch ...
 func Launch(cliCtx *cli.Context) {
-	log.SetOutput(os.Stderr)
+	googleCred := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	log.Println("GOOGLE_APPLICATION_CREDENTIALS", googleCred)
 	outputClusters, err := transformation.Clone(cliCtx)
 	if err != nil {
 		log.Fatalf("Error in transformation: %v", err)
 	}
 
 	outputString := util.ToJSON(outputClusters)
-	if len(outputClusters) == 0 {
-		panic("no output clusters")
-	}
 	exitCode, err := os.Stdout.WriteString(outputString + "\n")
 	if err != nil {
 		log.Fatalf("Error on exit %v, code %d", err, exitCode)

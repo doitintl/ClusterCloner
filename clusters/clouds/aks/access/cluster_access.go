@@ -198,7 +198,7 @@ func createAKSCluster(
 }
 
 //ListClusters ...
-func (ca AKSClusterAccess) ListClusters(subscription string, location string) (ci []*clusters.ClusterInfo, err error) {
+func (ca AKSClusterAccess) ListClusters(subscription, location string, labels map[string]string) (ci []*clusters.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
 	var aksClient, err2 = getManagedClustersClient()

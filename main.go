@@ -26,11 +26,6 @@ var (
 )
 
 func init() {
-	googleCred := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-	log.Println("GOOGLE_APPLICATION_CREDENTIALS", googleCred)
-}
-
-func init() {
 	// handle termination signal
 	mainCtx = handleSignals()
 	_ = mainCtx
@@ -71,6 +66,9 @@ func handleSignals() context.Context {
 }
 
 func main() {
+
+	log.SetOutput(os.Stderr) //Log to stderr
+
 	log.Println("Starting")
 
 	flags := launcher.CLIFlags()
@@ -93,6 +91,5 @@ func main() {
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)
-		//todo check that all output is std err except program output
 	}
 }
