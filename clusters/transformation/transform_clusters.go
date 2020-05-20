@@ -286,18 +286,18 @@ func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string
 		}
 		out.Name = out.Name + "-" + sfx
 		return out, nil
-	} else { //two different clouds;so we use use hub
-		hub, err1 := toHubFormat(in)
-		if err1 != nil || hub == nil {
-			return nil, errors.Wrap(err1, "error in transforming toHubFormat")
-		}
-		out, err := fromHubFormat(hub, toCloud, outputScope, randSfx)
-		if err != nil {
-			return nil, errors.Wrap(err, "cannot convert from Hub format")
-		}
-		out.GeneratedBy = clusters.Transformation
-		return out, nil
+	} //two different clouds;so we use use hub
+	hub, err1 := toHubFormat(in)
+	if err1 != nil || hub == nil {
+		return nil, errors.Wrap(err1, "error in transforming toHubFormat")
 	}
+	out, err := fromHubFormat(hub, toCloud, outputScope, randSfx)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot convert from Hub format")
+	}
+	out.GeneratedBy = clusters.Transformation
+	return out, nil
+
 }
 
 func toHubFormat(input *clusters.ClusterInfo) (ret *clusters.ClusterInfo, err error) {

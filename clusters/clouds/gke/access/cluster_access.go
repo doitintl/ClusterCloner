@@ -267,7 +267,7 @@ Waiting:
 			}
 			continue
 		case containerpb.Operation_ABORTING:
-			return errors.New("Abborting while waiting for shutdown")
+			return errors.New("Aborting while waiting for shutdown")
 		case containerpb.Operation_DONE:
 			log.Printf("deletion is finished")
 			break Waiting
