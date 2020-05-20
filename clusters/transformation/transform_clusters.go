@@ -5,12 +5,10 @@ import (
 	transformaks "clustercloner/clusters/clouds/aks/transform"
 	transformgke "clustercloner/clusters/clouds/gke/transform"
 	"clustercloner/clusters/clusteraccess"
+	"clustercloner/clusters/transformation/util"
 	clusterutil "clustercloner/clusters/util"
-	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
-	"io/ioutil"
-
 	"github.com/urfave/cli/v2"
 	"log"
 )
@@ -26,6 +24,7 @@ type Transformer interface {
 	LocationCloudToHub(loc string) (string, error)
 }
 
+// getTransformer, from or to hub to the cloud specified by the parameter.
 func getTransformer(cloud string) Transformer {
 	var transformer Transformer
 	switch cloud {
@@ -34,7 +33,7 @@ func getTransformer(cloud string) Transformer {
 	case clusters.Azure:
 		transformer = &transformaks.AKSTransformer{}
 	case clusters.Hub:
-		transformer = &IdentityTransformer{clusters.Hub}
+		transformer = &util.IdentityTransformer{clusters.Hub}
 	default:
 		transformer = nil
 		log.Printf("Unknown %s", cloud)
@@ -42,13 +41,38 @@ func getTransformer(cloud string) Transformer {
 	return transformer
 }
 
-// Clone ...
-func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
+// getTransformer, from this cloud to this same cloud, without going through hub
+func getSameCloudTransformer(cloud string) Transformer {
+	var transformer Transformer
+	switch cloud {
+	case clusters.GCP:
+		transformer = &transformgke.GKEToGKETransformer{}
+	case clusters.Azure:
+		transformer = &util.IdentityTransformer{clusters.Azure}
+	case clusters.Hub:
+		transformer = &util.IdentityTransformer{clusters.Hub}
+	default:
+		transformer = nil
+		log.Printf("Unknown %s", cloud)
+	}
+	return transformer
+}
+
+// CloneFromCli ...
+func CloneFromCli(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 	inputFile, inputCloud, outputCloud, inputLocation, inputScope, outputScope, shouldCreate, randSfx, labelFilter, err := parseCLIParams(cliCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse CLI params")
 	}
+	return Clone(inputFile, inputCloud, inputScope, inputLocation, labelFilter, outputCloud, outputScope, randSfx, shouldCreate)
 
+}
+
+// Clone ...
+func Clone(inputFile string, inputCloud string, inputScope string, inputLocation string, labelFilter map[string]string, outputCloud string, outputScope string, randSfx bool, shouldCreate bool) ([]*clusters.ClusterInfo, error) {
+	if labelFilter == nil { // enforce non-nil labelFilter to make sure we copy it. Here, nil is acceptable
+		labelFilter = make(map[string]string)
+	}
 	inputClusterInfos, err := getInputClusters(inputFile, inputCloud, inputScope, inputLocation, labelFilter)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get input clusters")
@@ -71,7 +95,6 @@ func Clone(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 		return nil, errors.Wrap(err, "cannot shouldCreate")
 	}
 	return transformedClustersCreatedOrNot, nil
-
 }
 
 func parseCLIParams(cliCtx *cli.Context) (inputFile string, inputCloud string, outputCloud string, inputLocation string, inputScope string, outputScope string, shouldCreate, randomSuffix bool, labelFilter map[string]string, err error) {
@@ -129,38 +152,21 @@ func transform(inputClusterInfos []*clusters.ClusterInfo, outputCloud string, ou
 	return transformationOutput, nil
 }
 
-func getInputClusters(inputFile string, inputCloud string, inputScope string, inputLocation string, labelFilter map[string]string) (listedClusters []*clusters.ClusterInfo, err error) {
-	var inputClusterInfos []*clusters.ClusterInfo
+func getInputClusters(inputFile string, inputCloud string, inputScope string, inputLocation string, labelFilter map[string]string) (inputClusterInfos []*clusters.ClusterInfo, err error) {
 	if inputFile != "" {
-		if inputFile[0:1] == "/" {
-			inputFile = inputFile[1:]
-		}
-		fn := clusterutil.RootPath() + "/" + inputFile
-		jsonBytes, err := ioutil.ReadFile(fn)
+		inputClusterInfos, err = clusters.LoadFromFile(inputFile)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot load input file "+inputFile)
+			return nil, errors.Wrap(err, "cannot read input file")
 		}
 
-		err = json.Unmarshal(jsonBytes, &inputClusterInfos)
-		if err != nil {
-			return nil, errors.Wrap(err, "cannot unmarshal "+inputFile)
-		}
-		for _, clusterInfo := range inputClusterInfos {
-			clusterInfo.GeneratedBy = clusters.InputFile
-		}
-		var names []string
-		for _, clusterInfo := range inputClusterInfos {
-			names = append(names, clusterInfo.Name)
-		}
-		log.Printf("Loaded %d clusters: %v. First Cluster is %s (%s, %s, %s)\n", len(inputClusterInfos), names, inputClusterInfos[0].Name, inputClusterInfos[0].Cloud, inputClusterInfos[0].Scope, inputClusterInfos[0].Location)
-
+		log.Printf("Loaded %d clusters from file\n", len(inputClusterInfos))
 	} else {
 
 		clusterAccessor := clusteraccess.GetClusterAccess(inputCloud)
 		if clusterAccessor == nil {
 			return nil, errors.New("cannot get accessor for " + inputCloud)
 		}
-		inputClusterInfos, err = clusterAccessor.ListClusters(inputScope, inputLocation, labelFilter)
+		inputClusterInfos, err = clusterAccessor.List(inputScope, inputLocation, labelFilter)
 		if err != nil {
 			return nil, err
 		}
@@ -207,7 +213,7 @@ func createCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *cluste
 	if ca == nil {
 		return nil, errors.New("cannot create ClusterAccess")
 	}
-	created, err := ca.CreateCluster(createThis)
+	created, err := ca.Create(createThis)
 	if err != nil {
 		log.Println("error creating cluster", err)
 	} else {
@@ -266,8 +272,8 @@ func assertSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster strin
 }
 
 func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string, randSfx bool) (c *clusters.ClusterInfo, err error) {
-	if in.Cloud == toCloud {
-		t := IdentityTransformer{toCloud}
+	if in.Cloud == toCloud { //don't use hub
+		t := getSameCloudTransformer(toCloud)
 		out, err := t.HubToCloud(in, outputScope)
 		if err != nil || out == nil {
 			return nil, errors.Wrap(err, "Error in transforming to same cloud")
@@ -280,18 +286,18 @@ func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string
 		}
 		out.Name = out.Name + "-" + sfx
 		return out, nil
+	} else { //two different clouds;so we use use hub
+		hub, err1 := toHubFormat(in)
+		if err1 != nil || hub == nil {
+			return nil, errors.Wrap(err1, "error in transforming toHubFormat")
+		}
+		out, err := fromHubFormat(hub, toCloud, outputScope, randSfx)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot convert from Hub format")
+		}
+		out.GeneratedBy = clusters.Transformation
+		return out, nil
 	}
-	hub, err1 := toHubFormat(in)
-	if err1 != nil || hub == nil {
-		return nil, errors.Wrap(err1, "error in transforming toHubFormat")
-	}
-	out, err := fromHubFormat(hub, toCloud, outputScope, randSfx)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot convert from Hub format")
-	}
-	out.GeneratedBy = clusters.Transformation
-	return out, nil
-
 }
 
 func toHubFormat(input *clusters.ClusterInfo) (ret *clusters.ClusterInfo, err error) {

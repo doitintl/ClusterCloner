@@ -15,12 +15,12 @@ import (
 type EKSClusterAccess struct {
 }
 
-// CreateCluster ...
+// Create ...
 func (ca EKSClusterAccess) CreateCluster(info clusters.ClusterInfo) (clusters.ClusterInfo, error) {
 	panic("implement me")
 }
 
-// DescribeCluster ...
+// Describe ...
 func (ca EKSClusterAccess) DescribeCluster(clusterName string, region string) (clusters.ClusterInfo, error) {
 
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
@@ -40,7 +40,7 @@ func (ca EKSClusterAccess) DescribeCluster(clusterName string, region string) (c
 	return clusters.ClusterInfo{Scope: "", Location: region, Name: clusterName, GeneratedBy: clusters.Read}, nil
 }
 
-// ListClusters ...
+// List ...
 func (ca EKSClusterAccess) ListClusters(_ string, location string) ([]clusters.ClusterInfo, error) {
 	clusterNames, err := clusterNames(location)
 	if err != nil {

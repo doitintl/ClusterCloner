@@ -56,7 +56,7 @@ func CLIFlags() []cli.Flag {
 func Launch(cliCtx *cli.Context) {
 	googleCred := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 	log.Println("GOOGLE_APPLICATION_CREDENTIALS", googleCred)
-	outputClusters, err := transformation.Clone(cliCtx)
+	outputClusters, err := transformation.CloneFromCli(cliCtx)
 	if err != nil {
 		log.Fatalf("Error in transformation: %v", err)
 	}

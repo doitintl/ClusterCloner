@@ -3,9 +3,12 @@
     "Cloud": "GCP",
     "Scope": "joshua-playground",
     "Location": "us-central1-c",
-    "Name": "cluster-2-uli8z-dqlgm",
+    "Name": "for-testing-clustercloner",
     "K8sVersion": "1.14.10-gke.27",
     "GeneratedBy": "Created",
+    "Labels": {
+      "for-testing-please-delete": "true"
+    },
     "NodePools": [
       {
         "Name": "default-pool",

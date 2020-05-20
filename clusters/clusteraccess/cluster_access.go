@@ -9,12 +9,14 @@ import (
 
 // ClusterAccess ...
 type ClusterAccess interface {
-	//ListClusters list all clusters at this location
-	ListClusters(project, location string, labels map[string]string) ([]*clusters.ClusterInfo, error)
-	//CreateCluster ...
-	CreateCluster(info *clusters.ClusterInfo) (*clusters.ClusterInfo, error)
-	//DescribeCluster...
-	DescribeCluster(readThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error)
+	//List list all clusters at this location
+	List(project, location string, labels map[string]string) ([]*clusters.ClusterInfo, error)
+	//Create ...
+	Create(info *clusters.ClusterInfo) (*clusters.ClusterInfo, error)
+	//Describe...
+	Describe(readThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error)
+	//Delete
+	Delete(ci *clusters.ClusterInfo) error
 	//GetSupportedK8sVersions
 	GetSupportedK8sVersions(scope, location string) []string
 }

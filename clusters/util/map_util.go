@@ -2,6 +2,7 @@ package util
 
 // LabelMatch ...
 func LabelMatch(labelFilter map[string]string, actualLabels map[string]string) bool {
+
 	for k, v := range labelFilter {
 		actualVal, found := actualLabels[k]
 		if !(found && actualVal == v) {

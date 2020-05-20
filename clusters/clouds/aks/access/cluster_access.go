@@ -37,6 +37,11 @@ func init() {
 type AKSClusterAccess struct {
 }
 
+// Delete ...
+func (ca AKSClusterAccess) Delete(ci *clusters.ClusterInfo) error {
+	panic("implement me")
+}
+
 // GetAKS ...
 func getCluster(resourceGroupName, resourceName string) (cluster containerservice.ManagedCluster, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
@@ -60,8 +65,8 @@ func createGroup(ctx context.Context, groupName string, region string) (resource
 	return groupsClient.CreateOrUpdate(ctx, groupName, group)
 }
 
-//DescribeCluster ...
-func (ca AKSClusterAccess) DescribeCluster(describeThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
+//Describe ...
+func (ca AKSClusterAccess) Describe(describeThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
 	if describeThis.GeneratedBy == "" {
 		describeThis.GeneratedBy = clusters.SearchTemplate
 	}
@@ -79,8 +84,8 @@ func (ca AKSClusterAccess) DescribeCluster(describeThis *clusters.ClusterInfo) (
 	return clusterInfo, nil
 }
 
-// CreateCluster ...
-func (ca AKSClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
+// Create ...
+func (ca AKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
 
 	groupName := createThis.Scope
 	log.Printf("Create Cluster: Group %s, Cluster %s, Location %s", groupName, createThis.Name, createThis.Location)
@@ -192,8 +197,8 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 	return clusterCreated, err
 }
 
-// ListClusters ...
-func (ca AKSClusterAccess) ListClusters(subscription, location string, labelFilter map[string]string) (listedClusters []*clusters.ClusterInfo, err error) {
+// List ...
+func (ca AKSClusterAccess) List(subscription, location string, labelFilter map[string]string) (listedClusters []*clusters.ClusterInfo, err error) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
 	aksClient, err := getManagedClustersClient()

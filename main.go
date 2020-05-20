@@ -67,7 +67,7 @@ func handleSignals() context.Context {
 
 func main() {
 
-	log.SetOutput(os.Stderr) //Log to stderr
+	log.SetOutput(os.Stdout) //Log to stderr
 
 	log.Println("Starting")
 

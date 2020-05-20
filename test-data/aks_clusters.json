@@ -1,0 +1,27 @@
+[
+  {
+    "Cloud": "Azure",
+    "Scope": "joshua-playground",
+    "Location": "centralus",
+    "Name": "cluster-2-323n7-copy",
+    "K8sVersion": "1.14.8",
+    "GeneratedBy": "Created",
+    "Labels": {
+      "label": "labelval",
+      "label2": ""
+    },
+    "NodePools": [
+      {
+        "Name": "defaultpool",
+        "NodeCount": 1,
+        "K8sVersion": "1.14.8",
+        "MachineType": {
+          "Name": "Standard_F2",
+          "CPU": 2,
+          "RAMMB": 4096
+        },
+        "DiskSizeGB": 33
+      }
+    ]
+  }
+]

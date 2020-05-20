@@ -27,6 +27,11 @@ func init() {
 type GKETransformer struct {
 }
 
+// GKEToGKETransformer ...
+type GKEToGKETransformer struct {
+	transformutil.IdentityTransformer
+}
+
 // CloudToHub ...
 func (tr *GKETransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
 	loc, err := tr.LocationCloudToHub(in.Location)
@@ -79,6 +84,17 @@ func (tr *GKETransformer) LocationCloudToHub(zone string) (string, error) {
 	}
 	return region, nil
 
+}
+
+// HubToCloud ...
+func (tr *GKEToGKETransformer) HubToCloud(in *clusters.ClusterInfo, outputScope string) (*clusters.ClusterInfo, error) {
+	loc, err := tr.LocationHubToCloud(in.Location)
+	if err != nil {
+		return nil, errors.Wrap(err, "error in converting location")
+	}
+	ret := transformutil.TransformSpoke(in, outputScope, clusters.GCP, loc, in.K8sVersion, access.MachineTypes, true)
+
+	return ret, err
 }
 
 // hyphensForGCPLocation ...

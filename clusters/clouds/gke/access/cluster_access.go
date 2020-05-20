@@ -20,13 +20,33 @@ import (
 type GKEClusterAccess struct {
 }
 
-// DescribeCluster ...
-func (ca GKEClusterAccess) DescribeCluster(describeThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+// Delete ...
+func (ca GKEClusterAccess) Delete(ci *clusters.ClusterInfo) error {
+	bkgdCtx := context.Background()
+	client, err := containerv1.NewClusterManagerClient(bkgdCtx)
+	if err != nil {
+		return errors.Wrap(err, "cannot make client")
+	}
+	req := containerpb.DeleteClusterRequest{Name: projectLocationClusterPath(ci.Scope, ci.Location, ci.Name)}
+	log.Println("About to delete ", ci.Name)
+
+	op, err := client.DeleteCluster(bkgdCtx, &req)
+	if err != nil {
+		return errors.Wrap(err, "cannot delete")
+	}
+
+	ca.waitForClusterDeletion(ci.Scope, ci.Location, op.Name)
+
+	return nil
+}
+
+// Describe ...
+func (ca GKEClusterAccess) Describe(describeThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
 	if describeThis.GeneratedBy == "" {
 		describeThis.GeneratedBy = clusters.SearchTemplate
 	}
 	if describeThis.GeneratedBy != clusters.SearchTemplate &&
-		describeThis.GeneratedBy != clusters.Transformation { //In CreateCluster, we describe the created cluster based on the info used to create the cluster.
+		describeThis.GeneratedBy != clusters.Transformation { //In Create, we describe the created cluster based on the info used to create the cluster.
 		panic(fmt.Sprintf("Wrong GeneratedBy: %s", describeThis.GeneratedBy))
 	}
 	cluster, err := getCluster(describeThis.Scope, describeThis.Location, describeThis.Name)
@@ -55,8 +75,8 @@ func getCluster(project, location, name string) (*containerpb.Cluster, error) {
 	return cluster, nil
 }
 
-// ListClusters lists clusters; location param can be region or zone
-func (ca GKEClusterAccess) ListClusters(project, location string, labelFilter map[string]string) (ret []*clusters.ClusterInfo, err error) {
+// List lists clusters; location param can be region or zone
+func (ca GKEClusterAccess) List(project, location string, labelFilter map[string]string) (ret []*clusters.ClusterInfo, err error) {
 	ret = make([]*clusters.ClusterInfo, 0)
 
 	bkgdCtx := context.Background()
@@ -127,9 +147,13 @@ func projectLocationClusterPath(project, location, clusterName string) string {
 	path := fmt.Sprintf("projects/%s/locations/%s/clusters/%s", project, location, clusterName)
 	return path
 }
+func projectLocationOperationPath(project, location, opName string) string {
+	path := fmt.Sprintf("projects/%s/locations/%s/operations/%s", project, location, opName)
+	return path
+}
 
-// CreateCluster ...
-func (ca GKEClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+// Create ...
+func (ca GKEClusterAccess) Create(createThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
 	path := projectLocationPath(createThis.Scope, createThis.Location)
 
 	var nodePools = make([]*containerpb.NodePool, len(createThis.NodePools))
@@ -156,8 +180,8 @@ func (ca GKEClusterAccess) CreateCluster(createThis *clusters.ClusterInfo) (*clu
 
 	backgroundCtx := context.Background()
 	clustMgrClient, _ := containerv1.NewClusterManagerClient(backgroundCtx)
-	resp, err := clustMgrClient.CreateCluster(backgroundCtx, req)
-	_ = resp
+	operation, err := clustMgrClient.CreateCluster(backgroundCtx, req)
+	_ = operation // Could wait on the operation to be done instead of waiting on the cluster to be ready
 	if err != nil {
 		log.Println(err)
 		return nil, errors.Wrap(err, "cannot create")
@@ -193,16 +217,65 @@ Waiting:
 			panic(fmt.Sprintf("unknown status %s", status))
 		}
 	}
-	createdCluster, err := ca.DescribeCluster(createThis) //redundant call to getCluster above,
+	createdCluster, err := ca.Describe(createThis) //redundant call to getCluster above,
 	if err != nil {
 		return nil, errors.Wrap(err, "could not describe cluster after creating it")
 	}
 	if createdCluster == nil {
-		return nil, errors.New("createdCluster nil")
+		return nil, errors.New("createdCluster: nil")
 	}
 	createdCluster.GeneratedBy = clusters.Created
 	createdCluster.SourceCluster = createThis
 	return createdCluster, err
+}
+func getOperation(project, location, opName string) (*containerpb.Operation, error) {
+
+	req := containerpb.GetOperationRequest{Name: projectLocationOperationPath(project, location, opName)}
+	bkgdCtx := context.Background() //TODO maybe reuse client
+	client, err := containerv1.NewClusterManagerClient(bkgdCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot make client")
+	}
+
+	operation, err := client.GetOperation(bkgdCtx, &req)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get the operation")
+	}
+	if operation == nil {
+		return nil, errors.New("cannot get operation: nil")
+	}
+
+	return operation, nil
+}
+func (ca GKEClusterAccess) waitForClusterDeletion(project, location, opName string) error {
+	var counter = -1
+	log.Print("Waiting for deletion; it may take a while")
+	var status = containerpb.Operation_STATUS_UNSPECIFIED
+Waiting:
+	for {
+		time.Sleep(time.Second)
+		counter++
+		op, err := getOperation(project, location, opName)
+		if err != nil {
+			return errors.Wrap(err, "cannot get operation to wait for shutdown")
+		}
+		status = op.Status
+		switch status {
+		case containerpb.Operation_STATUS_UNSPECIFIED, containerpb.Operation_RUNNING, containerpb.Operation_PENDING:
+			if counter%10 == 0 {
+				log.Println("Waiting to delete", opName, "status", status)
+			}
+			continue
+		case containerpb.Operation_ABORTING:
+			return errors.New("Abborting while waiting for shutdown")
+		case containerpb.Operation_DONE:
+			log.Printf("deletion is finished")
+			break Waiting
+		default:
+			panic(fmt.Sprintf("unknown status %s", status))
+		}
+	}
+	return nil
 }
 
 // MachineTypeByName ...
