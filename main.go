@@ -66,9 +66,11 @@ func handleSignals() context.Context {
 }
 
 func main() {
-
+	log.Println("aaaaaaaaaaaaaaa")
 	log.SetOutput(os.Stdout) //Log to stderr
 
+	log.Println("bbbbbbbbbbbbbbbbbbbbb")
+	log.SetOutput(os.Stdout) //Log to stderr
 	log.Println("Starting")
 
 	flags := launcher.CLIFlags()

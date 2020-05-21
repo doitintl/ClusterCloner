@@ -1,12 +1,14 @@
 # Cluster Cloner
-Reads the Kubernetes clusters in one location and clones them into another (or just outputs JSON as a dry run), to/from GKE and Azure.
+Reads the Kubernetes clusters in one location (optionally filtering by labels) and
+clones them into another (or just outputs JSON as a dry run), to/from GKE and Azure.
 
 For usage, run  `clustercloner --help`
 
 # Setup
 ## Supply credentials
-- `export GOOGLE_APPLICATION_CREDENTIALS='xyz.json'`, where `xyz.json` is a filename for a service account with the Kubernetes Cluster Admin role (to read and create clusters)
-- Create `.env` with Azure credentials. Use `.env.tpl` as a template.
+- Add a file `credentials-cluster-manager.json` with credentials for a service account with the Kubernetes Cluster Admin role (to read and create clusters).
+This is loaded through the `GOOGLE_APPLICATION_CREDENTIALS` environment variable; see the `Dockerfile`.
+- Add a file `.env` with Azure credentials. Use `.env.tpl` as a template.
 
 ## Required GitHub secrets
 (Not needed for local build.)

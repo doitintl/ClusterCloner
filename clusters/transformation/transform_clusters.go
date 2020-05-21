@@ -325,7 +325,7 @@ func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string
 		return nil, errors.Wrap(err, "cannot convert HubToCloud")
 	}
 	if randSuffix {
-		ret.Name = ret.Name + "-" + clusterutil.RandomAlphaNumSequence(5, false, true, true)
+		ret.Name = ret.Name + "-" + clusterutil.RandomAlphaNumSequence(5, false, true, false)
 	}
 
 	return ret, err

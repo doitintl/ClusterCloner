@@ -35,9 +35,9 @@ func (ca GKEClusterAccess) Delete(ci *clusters.ClusterInfo) error {
 		return errors.Wrap(err, "cannot delete")
 	}
 
-	ca.waitForClusterDeletion(ci.Scope, ci.Location, op.Name)
+	err = waitForClusterDeletion(ci.Scope, ci.Location, op.Name)
 
-	return nil
+	return err
 }
 
 // Describe ...
@@ -247,7 +247,7 @@ func getOperation(project, location, opName string) (*containerpb.Operation, err
 
 	return operation, nil
 }
-func (ca GKEClusterAccess) waitForClusterDeletion(project, location, opName string) error {
+func waitForClusterDeletion(project, location, opName string) error {
 	var counter = -1
 	log.Print("Waiting for deletion; it may take a while")
 	var status = containerpb.Operation_STATUS_UNSPECIFIED
@@ -263,13 +263,13 @@ Waiting:
 		switch status {
 		case containerpb.Operation_STATUS_UNSPECIFIED, containerpb.Operation_RUNNING, containerpb.Operation_PENDING:
 			if counter%10 == 0 {
-				log.Println("Waiting to delete", opName, "status", status)
+				log.Println("Waiting for deletion, operation status", status)
 			}
 			continue
 		case containerpb.Operation_ABORTING:
 			return errors.New("Aborting while waiting for shutdown")
 		case containerpb.Operation_DONE:
-			log.Printf("deletion is finished")
+			log.Printf("Deletion of GKE cluster is finished")
 			break Waiting
 		default:
 			panic(fmt.Sprintf("unknown status %s", status))

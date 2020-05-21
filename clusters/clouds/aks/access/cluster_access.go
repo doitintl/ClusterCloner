@@ -38,8 +38,32 @@ type AKSClusterAccess struct {
 }
 
 // Delete ...
-func (ca AKSClusterAccess) Delete(ci *clusters.ClusterInfo) error {
-	panic("implement me")
+func (ca AKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) error {
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
+	defer cancel()
+	aksClient, err := getManagedClustersClient()
+	if err != nil {
+		return errors.New("cannot get AKS client")
+	}
+	future, err := aksClient.Delete(ctx, deleteThis.Scope, deleteThis.Name)
+	if err != nil {
+		return fmt.Errorf("cannot create AKS cluster: %v", err)
+	}
+
+	log.Printf("About to delete Azure Cluster %s; wait for completion", deleteThis.Name)
+	err = future.WaitForCompletionRef(ctx, aksClient.Client)
+	if err != nil {
+		return fmt.Errorf("cannot get the AKS create or update future response: %v", err)
+	}
+	response, err := future.Result(aksClient)
+	if err != nil {
+		return errors.Wrap(err, "error waiting for result")
+	}
+	status := response.StatusCode
+	if status != 200 {
+		return errors.New("could not created cluster, staate was " + response.Status)
+	}
+	return nil
 }
 
 // GetAKS ...
@@ -203,7 +227,7 @@ func (ca AKSClusterAccess) List(subscription, location string, labelFilter map[s
 	defer cancel()
 	aksClient, err := getManagedClustersClient()
 	if err != nil {
-		return listedClusters, errors.New("cannot get AKS client")
+		return nil, errors.New("cannot get AKS client")
 	}
 
 	ret := make([]*clusters.ClusterInfo, 0)
