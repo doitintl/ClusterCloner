@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var scopeForTest = "joshua-playground"
+var scopeForTest = "joshua-playground" //TODO take this from config here and in the JSONs used for testing
 
 func assertNumberClustersByLabel(t *testing.T, ci *clusters.ClusterInfo, expected int) {
 	ca := clusteraccess.GetClusterAccess(ci.Cloud)

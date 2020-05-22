@@ -231,7 +231,7 @@ Waiting:
 func getOperation(project, location, opName string) (*containerpb.Operation, error) {
 
 	req := containerpb.GetOperationRequest{Name: projectLocationOperationPath(project, location, opName)}
-	bkgdCtx := context.Background() //TODO maybe reuse client
+	bkgdCtx := context.Background()
 	client, err := containerv1.NewClusterManagerClient(bkgdCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot make client")

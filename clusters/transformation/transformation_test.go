@@ -10,7 +10,6 @@ import (
 	"testing"
 )
 
-// TODO integration test with actual creation of clones
 func TestTransformAzureToGCP(t *testing.T) {
 	scope := "sample-scope"
 	machineType := "Standard_M64ms"

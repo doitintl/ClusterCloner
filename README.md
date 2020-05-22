@@ -19,9 +19,7 @@ For GitHub CI, please specify the following GitHub secrets:
 4. `DOCKER_REPOSITORY` - _optional_; Docker image repository name, default to `$GITHUB_REPOSITORY` (i.e. `user/repo`)
 
 ## Build
-Use naked `make` command. You can also run `make help` to see more build targets.
-
-For just the Docker build, run  `DOCKER_BUILDKIT=1 docker build -t <TAG> .`
+The Docker image is built in Github Workflows. For development, you can run  `DOCKER_BUILDKIT=1 docker build -t <TAG> .`
 
 ## Docker
 This uses Docker both as a CI tool and for releasing a final Docker image.
