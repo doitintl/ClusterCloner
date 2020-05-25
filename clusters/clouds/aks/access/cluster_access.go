@@ -237,18 +237,26 @@ func (ca AKSClusterAccess) List(subscription, location string, labelFilter map[s
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot list")
 	}
+
+	unmatchedNames := make([]string, 0)
+	matchedNames := make([]string, 0)
 	for _, managedCluster := range clusterList.Values() {
 		tags := managedCluster.Tags
 		tagsAsStrMap := clusterutil.StrPtrMapToStrMap(tags)
 		match := clusterutil.LabelMatch(labelFilter, tagsAsStrMap)
+		name := *managedCluster.Name
 		if !match {
-			log.Printf("Skipping cluster %s because labels do not match", *managedCluster.Name)
+			log.Printf("Skipping cluster %s because labels do not match", name)
+			unmatchedNames = append(unmatchedNames, name)
 			continue
 		}
+		matchedNames = append(matchedNames, name)
 		foundCluster := clusterObjectToClusterInfo(managedCluster, subscription, clusters.Read)
 		ret = append(ret, foundCluster)
 
 	}
+	log.Printf("In listing clusters, these matched the label filter %v; and these did not %v\n", matchedNames, unmatchedNames)
+
 	return ret, nil
 }
 
@@ -320,7 +328,7 @@ var MachineTypes map[string]clusters.MachineType
 func init() {
 	var err error
 	MachineTypes, err = loadMachineTypes()
-	if MachineTypes == nil || len(MachineTypes) == 0 || err != nil {
+	if len(MachineTypes) == 0 || err != nil {
 		panic(fmt.Sprintf("cannot load machine types %v", err))
 	}
 }

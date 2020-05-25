@@ -4,13 +4,12 @@ import (
 	"clustercloner/clusters/launcher"
 	"context"
 	"fmt"
+	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 	"os/signal"
 	"runtime"
 	"syscall"
-
-	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -66,19 +65,19 @@ func handleSignals() context.Context {
 }
 
 func main() {
-	log.Println("aaaaaaaaaaaaaaa")
-	log.SetOutput(os.Stdout) //Log to stderr
 
-	log.Println("bbbbbbbbbbbbbbbbbbbbb")
-	log.SetOutput(os.Stdout) //Log to stderr
+	//Log to stderr (This is actually the default).
+	//Stdout is reserved for CLI output (JSON)
+
+	log.SetOutput(os.Stderr)
+
 	log.Println("Starting")
 
 	flags := launcher.CLIFlags()
 	app := &cli.App{
-		Flags: flags,
-		Name:  "Cluster Cloner",
-		Usage: "CLI",
-
+		Flags:   flags,
+		Name:    "Cluster Cloner",
+		Usage:   "CLI",
 		Action:  mainCmd,
 		Version: Version,
 	}

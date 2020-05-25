@@ -45,17 +45,19 @@ type NodePoolInfo struct {
 }
 
 var (
-	// Mock ...
+	// Mock Created for testing
 	Mock = "Mock"
-	// Read ...
+	// Read from the cloud
 	Read = "Read"
-	// Created ...
+	// Created using this tool
 	Created = "Created"
-	// Transformation ...
+	// Transformation  by this tool; can be an intermediate transformation step (Hub) or the output of the transformation, which can be optionally created in the cloud
 	Transformation = "Transformation"
-	// SearchTemplate ...
+
+	// SearchTemplate used for searching for Clusters by label
 	SearchTemplate = "SearchTemplate"
-	// InputFile ...
+
+	// InputFile read from a JSON file. Even if the Cluster in the JSON file does not say InputFile, the value will be replaced
 	InputFile = "InputFile"
 )
 

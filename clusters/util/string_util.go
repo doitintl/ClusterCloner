@@ -42,8 +42,23 @@ func CommaSeparatedKeyValPairsToMap(s string) map[string]string {
 		return m
 	}
 	for _, e := range entries {
+		if e == "" {
+			continue
+		}
 		parts := strings.Split(e, "=")
+		if len(parts) == 1 {
+			parts = []string{parts[0], ""}
+		}
 		m[parts[0]] = parts[1]
 	}
 	return m
+}
+
+// ToCommaSeparateKeyValuePairs ...
+func ToCommaSeparateKeyValuePairs(m map[string]string) (ret string) {
+	for k, v := range m {
+		ret += k + "=" + v + ","
+	}
+
+	return
 }

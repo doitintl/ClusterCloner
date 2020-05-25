@@ -1,4 +1,4 @@
-name,numberOfCores,memoryInMb
+name,numberOfCores,memoryInMB
 Basic_A0,1,768
 Basic_A1,1,1792
 Basic_A2,2,3584

@@ -2,6 +2,7 @@
 Reads the Kubernetes clusters in one location (optionally filtering by labels) and
 clones them into another (or just outputs JSON as a dry run), to/from GKE and Azure.
 
+# Usage
 For usage, run  `clustercloner --help`
 
 # Setup
@@ -10,22 +11,18 @@ For usage, run  `clustercloner --help`
 This is loaded through the `GOOGLE_APPLICATION_CREDENTIALS` environment variable; see the `Dockerfile`.
 - Add a file `.env` with Azure credentials. Use `.env.tpl` as a template.
 
-## Required GitHub secrets
-(Not needed for local build.)
+## Required secrets for Building in GitHub Continuous Integration
+Not needed for local build.
+Store the base-64 encodings, for example echo `my-credential.json |base64`
 For GitHub CI, please specify the following GitHub secrets:
-1. `DOCKER_USERNAME` - Docker Registry username
-2. `DOCKER_PASSWORD` - Docker Registry password or token
-3. `DOCKER_REGISTRY` - _optional_; Docker Registry name, default to `docker.io`
-4. `DOCKER_REPOSITORY` - _optional_; Docker image repository name, default to `$GITHUB_REPOSITORY` (i.e. `user/repo`)
+- `AZ_ENV_BASE64  `.env` file with Azure credentials, following  `.env.tpl` as a template.
+- `GCP_CLUSTER_MANAGER_KEYJSON_BASE64` Google credentials file (JSON)  with role Kubernetes Cluster Manager. Used at runtime.
+- `GCR_PUSHER_KEYJSON_BASE64` Google credentials file (JSON) with role Storage Admin for pushing  to your GCR registry
+- `DOCKER_REGISTRY` - Point this to GCR
+- `DOCKER_REPOSITORY` - _optional_; Docker image name including repository, default to `$GITHUB_REPOSITORY` (in the form `user/repo`)
 
 ## Build
-The Docker image is built in Github Workflows. For development, you can run  `DOCKER_BUILDKIT=1 docker build -t <TAG> .`
-
-## Docker
-This uses Docker both as a CI tool and for releasing a final Docker image.
-
-## Continuous Integration
-The GitHub `Docker CI` action is used.
+The Docker image is built in Github Workflows. In development, you can run  `DOCKER_BUILDKIT=1 docker build -t <TAG> .`
 
 # Credits
 This project was started from the [goapp](https://github.com/alexei-led/goapp) template, a bootstrap project for Go CLI applications.

@@ -95,16 +95,21 @@ func (ca GKEClusterAccess) List(project, location string, labelFilter map[string
 		return nil, errors.Wrap(err, "cannot list")
 	}
 
+	unmatchedNames := make([]string, 0)
+	matchedNames := make([]string, 0)
 	for _, cluster := range resp.GetClusters() {
 
 		match := clusterutil.LabelMatch(labelFilter, cluster.GetResourceLabels())
 		if !match {
-			log.Printf("Skipping cluster %s because labels do not match", cluster.GetName())
+			unmatchedNames = append(unmatchedNames, cluster.GetName())
 			continue
 		}
+		matchedNames = append(matchedNames, cluster.GetName())
 		foundClusterInfo := clusterObjectToClusterInfo(cluster, project)
 		ret = append(ret, foundClusterInfo)
 	}
+	log.Printf("In listing clusters, these matched the label filter %v; and these did not %v", matchedNames, unmatchedNames)
+
 	return ret, nil
 
 }
@@ -195,7 +200,8 @@ func (ca GKEClusterAccess) Create(createThis *clusters.ClusterInfo) (*clusters.C
 }
 
 func (ca GKEClusterAccess) waitForClusterReadiness(createThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
-	var status = containerpb.Cluster_STATUS_UNSPECIFIED
+
+	var status containerpb.Cluster_Status
 	var err error
 Waiting:
 	for {
@@ -250,7 +256,7 @@ func getOperation(project, location, opName string) (*containerpb.Operation, err
 func waitForClusterDeletion(project, location, opName string) error {
 	var counter = -1
 	log.Print("Waiting for deletion; it may take a while")
-	var status = containerpb.Operation_STATUS_UNSPECIFIED
+	var status containerpb.Operation_Status
 Waiting:
 	for {
 		time.Sleep(time.Second)
@@ -287,9 +293,15 @@ func MachineTypeByName(machineType string) clusters.MachineType {
 var MachineTypes map[string]clusters.MachineType
 
 func init() {
+
+	key := "GOOGLE_APPLICATION_CREDENTIALS"
+	cred := os.Getenv(key)
+	log.Println(key, cred)
+}
+func init() {
 	var err error
 	MachineTypes, err = loadMachineTypes()
-	if MachineTypes == nil || len(MachineTypes) == 0 || err != nil {
+	if len(MachineTypes) == 0 || err != nil {
 		panic(fmt.Sprintf("cannot load machine types %v", err))
 	}
 }

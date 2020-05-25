@@ -7,14 +7,13 @@ import (
 	clusterutil "clustercloner/clusters/util"
 	"fmt"
 	"github.com/pkg/errors"
-	"log"
 	"math"
 )
 
 // TransformSpoke ...
 func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLoc,
 	targetClusterK8sVersion string, machineTypes map[string]clusters.MachineType,
-	adjustK8sVersions bool) *clusters.ClusterInfo {
+	adjustK8sVersions bool) (*clusters.ClusterInfo, error) {
 
 	var ret = &clusters.ClusterInfo{
 		Name:          in.Name,
@@ -31,13 +30,11 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 	for _, nodePoolIn := range in.NodePools {
 		nodePoolOut, err := nodes.TransformNodePool(nodePoolIn, machineTypes)
 		if err != nil {
-			log.Printf("Error transforming Node Pool %v\n", err)
-			return nil
+			return nil, errors.New("error transforming Node Pool %v")
 		}
 		zero := clusters.NodePoolInfo{}
 		if nodePoolOut == zero {
-			log.Printf("Empty result of converting %v", nodePoolIn)
-			return nil
+			return nil, errors.New(fmt.Sprintf("Empty result of converting %v", nodePoolIn))
 		}
 
 		ret.AddNodePool(nodePoolOut)
@@ -45,11 +42,10 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 	if adjustK8sVersions {
 		err := fixK8sVersion(ret) //should not fix version post-facto like this
 		if err != nil {
-			log.Println(err, "cannot fix K8s versions")
-			return nil
+			return nil, errors.Wrap(err, "cannot fix K8s versions")
 		}
 	}
-	return ret
+	return ret, nil
 
 }
 

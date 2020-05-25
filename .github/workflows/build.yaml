@@ -48,8 +48,6 @@ jobs:
 
       - name: push image
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
           GCR_PUSHER_KEYJSON_BASE64: ${{secrets.GCR_PUSHER_KEYJSON_BASE64}}
           IMAGE_NAME: ${{ steps.decide_name.outputs.image_name }}

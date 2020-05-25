@@ -16,6 +16,9 @@ func TestCreateGCPClusterFromFileThenCloneToAKS(t *testing.T) {
 	}
 	var inputFile = "test-data/gke_clusters.json"
 	clustersFromFile, err := clusters.LoadFromFile(inputFile)
+	if err != nil {
+		t.Error(err)
+	}
 	clusterFromFile := clustersFromFile[0]
 	assert.Equal(t, 1, len(clustersFromFile), "we work with a single cluster in this test")
 

@@ -1,4 +1,4 @@
-name,numberOfCores,memoryInMb
+name,numberOfCores,memoryInMB
 Standard_A2_v2,2,4096
 Standard_A2m_v2,2,16384
 Standard_A4_v2,4,8192

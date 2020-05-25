@@ -33,7 +33,7 @@ func getTransformer(cloud string) Transformer {
 	case clusters.Azure:
 		transformer = &transformaks.AKSTransformer{}
 	case clusters.Hub:
-		transformer = &util.IdentityTransformer{clusters.Hub}
+		transformer = &util.IdentityTransformer{TargetCloud: clusters.Hub}
 	default:
 		transformer = nil
 		log.Printf("Unknown %s", cloud)
@@ -48,12 +48,14 @@ func getSameCloudTransformer(cloud string) Transformer {
 	case clusters.GCP:
 		transformer = &transformgke.GKEToGKETransformer{}
 	case clusters.Azure:
-		transformer = &util.IdentityTransformer{clusters.Azure}
+		transformer = &util.IdentityTransformer{TargetCloud: clusters.Azure}
+	case clusters.AWS:
+		transformer = &util.IdentityTransformer{TargetCloud: clusters.AWS}
 	case clusters.Hub:
-		transformer = &util.IdentityTransformer{clusters.Hub}
+		transformer = &util.IdentityTransformer{TargetCloud: clusters.Hub}
 	default:
 		transformer = nil
-		log.Printf("Unknown %s", cloud)
+		panic(fmt.Sprintf("Unknown %s", cloud))
 	}
 	return transformer
 }
@@ -78,11 +80,11 @@ func Clone(inputFile string, inputCloud string, inputScope string, inputLocation
 		return nil, errors.Wrap(err, "cannot get input clusters")
 	}
 	transformationOutput, err := transform(inputClusterInfos, outputCloud, outputScope, randSfx)
-	if len(transformationOutput) != len(inputClusterInfos) {
-		panic(fmt.Sprintf("%d!=%d", len(transformationOutput), len(inputClusterInfos)))
-	}
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot transform clusters")
+	}
+	if len(transformationOutput) != len(inputClusterInfos) {
+		panic(fmt.Sprintf("%d!=%d", len(transformationOutput), len(inputClusterInfos)))
 	}
 
 	if !shouldCreate {
@@ -143,11 +145,15 @@ func transform(inputClusterInfos []*clusters.ClusterInfo, outputCloud string, ou
 	transformationOutput := make([]*clusters.ClusterInfo, 0)
 	for _, inputClusterInfo := range inputClusterInfos {
 		outputClusterInfo, err := transformCloudToCloud(inputClusterInfo, outputCloud, outputScope, randSfx)
-		assertSourceCluster(outputClusterInfo, clusters.Transformation)
-		transformationOutput = append(transformationOutput, outputClusterInfo)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("Error processing %v: %v", inputClusterInfo, err))
 		}
+		if outputClusterInfo == nil {
+			panic("should not be nil")
+		}
+		assertSourceCluster(outputClusterInfo, clusters.Transformation)
+		transformationOutput = append(transformationOutput, outputClusterInfo)
+
 	}
 	return transformationOutput, nil
 }
@@ -255,7 +261,7 @@ func assertSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster strin
 	} else {
 		actual = sourceCluster.GeneratedBy
 	}
-	var actualIsExpected = false
+	actualIsExpected := false
 	if expectedGenByForSource == nil { //nil means "don't check"
 		actualIsExpected = true
 	} else {
@@ -275,8 +281,11 @@ func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string
 	if in.Cloud == toCloud { //don't use hub
 		t := getSameCloudTransformer(toCloud)
 		out, err := t.HubToCloud(in, outputScope)
-		if err != nil || out == nil {
+		if err != nil {
 			return nil, errors.Wrap(err, "Error in transforming to same cloud")
+		}
+		if out == nil {
+			panic("should not be nil")
 		}
 		var sfx string
 		if randSfx {

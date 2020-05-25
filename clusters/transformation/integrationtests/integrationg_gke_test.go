@@ -4,12 +4,11 @@ import (
 	"testing"
 )
 
-// TestCreateAZClusterFromFile ...
-func TestCreateAzureClusterFromFile(t *testing.T) {
-	var inputFile = "test-data/aks_clusters.json"
+// TestCreateGCPClusterFromFile ...
+func TestCreateGCPClusterFromFile(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
+	var inputFile = "test-data/gke_clusters.json"
 	createClusterFromFile(t, inputFile)
-
 }

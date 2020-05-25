@@ -1,0 +1,24 @@
+[
+  {
+    "Cloud": "AWS",
+    "Scope": "joshua-playground",
+    "Location": "us-east-2",
+    "Name": "for-testing-clustercloner",
+    "K8sVersion": "1.15",
+    "GeneratedBy": "Created",
+    "Labels": {
+      "for-testing-please-delete": "true"
+    },
+    "NodePools": [
+      {
+        "Name": "default-node-group",
+        "NodeCount": 1,
+        "K8sVersion": "1.15",
+        "MachineType": {
+          "Name": "t2.small"
+        },
+        "DiskSizeGB": 33
+      }
+    ]
+  }
+]

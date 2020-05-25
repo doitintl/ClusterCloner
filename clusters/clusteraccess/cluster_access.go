@@ -3,8 +3,8 @@ package clusteraccess
 import (
 	"clustercloner/clusters"
 	accessaks "clustercloner/clusters/clouds/aks/access"
-	"clustercloner/clusters/clouds/gke/access"
-	"log"
+	accesseks "clustercloner/clusters/clouds/eks/access"
+	accessgke "clustercloner/clusters/clouds/gke/access"
 )
 
 // ClusterAccess ...
@@ -26,12 +26,13 @@ func GetClusterAccess(cloud string) ClusterAccess {
 	var clusterAccessor ClusterAccess
 	switch cloud {
 	case clusters.GCP:
-		clusterAccessor = access.GKEClusterAccess{}
+		clusterAccessor = accessgke.GKEClusterAccess{}
 	case clusters.Azure:
 		clusterAccessor = accessaks.AKSClusterAccess{}
-	default: //TODO support Amazon
-		log.Println("unsupported cloud ", cloud)
-		clusterAccessor = nil
+	case clusters.AWS:
+		clusterAccessor = accesseks.EKSClusterAccess{}
+	default:
+		panic("unsupported cloud " + cloud)
 	}
 	return clusterAccessor
 }
