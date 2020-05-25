@@ -14,8 +14,15 @@ func CreateCluster(clusterName, region, k8sVersion, tagsCsv string) error {
 func createClusterNoNodeGroup(clusterName, region, k8sVersion, tagsCsv string) error {
 	oldArgs := os.Args[:]
 	defer resetOsArgs(oldArgs)
-
 	os.Args = []string{"eksctl", "create", "cluster", "--without-nodegroup", "--name", clusterName, "--region", region, "--tags", tagsCsv, "--version", k8sVersion}
+	return runEksctl()
+}
+
+// AddLogging ...
+func AddLogging(clusterName, region, k8sVersion, tagsCsv string) error {
+	oldArgs := os.Args[:]
+	defer resetOsArgs(oldArgs)
+	os.Args = []string{"eksctl", "utils", "update-cluster-logging", "--cluster", clusterName, "--region", region}
 	return runEksctl()
 }
 

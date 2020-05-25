@@ -56,45 +56,48 @@ func (*AKSTransformer) LocationCloudToHub(loc string) (string, error) {
 	return hubValue, nil
 }
 
+var azToHubLocations map[string]string
+
 func getAzureToHubLocations() (map[string]string, error) {
-	ret := make(map[string]string)
-
-	fn := clusterutil.RootPath() + "/locations/azure_locations.csv"
-	csvfile, err := os.Open(fn)
-	if err != nil {
-		wd, _ := os.Getwd()
-		log.Println("At ", wd, ":", err)
-		return nil, err
-	}
-
-	r := csv.NewReader(csvfile)
-	r.Comma = ';'
-	first := true
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
+	if azToHubLocations == nil {
+		azToHubLocations = make(map[string]string)
+		fn := clusterutil.RootPath() + "/locations/azure_locations.csv"
+		csvfile, err := os.Open(fn)
 		if err != nil {
-			log.Println(err)
+			wd, _ := os.Getwd()
+			log.Println("At ", wd, ":", err)
 			return nil, err
 		}
-		if first {
-			first = false
-			continue
+
+		r := csv.NewReader(csvfile)
+		r.Comma = ';'
+		first := true
+		for {
+			record, err := r.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			if first {
+				first = false
+				continue
+			}
+			if len(record) == 1 {
+				log.Println("Short record ", record)
+			}
+			azRegion := record[3]
+			hubRegion := record[5]
+			supportsAks := record[4]
+			if supportsAks != "true" {
+				return nil, errors.New(fmt.Sprintf("Azure region %s does not support AKS", azRegion))
+			}
+			azToHubLocations[azRegion] = hubRegion
 		}
-		if len(record) == 1 {
-			log.Println("Short record ", record)
-		}
-		azRegion := record[3]
-		hubRegion := record[5]
-		supportsAks := record[4]
-		if supportsAks != "true" {
-			return nil, errors.New(fmt.Sprintf("Azure region %s does not support AKS", azRegion))
-		}
-		ret[azRegion] = hubRegion
 	}
-	return ret, nil
+	return azToHubLocations, nil
 }
 
 //LocationHubToCloud ...

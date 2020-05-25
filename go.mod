@@ -54,6 +54,7 @@ require (
 	github.com/tidwall/gjson v1.1.3
 	github.com/tidwall/match v1.0.1 // indirect
 	github.com/tidwall/sjson v1.0.2
+	github.com/tjarratt/babble v0.0.0-20191209142150-eecdf8c2339d
 	github.com/vektra/mockery v0.0.0-20181123154057-e78b021dcbb5
 	github.com/voxelbrain/goptions v0.0.0-20180630082107-58cddc247ea2 // indirect
 	github.com/weaveworks/github-release v0.6.3-0.20161024133933-73deea6af1e8

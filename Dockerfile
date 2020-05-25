@@ -1,16 +1,13 @@
 # syntax = docker/dockerfile:experimental
 
-#
-# ----- Go Builder Image ------
-#
+# Go Builder Image
 FROM golang:1.13-alpine AS builder
 
 # curl git bash
 RUN apk add --no-cache curl git bash make
 
-#
-# ----- Build and Test Image -----
-#
+# Build and Test Imag
+
 FROM builder as build
 
 # set working directorydoc
@@ -29,27 +26,23 @@ COPY . .
 # build
 RUN make
 
-
-#
-# ------ get latest CA certificates
-#
+# get latest CA certificates
 FROM alpine:3.10 as certs
 RUN apk --update add ca-certificates
 
-
-#
-# ------ gtoken release Docker image ------
-#
+# gtoken release Docker image
 FROM scratch
 
 # copy CA certificates
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY credentials-cluster-manager.json  /
 COPY  .env  /
+COPY awscredentials /
 COPY locations/ /locations
 COPY machine-types/ /machine-types
 COPY --from=build /go/src/app/.bin/clustercloner /clustercloner
 
 ENV GOOGLE_APPLICATION_CREDENTIALS "credentials-cluster-manager.json"
+ENV AWS_SHARED_CREDENTIALS_FILE "awscredentials"
 
 ENTRYPOINT ["/clustercloner"]

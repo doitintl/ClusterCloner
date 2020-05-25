@@ -16,3 +16,10 @@ func TestMapToCsv(t *testing.T) {
 	}
 
 }
+
+func TestRandomWord(t *testing.T) {
+	r := RandomWord()
+	if len(r) > 7 || len(r) < 1 {
+		t.Fatal(r)
+	}
+}

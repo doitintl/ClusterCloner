@@ -4,14 +4,22 @@ import (
 	"clustercloner/clusters"
 	"clustercloner/clusters/clouds/eks/eksctl"
 	"clustercloner/clusters/util"
+	"github.com/pkg/errors"
 	"log"
 	"os"
 )
 
 func init() {
-	key := "AWS_CONFIG_FILE"
+	key := "AWS_SHARED_CREDENTIALS_FILE"
 	cred := os.Getenv(key)
-	log.Println(key, cred)
+	rootPath := util.RootPath() + "/" + cred
+	err := os.Setenv(key, rootPath)
+	if err != nil {
+		panic(err)
+	}
+	absPathCred := os.Getenv(key)
+
+	log.Println(key, absPathCred)
 }
 
 //EKSClusterAccess ...
@@ -23,7 +31,11 @@ func (ca EKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 	tagsCsv := util.ToCommaSeparateKeyValuePairs(createThis.Labels)
 	err = eksctl.CreateCluster(createThis.Name, createThis.Location, createThis.K8sVersion, tagsCsv)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "cannot create cluster")
+	}
+	err = eksctl.AddLogging(createThis.Name, createThis.Location, createThis.K8sVersion, tagsCsv)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot add logging")
 	}
 	for _, nodeGroup := range createThis.NodePools {
 		err = eksctl.CreateNodeGroup(createThis.Name, nodeGroup.Name, createThis.Location, createThis.K8sVersion,

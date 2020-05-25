@@ -61,7 +61,7 @@ func (tr *GKETransformer) HubToCloud(in *clusters.ClusterInfo, outputScope strin
 
 // LocationCloudToHub ...
 func (tr *GKETransformer) LocationCloudToHub(zone string) (string, error) {
-	locs, err := getGcpLocations()
+	locs, err := GetGcpLocations()
 	if err != nil {
 		return "", err
 	}
@@ -132,37 +132,41 @@ func (GKETransformer) LocationHubToCloud(location string) (string, error) {
 
 }
 
-func getGcpLocations() ([]string, error) {
+var gcpLocations []string
 
-	ret := make([]string, 20)
-	fn := baseutil.RootPath() + "/locations/gcp_locations.csv"
-	csvfile, err := os.Open(fn)
-	if err != nil {
-		wd, _ := os.Getwd()
-		log.Println("At ", wd, ":", err)
-		return nil, err
-	}
-
-	r := csv.NewReader(csvfile)
-	r.Comma = ';'
-	first := true
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
+// GetGcpLocations ...
+func GetGcpLocations() ([]string, error) {
+	if gcpLocations == nil {
+		gcpLocations = make([]string, 0)
+		fn := baseutil.RootPath() + "/locations/gcp_locations.csv"
+		csvfile, err := os.Open(fn)
 		if err != nil {
-			log.Println(err)
+			wd, _ := os.Getwd()
+			log.Println("At ", wd, ":", err)
 			return nil, err
 		}
-		if first {
-			first = false
-			continue
-		}
-		loc := record[0]
-		if loc != "" {
-			ret = append(ret, loc)
+
+		r := csv.NewReader(csvfile)
+		r.Comma = ';'
+		first := true
+		for {
+			record, err := r.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			if first {
+				first = false
+				continue
+			}
+			loc := record[0]
+			if loc != "" {
+				gcpLocations = append(gcpLocations, loc)
+			}
 		}
 	}
-	return ret, nil
+	return gcpLocations, nil
 }

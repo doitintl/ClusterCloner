@@ -9,7 +9,9 @@ For usage, run  `clustercloner --help`
 ## Supply credentials
 - Add a file `credentials-cluster-manager.json` with credentials for a service account with the Kubernetes Cluster Admin role (to read and create clusters).
 This is loaded through the `GOOGLE_APPLICATION_CREDENTIALS` environment variable; see the `Dockerfile`.
-- Add a file `.env` with Azure credentials. Use `.env.tpl` as a template.
+- Add a file `.env` with Azure credentials. Use `.env.tpl` as a template. The user should have the  Azure Kubernetes Service Cluster Admin Role.
+- Add a file `awscredentials` with AWS credentials. The user should have the policy
+ discussed [here](https://docs.aws.amazon.com/eks/latest/userguide/security_iam_id-based-policy-examples.html). Specific example [here](https://github.com/weaveworks/eksctl/issues/204#issuecomment-631630355)
 
 ## Required secrets for Building in GitHub Continuous Integration
 Not needed for local build.

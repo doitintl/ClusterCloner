@@ -1,7 +1,9 @@
 package util
 
 import (
+	"github.com/tjarratt/babble"
 	"math/rand"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -9,6 +11,20 @@ import (
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
+}
+
+// RandomWord , lowercase, ASCII-only, max 7 letters. Meant for human-memorable identifers.
+func RandomWord() string {
+	babbler := babble.NewBabbler()
+	babbler.Count = 1
+	word := babbler.Babble()
+	for len(word) > 7 {
+		word = babbler.Babble()
+	}
+	wordLC := strings.ToLower(word)
+	re := regexp.MustCompile("[[:^ascii:]]")
+	wordASCII := re.ReplaceAllLiteralString(wordLC, "")
+	return wordASCII
 }
 
 // RandomAlphaNumSequence ...
@@ -59,6 +75,6 @@ func ToCommaSeparateKeyValuePairs(m map[string]string) (ret string) {
 	for k, v := range m {
 		ret += k + "=" + v + ","
 	}
-
+	ret = ret[:len(ret)-1]
 	return
 }

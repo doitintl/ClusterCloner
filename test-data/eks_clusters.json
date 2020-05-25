@@ -3,15 +3,17 @@
     "Cloud": "AWS",
     "Scope": "joshua-playground",
     "Location": "us-east-2",
-    "Name": "for-testing-clustercloner",
+    "Name": "clus",
     "K8sVersion": "1.15",
     "GeneratedBy": "Created",
     "Labels": {
-      "for-testing-please-delete": "true"
+      "for-testing-please-delete": "true",
+
+      "also-for-testing-please-delete": "true"
     },
     "NodePools": [
       {
-        "Name": "default-node-group",
+        "Name": "one-node-group",
         "NodeCount": 1,
         "K8sVersion": "1.15",
         "MachineType": {

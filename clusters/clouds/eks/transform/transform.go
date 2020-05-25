@@ -2,6 +2,12 @@ package transform
 
 import (
 	"clustercloner/clusters"
+	clusterutil "clustercloner/clusters/util"
+	"encoding/csv"
+	"github.com/pkg/errors"
+	"io"
+	"log"
+	"os"
 )
 
 // EKSTransformer ...
@@ -28,4 +34,46 @@ func (EKSTransformer) LocationHubToCloud(location string) (ret string, err error
 
 	return ret, nil
 
+}
+
+var awsToHubLocations map[string]string
+
+func getAwsToHubLocations() (map[string]string, error) {
+	if awsToHubLocations == nil {
+		awsToHubLocations = make(map[string]string)
+		fn := clusterutil.RootPath() + "/locations/aws_locations.csv"
+		csvfile, err := os.Open(fn)
+		if err != nil {
+			wd, _ := os.Getwd()
+			log.Println("At ", wd, ":", err)
+			return nil, err
+		}
+
+		r := csv.NewReader(csvfile)
+		r.Comma = ';'
+		r.Comment = '#'
+		first := true
+		for {
+			record, err := r.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Println(err)
+				return nil, errors.Wrap(err, "cannot read line")
+
+			}
+			if first {
+				first = false
+				continue
+			}
+			if len(record) == 1 {
+				log.Println("Short record ", record)
+			}
+			awsRegion := record[1]
+			hubRegion := record[2]
+			awsToHubLocations[awsRegion] = hubRegion
+		}
+	}
+	return awsToHubLocations, nil
 }
