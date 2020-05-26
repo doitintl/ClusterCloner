@@ -45,7 +45,7 @@ func (tr *AKSTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope strin
 
 //LocationCloudToHub ...
 func (*AKSTransformer) LocationCloudToHub(loc string) (string, error) {
-	mapping, err := getAzureToHubLocations()
+	mapping, err := LocationsCloudToHub()
 	if err != nil {
 		return "", err
 	}
@@ -56,11 +56,12 @@ func (*AKSTransformer) LocationCloudToHub(loc string) (string, error) {
 	return hubValue, nil
 }
 
-var azToHubLocations map[string]string
+var locations map[string]string
 
-func getAzureToHubLocations() (map[string]string, error) {
-	if azToHubLocations == nil {
-		azToHubLocations = make(map[string]string)
+// LocationsCloudToHub ...
+func LocationsCloudToHub() (map[string]string, error) {
+	if locations == nil {
+		locations = make(map[string]string)
 		fn := clusterutil.RootPath() + "/locations/azure_locations.csv"
 		csvfile, err := os.Open(fn)
 		if err != nil {
@@ -94,15 +95,15 @@ func getAzureToHubLocations() (map[string]string, error) {
 			if supportsAks != "true" {
 				return nil, errors.New(fmt.Sprintf("Azure region %s does not support AKS", azRegion))
 			}
-			azToHubLocations[azRegion] = hubRegion
+			locations[azRegion] = hubRegion
 		}
 	}
-	return azToHubLocations, nil
+	return locations, nil
 }
 
 //LocationHubToCloud ...
 func (AKSTransformer) LocationHubToCloud(location string) (string, error) {
-	azToHub, err := getAzureToHubLocations()
+	azToHub, err := LocationsCloudToHub()
 	if err != nil {
 		return "", err
 	}

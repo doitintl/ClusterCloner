@@ -36,11 +36,13 @@ func (EKSTransformer) LocationHubToCloud(location string) (ret string, err error
 
 }
 
-var awsToHubLocations map[string]string
+// Locations ...
+var locations map[string]string
 
-func getAwsToHubLocations() (map[string]string, error) {
-	if awsToHubLocations == nil {
-		awsToHubLocations = make(map[string]string)
+// LocationsCloudToHub ...
+func LocationsCloudToHub() (map[string]string, error) {
+	if locations == nil {
+		locations = make(map[string]string)
 		fn := clusterutil.RootPath() + "/locations/aws_locations.csv"
 		csvfile, err := os.Open(fn)
 		if err != nil {
@@ -72,8 +74,8 @@ func getAwsToHubLocations() (map[string]string, error) {
 			}
 			awsRegion := record[1]
 			hubRegion := record[2]
-			awsToHubLocations[awsRegion] = hubRegion
+			locations[awsRegion] = hubRegion
 		}
 	}
-	return awsToHubLocations, nil
+	return locations, nil
 }

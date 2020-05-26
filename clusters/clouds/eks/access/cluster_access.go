@@ -12,6 +12,9 @@ import (
 func init() {
 	key := "AWS_SHARED_CREDENTIALS_FILE"
 	cred := os.Getenv(key)
+	if cred == "" {
+		log.Println("Error: Must set AWS_SHARED_CREDENTIALS_FILE")
+	}
 	rootPath := util.RootPath() + "/" + cred
 	err := os.Setenv(key, rootPath)
 	if err != nil {
@@ -50,22 +53,47 @@ func (ca EKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 
 // Delete ...
 func (ca EKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) (err error) {
-	log.Println("Implement") //TODO
-	return
+	//TODO maybe deelete NodeGroups separately
+	err = eksctl.DeleteCluster(deleteThis.Name, deleteThis.Location)
+	if err != nil {
+		return errors.Wrap(err, "cannot delete cluster")
+	}
+	return nil
+
 }
 
 //Describe ...
-func (ca EKSClusterAccess) Describe(describeThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
-
-	log.Println("Implement") //TODO
-	return
+func (ca EKSClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (described *clusters.ClusterInfo, err error) {
+	if searchTemplate.GeneratedBy == "" {
+		searchTemplate.GeneratedBy = clusters.SearchTemplate
+	}
+	described, err = eksctl.DescribeCluster(searchTemplate.Name, searchTemplate.Location)
+	//TODO also describe NodeGrops
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot add logging")
+	}
+	return described, err
 }
 
 // List ...
-func (ca EKSClusterAccess) List(subscription, location string, labelFilter map[string]string) (listedClusters []*clusters.ClusterInfo, err error) {
-	log.Println("Implement") //TODO
+func (ca EKSClusterAccess) List(_, location string, tagFilter map[string]string) (listedClusters []*clusters.ClusterInfo, err error) {
 
-	return
+	tagsCsv := util.ToCommaSeparateKeyValuePairs(tagFilter)
+	listedClusterNames, err := eksctl.ListClusters(location, tagsCsv)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot add logging")
+	}
+	listedClusters = make([]*clusters.ClusterInfo, 0)
+	for _, clusterName := range listedClusterNames {
+		searchTemplate := &clusters.ClusterInfo{Cloud: clusters.AWS, Name: clusterName, Location: location, GeneratedBy: clusters.SearchTemplate}
+		ci, err := ca.Describe(searchTemplate)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot describe cluster "+clusterName)
+		}
+		listedClusters = append(listedClusters, ci)
+		//TODO describe nodegroups too?
+	}
+	return listedClusters, nil
 }
 
 // GetSupportedK8sVersions ...

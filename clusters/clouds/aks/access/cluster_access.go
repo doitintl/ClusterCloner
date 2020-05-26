@@ -90,21 +90,21 @@ func createGroup(ctx context.Context, groupName string, region string) (resource
 }
 
 //Describe ...
-func (ca AKSClusterAccess) Describe(describeThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
-	if describeThis.GeneratedBy == "" {
-		describeThis.GeneratedBy = clusters.SearchTemplate
+func (ca AKSClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (described *clusters.ClusterInfo, err error) {
+	if searchTemplate.GeneratedBy == "" {
+		searchTemplate.GeneratedBy = clusters.SearchTemplate
 	}
-	if describeThis.GeneratedBy != clusters.SearchTemplate {
-		panic(fmt.Sprintf("Wrong GeneratedBy: %s" + describeThis.GeneratedBy))
+	if searchTemplate.GeneratedBy != clusters.SearchTemplate {
+		panic(fmt.Sprintf("Wrong GeneratedBy: %s" + searchTemplate.GeneratedBy))
 	}
-	groupName := describeThis.Scope
+	groupName := searchTemplate.Scope
 
-	cluster, err := getCluster(groupName, describeThis.Name)
+	cluster, err := getCluster(groupName, searchTemplate.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get cluster")
 	}
-	clusterInfo := clusterObjectToClusterInfo(cluster, describeThis.Scope, clusters.Read)
-	clusterInfo.SourceCluster = describeThis
+	clusterInfo := clusterObjectToClusterInfo(cluster, searchTemplate.Scope, clusters.Read)
+	clusterInfo.SourceCluster = searchTemplate
 	return clusterInfo, nil
 }
 

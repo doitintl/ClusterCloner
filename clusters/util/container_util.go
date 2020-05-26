@@ -1,5 +1,15 @@
 package util
 
+// Keys ...
+func Keys(m map[string]string) []string {
+
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // ContainsInt ...
 func ContainsInt(s []int, e int) bool {
 	for _, a := range s {

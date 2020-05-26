@@ -61,10 +61,7 @@ func (tr *GKETransformer) HubToCloud(in *clusters.ClusterInfo, outputScope strin
 
 // LocationCloudToHub ...
 func (tr *GKETransformer) LocationCloudToHub(zone string) (string, error) {
-	locs, err := GetGcpLocations()
-	if err != nil {
-		return "", err
-	}
+
 	hyphenCount, secondHyphenIdx := hyphensForGCPLocation(zone)
 	if hyphenCount != 1 && hyphenCount != 2 {
 		msg := fmt.Sprintf("%s is not a legal zone/region format for GCP", zone)
@@ -77,7 +74,11 @@ func (tr *GKETransformer) LocationCloudToHub(zone string) (string, error) {
 		endRegion = secondHyphenIdx
 	}
 	region := string(runes[0:endRegion])
-	if !baseutil.ContainsStr(locs, region) {
+	locs, err := LocationsCloudToHub()
+	if err != nil {
+		return "", err
+	}
+	if _, ok := locs[region]; !ok {
 		msg := fmt.Sprintf("Zone %s is not in a legal region for GCP", zone)
 		log.Println(msg)
 		return "", errors.New(msg)
@@ -132,12 +133,12 @@ func (GKETransformer) LocationHubToCloud(location string) (string, error) {
 
 }
 
-var gcpLocations []string
+var locations map[string]string
 
-// GetGcpLocations ...
-func GetGcpLocations() ([]string, error) {
-	if gcpLocations == nil {
-		gcpLocations = make([]string, 0)
+// LocationsCloudToHub  gives an identity map (the value is always the  same as the key), for consistency to AWS and Azure
+func LocationsCloudToHub() (map[string]string, error) {
+	if locations == nil {
+		locations = make(map[string]string)
 		fn := baseutil.RootPath() + "/locations/gcp_locations.csv"
 		csvfile, err := os.Open(fn)
 		if err != nil {
@@ -164,9 +165,9 @@ func GetGcpLocations() ([]string, error) {
 			}
 			loc := record[0]
 			if loc != "" {
-				gcpLocations = append(gcpLocations, loc)
+				locations[loc] = loc
 			}
 		}
 	}
-	return gcpLocations, nil
+	return locations, nil
 }

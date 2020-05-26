@@ -41,20 +41,20 @@ func (ca GKEClusterAccess) Delete(ci *clusters.ClusterInfo) error {
 }
 
 // Describe ...
-func (ca GKEClusterAccess) Describe(describeThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
-	if describeThis.GeneratedBy == "" {
-		describeThis.GeneratedBy = clusters.SearchTemplate
+func (ca GKEClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+	if searchTemplate.GeneratedBy == "" {
+		searchTemplate.GeneratedBy = clusters.SearchTemplate
 	}
-	if describeThis.GeneratedBy != clusters.SearchTemplate &&
-		describeThis.GeneratedBy != clusters.Transformation { //In Create, we describe the created cluster based on the info used to create the cluster.
-		panic(fmt.Sprintf("Wrong GeneratedBy: %s", describeThis.GeneratedBy))
+	if searchTemplate.GeneratedBy != clusters.SearchTemplate &&
+		searchTemplate.GeneratedBy != clusters.Transformation { //In Create, we describe the created cluster based on the info used to create the cluster.
+		panic(fmt.Sprintf("Wrong GeneratedBy: %s", searchTemplate.GeneratedBy))
 	}
-	cluster, err := getCluster(describeThis.Scope, describeThis.Location, describeThis.Name)
+	cluster, err := getCluster(searchTemplate.Scope, searchTemplate.Location, searchTemplate.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get cluster")
 	}
-	readClusterInfo := clusterObjectToClusterInfo(cluster, describeThis.Scope)
-	readClusterInfo.SourceCluster = describeThis
+	readClusterInfo := clusterObjectToClusterInfo(cluster, searchTemplate.Scope)
+	readClusterInfo.SourceCluster = searchTemplate
 	return readClusterInfo, nil
 }
 

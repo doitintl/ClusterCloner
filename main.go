@@ -63,7 +63,6 @@ func handleSignals() context.Context {
 
 	return ctx
 }
-
 func main() {
 
 	//Log to stderr (This is actually the default).

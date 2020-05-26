@@ -3,7 +3,6 @@ package transform
 import (
 	"clustercloner/clusters"
 	"clustercloner/clusters/clouds/gke/transform"
-	"clustercloner/clusters/util"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -69,20 +68,21 @@ func TestTransformHubToAzure(t *testing.T) {
 		t.Errorf("Bad K8s Version for Azure based on input: %s", az.K8sVersion)
 	}
 }
+
 func TestTransformLocToHub(t *testing.T) {
 	loc := "eastus"
-	locationMap, err := getAzureToHubLocations()
+	locationMap, err := LocationsCloudToHub()
 	if err != nil {
 		t.Fatal(err)
 	}
 	hub := locationMap[loc]
 	assert.Equal(t, "us-east4", hub)
-	gcpLoc, err := transform.GetGcpLocations()
+	gcpLoc, err := transform.LocationsCloudToHub()
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, gcp := range locationMap {
-		if !util.ContainsStr(gcpLoc, gcp) {
+		if _, ok := gcpLoc[gcp]; !ok {
 			t.Error(gcp)
 		}
 	}

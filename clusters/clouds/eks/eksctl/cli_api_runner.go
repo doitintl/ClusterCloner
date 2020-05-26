@@ -21,6 +21,7 @@ import (
 	"github.com/weaveworks/eksctl/pkg/ctl/upgrade"
 	"github.com/weaveworks/eksctl/pkg/ctl/utils"
 	"github.com/weaveworks/eksctl/pkg/version"
+	"os"
 )
 
 func addCommands(rootCmd *cobra.Command, flagGrouping *cmdutils.FlagGrouping) {
@@ -41,7 +42,11 @@ func addCommands(rootCmd *cobra.Command, flagGrouping *cmdutils.FlagGrouping) {
 	cmdutils.AddResourceCmd(flagGrouping, rootCmd, versionCmd)
 }
 
-func runEksctl() error {
+func runEksctl(args []string) error {
+	oldArgs := os.Args[:]
+	defer resetOsArgs(oldArgs)
+	os.Args = args[:]
+
 	cobra.EnableCommandSorting = false
 
 	rootCmd := &cobra.Command{
