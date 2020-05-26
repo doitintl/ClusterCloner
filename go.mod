@@ -10,7 +10,6 @@ require (
 	github.com/Azure/go-autorest/autorest/azure/auth v0.4.2
 	github.com/Azure/go-autorest/autorest/to v0.3.0
 	github.com/Azure/go-autorest/autorest/validation v0.2.0 // indirect
-	github.com/aws/aws-sdk-go v1.30.14
 	github.com/cuonglm/gocmt v0.0.0-20191202104510-7f323a1ee08c // indirect
 	github.com/hashicorp/hcl/v2 v2.5.0 // indirect
 	github.com/joho/godotenv v1.3.0
@@ -22,58 +21,18 @@ require (
 )
 
 require (
-	github.com/alecthomas/jsonschema v0.0.0-20200514014646-0366d1034a17
-	github.com/awslabs/goformation v0.0.0-20190320125420-ac0a17860cf1
-	github.com/awslabs/goformation/v4 v4.1.0
-	github.com/blang/semver v3.5.1+incompatible
-	github.com/bxcodec/faker v2.0.1+incompatible
-	github.com/cloudflare/cfssl v0.0.0-20190726000631-633726f6bcb7
-	github.com/dave/jennifer v1.3.0
-	github.com/dlespiau/kube-test-harness v0.0.0-20190930170435-ec3f93e1a754
-	github.com/evanphx/json-patch v4.5.0+incompatible
-	github.com/fluxcd/flux/pkg/install v0.0.0-20200402142123-873fb9300996 // flux 1.19.0
-	github.com/fluxcd/helm-operator/pkg/install v0.0.0-20200407140510-8d71b0072a3e // helm-operator 1.0.0
-	github.com/gobwas/glob v0.2.3
-	github.com/golangci/golangci-lint v1.21.0
-	github.com/goreleaser/goreleaser v0.110.0
-	github.com/instrumenta/kubeval v0.0.0-20190918223246-8d013ec9fc56
-	github.com/justinbarrick/go-k8s-portforward v1.0.3
-	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
-	github.com/kevinburke/go-bindata v3.15.0+incompatible
+
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/kris-nova/logger v0.0.0-20181127235838-fd0d87064b06
 	github.com/kris-nova/lolgopher v0.0.0-20180921204813-313b3abb0d9b // indirect
-	github.com/kubicorn/kubicorn v0.0.0-20180829191017-06f6bce92acc
-	github.com/lithammer/dedent v1.1.0
-	github.com/onsi/ginkgo v1.11.0
-	github.com/onsi/gomega v1.8.1
-	github.com/pelletier/go-toml v1.6.0
-	github.com/spf13/afero v1.2.2
+
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
-	github.com/tidwall/gjson v1.1.3
 	github.com/tidwall/match v1.0.1 // indirect
-	github.com/tidwall/sjson v1.0.2
 	github.com/tjarratt/babble v0.0.0-20191209142150-eecdf8c2339d
-	github.com/vektra/mockery v0.0.0-20181123154057-e78b021dcbb5
+
 	github.com/voxelbrain/goptions v0.0.0-20180630082107-58cddc247ea2 // indirect
-	github.com/weaveworks/github-release v0.6.3-0.20161024133933-73deea6af1e8
-	github.com/weaveworks/launcher v0.0.0-20180711153254-f1b2830d4f2d
-	github.com/whilp/git-urls v0.0.0-20160530060445-31bac0d230fa
 	golang.org/x/sys v0.0.0-20200428200454-593003d681fa // indirect
-	golang.org/x/tools v0.0.0-20200301222351-066e0c02454c
-	k8s.io/api v0.16.8
-	k8s.io/apiextensions-apiserver v0.16.8
-	k8s.io/apimachinery v0.16.8
-	k8s.io/cli-runtime v0.16.8
-	k8s.io/client-go v11.0.0+incompatible
-	k8s.io/cloud-provider v0.16.8
-	k8s.io/code-generator v0.16.8
-	k8s.io/kops v1.15.2
-	k8s.io/kubelet v0.0.0
-	k8s.io/legacy-cloud-providers v0.0.0
-	sigs.k8s.io/aws-iam-authenticator v0.5.0
-	sigs.k8s.io/yaml v1.2.0
 )
 
 replace (
