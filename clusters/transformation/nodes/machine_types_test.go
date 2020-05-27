@@ -11,7 +11,7 @@ func TestFindMatchingMachineTypeGkeToAks(t *testing.T) {
 	mt := access.MachineTypeByName(gkeMachine)
 	matching := FindMatchingMachineType(mt, accessaks.MachineTypes)
 	if matching.CPU != 8 || matching.RAMMB != 16384 {
-		t.Errorf("No match: %v", matching)
+		t.Fatalf("No match: %v", matching)
 	}
 }
 
@@ -21,6 +21,6 @@ func TestFindMatchingMachineTypeGkeToGke(t *testing.T) {
 	mt := access.MachineTypeByName(gkeMachine)
 	matching := FindMatchingMachineType(mt, access.MachineTypes)
 	if matching.CPU != 8 || matching.RAMMB != 8000 {
-		t.Errorf("No match: %v", matching)
+		t.Fatalf("No match: %v", matching)
 	}
 }

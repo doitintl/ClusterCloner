@@ -172,6 +172,7 @@ func (ca EKSClusterAccess) GetSupportedK8sVersions(scope, location string) (vers
 
 // MachineTypeByName ...
 func MachineTypeByName(machineType string) clusters.MachineType {
+	log.Println(MachineTypes)
 	return MachineTypes[machineType]
 }
 
@@ -198,6 +199,7 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 
 	r := csv.NewReader(csvfile)
 	r.Comma = ','
+	r.Comment = '#'
 	first := true
 	for {
 		record, err := r.Read()

@@ -21,7 +21,7 @@ func TestTransformLocToHub(t *testing.T) {
 	for _, gcp := range locationMap {
 		_, ok := gcpLoc[gcp]
 		if !ok {
-			t.Error(gcp)
+			t.Fatal(gcp)
 		}
 	}
 }

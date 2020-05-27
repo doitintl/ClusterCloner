@@ -19,13 +19,13 @@ func TestTransformAzureToHub(t *testing.T) {
 	tr := AKSTransformer{}
 	std, err := tr.CloudToHub(ci)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if std.Location != "us-west1" {
-		t.Error(std.Location)
+		t.Fatal(std.Location)
 	}
 	if std.Cloud != clusters.Hub {
-		t.Errorf("not the standard cloud %s", std.Cloud)
+		t.Fatalf("not the standard cloud %s", std.Cloud)
 	}
 }
 func TestTransformAzureToHubBadLoc(t *testing.T) {
@@ -39,7 +39,7 @@ func TestTransformAzureToHubBadLoc(t *testing.T) {
 	tr := AKSTransformer{}
 	_, err := tr.CloudToHub(ci)
 	if err == nil {
-		t.Error("expect error")
+		t.Fatal("expect error")
 	}
 }
 
@@ -56,16 +56,16 @@ func TestTransformHubToAzure(t *testing.T) {
 	tr := AKSTransformer{}
 	az, err := tr.HubToCloud(ci, "")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if az.Location != "centralus" {
-		t.Error(az.Location)
+		t.Fatal(az.Location)
 	}
 	if az.Cloud != clusters.Azure {
-		t.Errorf("Not the expected cloud %s", az.Cloud)
+		t.Fatalf("Not the expected cloud %s", az.Cloud)
 	}
 	if az.K8sVersion != "1.14.7" {
-		t.Errorf("Bad K8s Version for Azure based on input: %s", az.K8sVersion)
+		t.Fatalf("Bad K8s Version for Azure based on input: %s", az.K8sVersion)
 	}
 }
 
@@ -83,7 +83,7 @@ func TestTransformLocToHub(t *testing.T) {
 	}
 	for _, gcp := range locationMap {
 		if _, ok := gcpLoc[gcp]; !ok {
-			t.Error(gcp)
+			t.Fatal(gcp)
 		}
 	}
 }

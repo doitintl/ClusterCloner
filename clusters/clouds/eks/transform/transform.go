@@ -15,23 +15,25 @@ type EKSTransformer struct{}
 
 // CloudToHub ...
 func (tr *EKSTransformer) CloudToHub(in *clusters.ClusterInfo) (ret *clusters.ClusterInfo, err error) {
-
+	panic("")
 	return ret, err
 }
 
 // HubToCloud ...
 func (tr *EKSTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope string) (ret *clusters.ClusterInfo, err error) {
+	panic("")
 	return ret, err
 }
 
 //LocationCloudToHub ...
 func (*EKSTransformer) LocationCloudToHub(loc string) (hubValue string, err error) {
+	panic("")
 	return hubValue, nil
 }
 
 //LocationHubToCloud ...
 func (EKSTransformer) LocationHubToCloud(location string) (ret string, err error) {
-
+	panic("")
 	return ret, nil
 
 }

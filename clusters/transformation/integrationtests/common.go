@@ -24,7 +24,7 @@ func assertNumberClustersByLabel(t *testing.T, ci *clusters.ClusterInfo, expecte
 func execTestClusterFromFile(t *testing.T, inputFile string) {
 	clustersFromFile, err := clusters.LoadFromFile(inputFile)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	clusterFromFile := clustersFromFile[0]
 	assert.Equal(t, 1, len(clustersFromFile), "we work with a single cluster in this test")
@@ -35,7 +35,7 @@ func execTestClusterFromFile(t *testing.T, inputFile string) {
 		t.Fatal(err)
 	}
 	if !strings.HasPrefix(out[0].Name, clusterFromFile.Name) {
-		t.Errorf("%s does not have %s as prefix", out[0].Name, clusterFromFile.Name)
+		t.Fatalf("%s does not have %s as prefix", out[0].Name, clusterFromFile.Name)
 	}
 
 	assertNumberClustersByLabel(t, clusterFromFile, 1)

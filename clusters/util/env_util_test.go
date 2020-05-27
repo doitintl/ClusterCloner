@@ -12,7 +12,7 @@ func TestRootPath(t *testing.T) {
 
 	r := RootPath()
 	if !strings.Contains(r, "clustercloner") {
-		t.Error(r)
+		t.Fatal(r)
 	}
 }
 func TestReplaceStdout(t *testing.T) {

@@ -35,28 +35,28 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	tr := GKETransformer{}
 	hub, err := tr.CloudToHub(input)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	if !strings.HasPrefix(input.Location, hub.Location) {
-		t.Error(hub.Location)
+		t.Fatal(hub.Location)
 	}
 	if hub.Cloud != clusters.Hub {
-		t.Errorf("Not the Hub: %s", hub.Cloud)
+		t.Fatalf("Not the Hub: %s", hub.Cloud)
 	}
 
 	output, err := tr.HubToCloud(hub, scope)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if output.Scope != scope || output.Name != input.Name ||
 		output.Cloud != input.Cloud {
 		outputStr := util.ToJSON(output)
 		inputStr := util.ToJSON(input)
-		t.Error(outputStr + "!=" + inputStr)
+		t.Fatal(outputStr + "!=" + inputStr)
 	}
 	if output.NodePools[0].DiskSizeGB != input.NodePools[0].DiskSizeGB {
-		t.Error(output.NodePools[0].DiskSizeGB)
+		t.Fatal(output.NodePools[0].DiskSizeGB)
 	}
 }
 func TestTransformGcpToHubBadLoc(t *testing.T) {
@@ -71,33 +71,33 @@ func TestTransformGcpToHubBadLoc(t *testing.T) {
 	tr := GKETransformer{}
 	_, err := tr.CloudToHub(ci)
 	if err == nil {
-		t.Error("expect error")
+		t.Fatal("expect error")
 	}
 }
 func TestHyphens(t *testing.T) {
 	hyCount, secondHyIdx := hyphensForGCPLocation("us-central1-c")
 	if hyCount != 2 {
-		t.Error(hyCount)
+		t.Fatal(hyCount)
 	}
 	if secondHyIdx != 11 {
-		t.Error(secondHyIdx)
+		t.Fatal(secondHyIdx)
 	}
 }
 func TestHyphensNone(t *testing.T) {
 	hyCount, secondHyIdx := hyphensForGCPLocation("uscentral1c")
 	if hyCount != 0 {
-		t.Error(hyCount)
+		t.Fatal(hyCount)
 	}
 	if secondHyIdx != -1 {
-		t.Error(secondHyIdx)
+		t.Fatal(secondHyIdx)
 	}
 }
 func TestHyphenOne(t *testing.T) {
 	hyCount, secondHyIdx := hyphensForGCPLocation("us-central1")
 	if hyCount != 1 {
-		t.Error(hyCount)
+		t.Fatal(hyCount)
 	}
 	if secondHyIdx != -1 {
-		t.Error(secondHyIdx)
+		t.Fatal(secondHyIdx)
 	}
 }

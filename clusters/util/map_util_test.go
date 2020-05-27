@@ -18,6 +18,6 @@ func TestStrMapToStrPtrMap(t *testing.T) {
 	out2Str := ToJSON(out2)
 
 	if out2["a"] != m["a"] && out2["c"] != m["c"] {
-		t.Errorf("%s !=%s", out2Str, outS)
+		t.Fatalf("%s !=%s", out2Str, outS)
 	}
 }

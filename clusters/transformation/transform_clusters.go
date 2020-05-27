@@ -3,7 +3,9 @@ package transformation
 import (
 	"clustercloner/clusters"
 	transformaks "clustercloner/clusters/clouds/aks/transform"
+	transformeks "clustercloner/clusters/clouds/eks/transform"
 	transformgke "clustercloner/clusters/clouds/gke/transform"
+
 	"clustercloner/clusters/clusteraccess"
 	"clustercloner/clusters/transformation/util"
 	clusterutil "clustercloner/clusters/util"
@@ -32,11 +34,11 @@ func getTransformer(cloud string) Transformer {
 		transformer = &transformgke.GKETransformer{}
 	case clusters.Azure:
 		transformer = &transformaks.AKSTransformer{}
-	case clusters.Hub:
-		transformer = &util.IdentityTransformer{TargetCloud: clusters.Hub}
+	case clusters.Azure:
+		transformer = &transformeks.EKSTransformer{}
 	default:
 		transformer = nil
-		log.Printf("Unknown %s", cloud)
+		panic("Unknown cloud " + cloud)
 	}
 	return transformer
 }
@@ -55,7 +57,7 @@ func getSameCloudTransformer(cloud string) Transformer {
 		transformer = &util.IdentityTransformer{TargetCloud: clusters.Hub}
 	default:
 		transformer = nil
-		panic(fmt.Sprintf("Unknown %s", cloud))
+		panic(fmt.Sprintf("cannot get transformer for unknown cloud %s", cloud))
 	}
 	return transformer
 }

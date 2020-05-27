@@ -15,24 +15,23 @@ func TestParseMachineType(t *testing.T) {
 
 	mt := MachineTypeByName(machineType)
 	if mt.Name != machineType {
-		t.Error(mt.Name)
+		t.Fatal(mt.Name)
 	}
 	if mt.CPU != 1 {
-		t.Error(mt.CPU)
+		t.Fatal(mt.CPU)
 
 	}
 	if mt.RAMMB != 3584 {
-		t.Error(mt.RAMMB)
+		t.Fatal(mt.RAMMB)
 	}
 }
 func TestMachineTypes(t *testing.T) {
 	types := MachineTypes
 	log.Println(types)
 	machineTypeCount := len(types)
-	assert.Greater(t, machineTypeCount, 300)
-	assert.Less(t, machineTypeCount, 330)
+	assert.Greater(t, machineTypeCount, 90)
 	mt := MachineTypeByName("Standard_A2_v2")
-	assert.Equal(t, "Standard_A2_v2",mt.Name)
-		assert.Equal(t, 1792,mt.RAMMB)
-	assert.Equal(t, 1, mt.CPU )
+	assert.Equal(t, "Standard_A2_v2", mt.Name)
+	assert.Equal(t, 4096, mt.RAMMB)
+	assert.Equal(t, 2, mt.CPU)
 }
