@@ -103,7 +103,11 @@ func (ca AKSClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (descr
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get cluster")
 	}
-	clusterInfo := clusterObjectToClusterInfo(cluster, searchTemplate.Scope, clusters.Read)
+	clusterInfo, err := clusterObjectToClusterInfo(cluster, searchTemplate.Scope, clusters.Read)
+	if err != nil {
+		return nil, errors.New("cannot convert cluster object")
+	}
+
 	clusterInfo.SourceCluster = searchTemplate
 	return clusterInfo, nil
 }
@@ -132,7 +136,11 @@ func (ca AKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 		log.Println(err)
 		return nil, errors.Wrap(err, "cannot create cluster")
 	}
-	createdClusterInfo := clusterObjectToClusterInfo(createdCluster, createThis.Scope, clusters.Created)
+	createdClusterInfo, err := clusterObjectToClusterInfo(createdCluster, createThis.Scope, clusters.Created)
+	if err != nil {
+		return nil, errors.New("cannot convert cluster object")
+	}
+
 	createdClusterInfo.SourceCluster = createThis
 	return createdClusterInfo, nil
 }
@@ -159,10 +167,10 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 	for _, nodePool := range createThis.NodePools {
 		agPoolName := strings.ReplaceAll(nodePool.Name, "-", "")
 		agPoolProfile := containerservice.ManagedClusterAgentPoolProfile{
-			Count:        to.Int32Ptr(nodePool.NodeCount),
+			Count:        to.Int32Ptr(int32(nodePool.NodeCount)),
 			Name:         to.StringPtr(agPoolName),
 			VMSize:       containerservice.VMSizeTypes(nodePool.MachineType.Name),
-			OsDiskSizeGB: to.Int32Ptr(nodePool.DiskSizeGB),
+			OsDiskSizeGB: to.Int32Ptr(int32(nodePool.DiskSizeGB)),
 			//TODO use the nodePool.K8sVersion. Does Az support that?
 		}
 		agPoolProfiles = append(agPoolProfiles, agPoolProfile)
@@ -251,7 +259,11 @@ func (ca AKSClusterAccess) List(subscription, location string, labelFilter map[s
 			continue
 		}
 		matchedNames = append(matchedNames, name)
-		foundCluster := clusterObjectToClusterInfo(managedCluster, subscription, clusters.Read)
+		foundCluster, err := clusterObjectToClusterInfo(managedCluster, subscription, clusters.Read)
+		if err != nil {
+			return nil, errors.New("cannot convert cluster object")
+		}
+
 		ret = append(ret, foundCluster)
 
 	}
@@ -260,7 +272,7 @@ func (ca AKSClusterAccess) List(subscription, location string, labelFilter map[s
 	return ret, nil
 }
 
-func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, subscription string, generatedBy string) *clusters.ClusterInfo {
+func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, subscription string, generatedBy string) (*clusters.ClusterInfo, error) {
 	var props = managedCluster.ManagedClusterProperties
 	foundCluster := &clusters.ClusterInfo{
 		Scope:       subscription,
@@ -274,12 +286,19 @@ func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, 
 	//AgentPoolProfile is not showing AgentPool K8s Version, so copying from the Cluster
 	var nodePoolK8sVersion = foundCluster.K8sVersion
 	for _, agentPoolProfile := range *props.AgentPoolProfiles {
+		var scaleSetPriority = agentPoolProfile.ScaleSetPriority
+		var spot = scaleSetPriority == containerservice.Spot
+		machineTypeByName := MachineTypeByName(fmt.Sprintf("%v", agentPoolProfile.VMSize))
+		if machineTypeByName.Name == "" {
+			return nil, errors.New(fmt.Sprintf("cannot find machine type %v", agentPoolProfile.VMSize))
+		}
 		nodePool := clusters.NodePoolInfo{
 			Name:        *agentPoolProfile.Name,
-			NodeCount:   *agentPoolProfile.Count,
-			MachineType: MachineTypeByName(fmt.Sprintf("%v", agentPoolProfile.VMSize)),
-			DiskSizeGB:  *agentPoolProfile.OsDiskSizeGB,
+			NodeCount:   int(*agentPoolProfile.Count),
+			MachineType: machineTypeByName,
+			DiskSizeGB:  int(*agentPoolProfile.OsDiskSizeGB),
 			K8sVersion:  nodePoolK8sVersion,
+			Preemptible: spot,
 		}
 		foundCluster.AddNodePool(nodePool)
 		zero := clusters.MachineType{}
@@ -287,7 +306,7 @@ func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, 
 			panic("cannot read " + agentPoolProfile.VMSize)
 		}
 	}
-	return foundCluster
+	return foundCluster, nil
 }
 
 // supportedVersions ...
@@ -319,7 +338,7 @@ func (ca AKSClusterAccess) GetSupportedK8sVersions(scope, location string) []str
 
 // MachineTypeByName ...
 func MachineTypeByName(machineType string) clusters.MachineType {
-	return MachineTypes[machineType] //return zero object if not found
+	return MachineTypes[machineType]
 }
 
 // MachineTypes ...
@@ -375,7 +394,7 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 		if err != nil {
 			return nil, err
 		}
-		ret[name] = clusters.MachineType{Name: name, CPU: int32(cpuInteger), RAMMB: int32(ramMBInt)}
+		ret[name] = clusters.MachineType{Name: name, CPU: int(cpuInteger), RAMMB: int(ramMBInt)}
 	}
 	return ret, nil
 }

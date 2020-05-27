@@ -17,6 +17,7 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 		K8sVersion:  "1.15.2-gke27",
 		MachineType: mt,
 		DiskSizeGB:  32,
+		Preemptible: true,
 	}
 	npi2 := npi1 //copy
 	npi2.Name = "yyy"

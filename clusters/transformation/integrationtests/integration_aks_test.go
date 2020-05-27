@@ -10,6 +10,6 @@ func TestCreateAzureClusterFromFile(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	CreateClusterFromFile(t, inputFile)
+	execTestClusterFromFile(t, inputFile)
 
 }

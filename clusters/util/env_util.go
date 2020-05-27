@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -42,9 +41,8 @@ func (m NoopWriter) Write(p []byte) (n int, err error) {
 // ReplaceStdout ...
 func ReplaceStdout() (tempStdoutFullPath string, oldStdout *os.File) {
 	tempStdoutFullPath = filepath.Join(os.TempDir(), "stdout")
-	fmt.Println("stdout is now set to", tempStdoutFullPath)
-	oldStdout = os.Stdout                      // keep backup of the real stdout
-	temp, err := os.Create(tempStdoutFullPath) // create temp file
+	oldStdout = os.Stdout // keep backup of the real stdout
+	temp, err := os.Create(tempStdoutFullPath)
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +51,11 @@ func ReplaceStdout() (tempStdoutFullPath string, oldStdout *os.File) {
 }
 
 // RestoreStdout ...
-func RestoreStdout(oldStdout *os.File) {
+func RestoreStdout(oldStdout *os.File, tempFile string) {
 	os.Stdout = oldStdout
+	err := os.Remove(tempFile)
+	if err != nil {
+		log.Println("Error removing " + tempFile + " " + err.Error())
+	}
 
 }

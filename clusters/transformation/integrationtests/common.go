@@ -20,8 +20,8 @@ func assertNumberClustersByLabel(t *testing.T, ci *clusters.ClusterInfo, expecte
 	assert.Equal(t, expected, len(listed), listed)
 }
 
-// CreateClusterFromFile ...
-func CreateClusterFromFile(t *testing.T, inputFile string) {
+// execTestClusterFromFile ...
+func execTestClusterFromFile(t *testing.T, inputFile string) {
 	clustersFromFile, err := clusters.LoadFromFile(inputFile)
 	if err != nil {
 		t.Error(err)

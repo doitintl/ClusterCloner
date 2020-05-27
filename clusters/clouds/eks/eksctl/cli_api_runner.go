@@ -43,6 +43,9 @@ func addCommands(rootCmd *cobra.Command, flagGrouping *cmdutils.FlagGrouping) {
 }
 
 func runEksctl(args []string) error {
+	if args[0] != "eksctl" {
+		return errors.New(fmt.Sprintf("must pass \"eksctl\" as first arg %v", args))
+	}
 	oldArgs := os.Args[:]
 	defer resetOsArgs(oldArgs)
 	os.Args = args[:]

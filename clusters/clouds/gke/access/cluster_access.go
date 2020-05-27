@@ -53,7 +53,10 @@ func (ca GKEClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (*clus
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get cluster")
 	}
-	readClusterInfo := clusterObjectToClusterInfo(cluster, searchTemplate.Scope)
+	readClusterInfo, err := clusterObjectToClusterInfo(cluster, searchTemplate.Scope)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot convert cluster object")
+	}
 	readClusterInfo.SourceCluster = searchTemplate
 	return readClusterInfo, nil
 }
@@ -105,7 +108,10 @@ func (ca GKEClusterAccess) List(project, location string, labelFilter map[string
 			continue
 		}
 		matchedNames = append(matchedNames, cluster.GetName())
-		foundClusterInfo := clusterObjectToClusterInfo(cluster, project)
+		foundClusterInfo, err := clusterObjectToClusterInfo(cluster, project)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot convert cluster object")
+		}
 		ret = append(ret, foundClusterInfo)
 	}
 	log.Printf("In listing clusters, these matched the label filter %v; and these did not %v", matchedNames, unmatchedNames)
@@ -114,7 +120,7 @@ func (ca GKEClusterAccess) List(project, location string, labelFilter map[string
 
 }
 
-func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) *clusters.ClusterInfo {
+func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) (*clusters.ClusterInfo, error) {
 	labels := clus.GetResourceLabels()
 	foundCluster := &clusters.ClusterInfo{
 		Scope:       project,
@@ -128,12 +134,17 @@ func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) *clus
 
 	var nodePools = clus.GetNodePools()
 	for _, np := range nodePools {
+		machineType := MachineTypeByName(np.GetConfig().MachineType)
+		if machineType.Name == "" { //zero-object
+			return nil, errors.New("cannot find match for " + np.GetConfig().MachineType)
+		}
 		nodePool := clusters.NodePoolInfo{
 			Name:        np.GetName(),
-			NodeCount:   np.GetInitialNodeCount(),
-			MachineType: MachineTypeByName(np.GetConfig().MachineType),
+			NodeCount:   int(np.GetInitialNodeCount()),
+			MachineType: machineType,
 			K8sVersion:  np.GetVersion(),
-			DiskSizeGB:  np.GetConfig().GetDiskSizeGb(),
+			DiskSizeGB:  int(np.GetConfig().GetDiskSizeGb()),
+			Preemptible: np.GetConfig().Preemptible,
 		}
 		zero := clusters.MachineType{}
 		if nodePool.MachineType == zero {
@@ -141,7 +152,7 @@ func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) *clus
 		}
 		foundCluster.AddNodePool(nodePool)
 	}
-	return foundCluster
+	return foundCluster, nil
 }
 
 func projectLocationPath(project, location string) string {
@@ -165,12 +176,12 @@ func (ca GKEClusterAccess) Create(createThis *clusters.ClusterInfo) (*clusters.C
 	for i, npi := range createThis.NodePools {
 		var nodeConfig = containerpb.NodeConfig{
 			MachineType: npi.MachineType.Name,
-			DiskSizeGb:  npi.DiskSizeGB,
+			DiskSizeGb:  int32(npi.DiskSizeGB),
 		}
 		np := containerpb.NodePool{
 			Name:             npi.Name,
 			Config:           &nodeConfig,
-			InitialNodeCount: npi.NodeCount,
+			InitialNodeCount: int32(npi.NodeCount),
 			Version:          npi.K8sVersion,
 		}
 		nodePools[i] = &np
@@ -286,14 +297,13 @@ Waiting:
 
 // MachineTypeByName ...
 func MachineTypeByName(machineType string) clusters.MachineType {
-	return MachineTypes[machineType] //return zero object if not found
+	return MachineTypes[machineType]
 }
 
 // MachineTypes ...
 var MachineTypes map[string]clusters.MachineType
 
 func init() {
-
 	key := "GOOGLE_APPLICATION_CREDENTIALS"
 	cred := os.Getenv(key)
 	log.Println(key, cred)
@@ -345,9 +355,9 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot parse "+ramGBStr)
 		}
-		ramMB := int32(ramGbFlt * 1000)
+		ramMB := ramGbFlt * 1000
 
-		ret[name] = clusters.MachineType{Name: name, CPU: int32(cpuInteger), RAMMB: ramMB}
+		ret[name] = clusters.MachineType{Name: name, CPU: int(cpuInteger), RAMMB: int(ramMB)}
 	}
 	return ret, nil
 }

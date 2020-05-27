@@ -18,13 +18,17 @@ func TestTransformAzureToGCP(t *testing.T) {
 		MachineType: accessaks.MachineTypeByName(machineType),
 		NodeCount:   1,
 		K8sVersion:  "1.14.0",
-		DiskSizeGB:  10}
+		DiskSizeGB:  10,
+		Preemptible: true,
+	}
 	npi2 := clusters.NodePoolInfo{
 		Name:        "NP2",
 		MachineType: accessaks.MachineTypeByName("Standard_A1"),
 		NodeCount:   2,
 		K8sVersion:  "1.15.0",
-		DiskSizeGB:  20}
+		DiskSizeGB:  20,
+		Preemptible: true,
+	}
 
 	npis := []clusters.NodePoolInfo{npi, npi2}
 	nodePools := npis[:]
@@ -87,13 +91,17 @@ func TestTransformGCPToAzure(t *testing.T) {
 		MachineType: accessaks.MachineTypeByName(machineType),
 		NodeCount:   1,
 		K8sVersion:  "1.14.3",
-		DiskSizeGB:  10}
+		DiskSizeGB:  10,
+		Preemptible: true,
+	}
 	npi2 := clusters.NodePoolInfo{
 		Name:        "NP2",
 		MachineType: accessaks.MachineTypeByName("Standard_A1"),
 		NodeCount:   2,
 		K8sVersion:  "1.15.2",
-		DiskSizeGB:  20}
+		DiskSizeGB:  20,
+		Preemptible: true,
+	}
 
 	npis := []clusters.NodePoolInfo{npi, npi2}
 	nodePools := npis[:]

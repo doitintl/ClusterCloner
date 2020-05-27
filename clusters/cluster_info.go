@@ -31,17 +31,18 @@ func (ci *ClusterInfo) AddNodePool(pool NodePoolInfo) {
 // MachineType ...
 type MachineType struct {
 	Name  string
-	CPU   int32
-	RAMMB int32
+	CPU   int
+	RAMMB int
 }
 
 // NodePoolInfo ...
 type NodePoolInfo struct {
 	Name        string
-	NodeCount   int32
+	NodeCount   int
 	K8sVersion  string
 	MachineType MachineType
-	DiskSizeGB  int32
+	DiskSizeGB  int
+	Preemptible bool
 }
 
 var (

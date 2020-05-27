@@ -1,0 +1,14 @@
+[
+  {
+    "StackName": "eksctl-clus-bumping-nodegroup-one-node-group",
+    "Cluster": "clus-bumping",
+    "Name": "one-node-group",
+    "MaxSize": 1,
+    "MinSize": 1,
+    "DesiredCapacity": 1,
+    "InstanceType": "t2.small",
+    "ImageID": "",
+    "CreationTime": "2020-05-27T07:18:32.496Z",
+    "NodeInstanceRoleARN": ""
+  }
+]

@@ -3,7 +3,7 @@
 
 ## Fields of GKE Cluster
 - Name: Copied
-- Description: Should Copy
+- Description: Will not copy (Cloud-specific)
 - InitialNodeCount: Will not copy (in NodePool)
 - NodeConfig: Will not copy (in NodePool)
 - MasterAuth: Will not copy (Cloud-specific)

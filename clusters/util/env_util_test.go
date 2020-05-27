@@ -21,7 +21,7 @@ func TestReplaceStdout(t *testing.T) {
 	tempFile, old := ReplaceStdout()
 	inString := "tempfile Stdout"
 	fmt.Print(inString)
-	RestoreStdout(old)
+	RestoreStdout(old, "")
 	fmt.Println("Stdout restored")
 	read, err := ioutil.ReadFile(tempFile)
 	if err != nil {

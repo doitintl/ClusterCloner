@@ -16,17 +16,22 @@ func TransformNodePool(np clusters.NodePoolInfo, machineTypes map[string]cluster
 	if err != nil {
 		return clusters.NodePoolInfo{}, errors.New("cannot convert K8s Version \"" + np.K8sVersion + "\" for node pool")
 	}
+	matchingMachineType := FindMatchingMachineType(np.MachineType, machineTypes)
+	if matchingMachineType.Name == "" { //zero-object
+		return clusters.NodePoolInfo{}, errors.New("cannot find match for " + np.MachineType.Name)
+	}
 	ret := clusters.NodePoolInfo{
 		Name:        np.Name,
 		NodeCount:   np.NodeCount,
 		K8sVersion:  nodePoolK8sVersion,
-		MachineType: FindMatchingMachineType(np.MachineType, machineTypes),
+		MachineType: matchingMachineType,
 		DiskSizeGB:  np.DiskSizeGB,
+		Preemptible: np.Preemptible,
 	}
 	return ret, nil
 }
 
-// FindMatchingMachineType chooses the weakest machine wgich equals or exceeeds in the inputMachineType in CPU amd RAM. If there are several some such, one is chosen arbitrarily
+// FindMatchingMachineType chooses the weakest machine which equals or exceeeds in the inputMachineType in CPU amd RAM. If there are several some such, one is chosen arbitrarily
 func FindMatchingMachineType(inputMachineType clusters.MachineType, machineTypes map[string]clusters.MachineType) clusters.MachineType {
 	if machineTypes == nil { //Transforming to Hub, no change
 		return inputMachineType
