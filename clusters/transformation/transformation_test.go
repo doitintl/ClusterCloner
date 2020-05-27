@@ -12,18 +12,21 @@ import (
 
 func TestTransformAzureToGCP(t *testing.T) {
 	scope := "sample-scope"
-	machineType := "Standard_M64ms"
+	machineType1ByName := accessaks.MachineTypeByName( "Standard_M64ms")
+	assert.NotEqual(t, machineType1ByName.Name, "")
 	npi := clusters.NodePoolInfo{
 		Name:        "NP",
-		MachineType: accessaks.MachineTypeByName(machineType),
+		MachineType: machineType1ByName,
 		NodeCount:   1,
 		K8sVersion:  "1.14.0",
 		DiskSizeGB:  10,
 		Preemptible: true,
 	}
+	machineType2ByName := accessaks.MachineTypeByName("Standard_A2_v2")
+assert.NotEqual(t, machineType2ByName.Name, "")
 	npi2 := clusters.NodePoolInfo{
 		Name:        "NP2",
-		MachineType: accessaks.MachineTypeByName("Standard_A1"),
+		MachineType: machineType2ByName,
 		NodeCount:   2,
 		K8sVersion:  "1.15.0",
 		DiskSizeGB:  20,
@@ -96,7 +99,7 @@ func TestTransformGCPToAzure(t *testing.T) {
 	}
 	npi2 := clusters.NodePoolInfo{
 		Name:        "NP2",
-		MachineType: accessaks.MachineTypeByName("Standard_A1"),
+		MachineType: accessaks.MachineTypeByName("Standard_A2_v2"),
 		NodeCount:   2,
 		K8sVersion:  "1.15.2",
 		DiskSizeGB:  20,

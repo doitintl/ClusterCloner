@@ -28,9 +28,12 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 
 	ret.NodePools = make([]clusters.NodePoolInfo, 0)
 	for _, nodePoolIn := range in.NodePools {
+		if nodePoolIn.MachineType.Name == "" {
+			return nil, errors.New("node pool " + nodePoolIn.Name + " has an uninitialized Machine Type")
+		}
 		nodePoolOut, err := nodes.TransformNodePool(nodePoolIn, machineTypes)
 		if err != nil {
-			return nil, errors.New("error transforming Node Pool %v")
+			return nil, errors.Wrap(err, "error transforming Node Pool"+nodePoolIn.Name)
 		}
 		zero := clusters.NodePoolInfo{}
 		if nodePoolOut == zero {

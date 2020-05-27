@@ -17,8 +17,8 @@ func TransformNodePool(np clusters.NodePoolInfo, machineTypes map[string]cluster
 		return clusters.NodePoolInfo{}, errors.New("cannot convert K8s Version \"" + np.K8sVersion + "\" for node pool")
 	}
 	matchingMachineType := FindMatchingMachineType(np.MachineType, machineTypes)
-	if matchingMachineType.Name == "" { //zero-object
-		return clusters.NodePoolInfo{}, errors.New("cannot find match for " + np.MachineType.Name)
+	if matchingMachineType.Name == "" { //zero-object -- name n
+		return clusters.NodePoolInfo{}, errors.New("cannot find match for Machine Type " + np.MachineType.Name)
 	}
 	ret := clusters.NodePoolInfo{
 		Name:        np.Name,

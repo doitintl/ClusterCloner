@@ -64,8 +64,6 @@ func (ca EKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 
 // Delete ...
 func (ca EKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) (err error) {
-	//TODO maybe delete NodeGroups separately
-	//TODO check if VPC gets deleted
 	err = eksctl.DeleteCluster(deleteThis.Name, deleteThis.Location)
 	if err != nil {
 		return errors.Wrap(err, "cannot delete cluster")
@@ -174,7 +172,6 @@ func (ca EKSClusterAccess) GetSupportedK8sVersions(scope, location string) (vers
 
 // MachineTypeByName ...
 func MachineTypeByName(machineType string) clusters.MachineType {
-	//TODO load EKS Machine Types at init
 	return MachineTypes[machineType]
 }
 
@@ -222,10 +219,9 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 		supportsEks := record[4]
 		if strings.ToLower(supportsEks) != "true" {
 			continue
-
 		}
-		name := record[0]
 
+		name := record[0]
 		ramGiBStr := record[2]
 		ramGiBFloat, err := strconv.ParseFloat(ramGiBStr, 32)
 		if err != nil {

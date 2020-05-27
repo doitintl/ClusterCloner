@@ -392,7 +392,7 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 		ramMBString := record[2]
 		ramMBInt, err := strconv.ParseInt(ramMBString, 10, 32)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "cannot parse "+ramMBString)
 		}
 		ret[name] = clusters.MachineType{Name: name, CPU: int(cpuInteger), RAMMB: int(ramMBInt)}
 	}

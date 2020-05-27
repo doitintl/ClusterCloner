@@ -1,6 +1,8 @@
 package access
 
 import (
+	"github.com/stretchr/testify/assert"
+	"log"
 	"testing"
 )
 
@@ -22,4 +24,15 @@ func TestParseMachineType(t *testing.T) {
 	if mt.RAMMB != 3584 {
 		t.Error(mt.RAMMB)
 	}
+}
+func TestMachineTypes(t *testing.T) {
+	types := MachineTypes
+	log.Println(types)
+	machineTypeCount := len(types)
+	assert.Greater(t, machineTypeCount, 300)
+	assert.Less(t, machineTypeCount, 330)
+	mt := MachineTypeByName("Standard_A2_v2")
+	assert.Equal(t, "Standard_A2_v2",mt.Name)
+		assert.Equal(t, 1792,mt.RAMMB)
+	assert.Equal(t, 1, mt.CPU )
 }
