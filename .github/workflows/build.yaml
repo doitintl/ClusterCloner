@@ -42,6 +42,8 @@ jobs:
           IMAGE_NAME: ${{ steps.decide_name.outputs.image_name }}
           IMAGE_TAG: ${{ steps.decide_tag.outputs.image_tag }}
         run: |
+          echo $AZ_ENV_BASE64>tmpfile.txt
+          cat tmpfile.txt
           echo $AZ_ENV_BASE64 |  base64 --decode > ".env"
           echo AWS_CREDENTIALS_BASE64 |  base64 --decode > awscredentials
           echo $GCP_CLUSTER_MANAGER_KEYJSON_BASE64 |  base64 --decode > credentials-cluster-manager.json
