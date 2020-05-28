@@ -25,12 +25,14 @@ func TestDescCluster(t *testing.T) {
 	}
 	log.Println(cis)
 }
-//TODO delete (temp)
+*/
+
+/*TODO delete (temp)
 func TestDelCluster(t *testing.T) {
 
 	ca := clusteraccess.GetClusterAccess(clusters.AWS)
-	searchTemplate := &clusters.ClusterInfo{Name: "clus-bumping", Location: "us-east-2"}
- err := ca.Delete(searchTemplate)
+	searchTemplate := &clusters.ClusterInfo{Name: "clus-outlung", Location: "us-east-2"}
+	err := ca.Delete(searchTemplate)
 	if err != nil {
 		t.Fatal(err)
 	}

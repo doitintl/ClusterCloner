@@ -2,82 +2,89 @@ package transform
 
 import (
 	"clustercloner/clusters"
+	"clustercloner/clusters/clouds/eks/access"
+	transformutil "clustercloner/clusters/transformation/util"
 	clusterutil "clustercloner/clusters/util"
-	"encoding/csv"
+	"fmt"
 	"github.com/pkg/errors"
-	"io"
-	"log"
-	"os"
 )
 
 // EKSTransformer ...
 type EKSTransformer struct{}
 
 // CloudToHub ...
-func (tr *EKSTransformer) CloudToHub(in *clusters.ClusterInfo) (ret *clusters.ClusterInfo, err error) {
-	panic("")
-	return ret, err
+func (tr *EKSTransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+	loc, err := tr.LocationCloudToHub(in.Location)
+	if err != nil {
+		return nil, errors.Wrap(err, "error in converting locations")
+	}
+
+	clusterK8sVersion, err := clusterutil.MajorMinorPatchVersion(in.K8sVersion)
+	if err != nil {
+		return nil, errors.Wrap(err, "error in K8s K8sVersion "+in.K8sVersion)
+	}
+
+	ret, err := transformutil.TransformSpoke(in, "", clusters.Hub, loc, clusterK8sVersion, nil, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot TransformSpoke CloudToHub AKS")
+	}
+	return ret, nil
 }
 
 // HubToCloud ...
-func (tr *EKSTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope string) (ret *clusters.ClusterInfo, err error) {
-	panic("")
-	return ret, err
+func (tr *EKSTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope string) (*clusters.ClusterInfo, error) {
+	loc, err := tr.LocationHubToCloud(in.Location)
+	if err != nil {
+		return nil, errors.Wrap(err, "error in converting location")
+	}
+	ret, err := transformutil.TransformSpoke(in, outputScope, clusters.Azure, loc, in.K8sVersion, access.MachineTypes, true)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot TransformSpoke HubToCloud AKS")
+	}
+	return ret, nil
+}
+
+// LocationsCloudToHub ...
+func LocationsCloudToHub() (map[string]string, error) {
+	file := "aws_locations.csv"
+	if locations == nil {
+		var err error
+		locations, err = transformutil.LoadLocationMap(file)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot load "+file)
+		}
+	}
+	return locations, nil
 }
 
 //LocationCloudToHub ...
-func (*EKSTransformer) LocationCloudToHub(loc string) (hubValue string, err error) {
-	panic("")
+func (*EKSTransformer) LocationCloudToHub(loc string) (string, error) {
+	mapping, err := LocationsCloudToHub()
+	if err != nil {
+		return "", err
+	}
+	hubValue, wasinMap := mapping[loc]
+	if !wasinMap {
+		return "", errors.New(fmt.Sprintf("Not found: %s", loc))
+	}
 	return hubValue, nil
 }
 
 //LocationHubToCloud ...
-func (EKSTransformer) LocationHubToCloud(location string) (ret string, err error) {
-	panic("")
-	return ret, nil
+func (EKSTransformer) LocationHubToCloud(location string) (string, error) {
+	awsToHub, err := LocationsCloudToHub()
+	if err != nil {
+		return "", errors.Wrap(err, "cannot get LocationsCloudToHub AWS")
+	}
+	hubToAws := clusterutil.ReverseStrMap(awsToHub)
+	azLoc, ok := hubToAws[location]
+	if !ok {
+		return "", errors.New(fmt.Sprintf("Cannot find %s", location))
+	}
+	return azLoc, nil
 
 }
 
 // Locations ...
 var locations map[string]string
-
-// LocationsCloudToHub ...
-func LocationsCloudToHub() (map[string]string, error) {
-	if locations == nil {
-		locations = make(map[string]string)
-		fn := clusterutil.RootPath() + "/locations/aws_locations.csv"
-		csvfile, err := os.Open(fn)
-		if err != nil {
-			wd, _ := os.Getwd()
-			log.Println("At ", wd, ":", err)
-			return nil, err
-		}
-
-		r := csv.NewReader(csvfile)
-		r.Comma = ';'
-		r.Comment = '#'
-		first := true
-		for {
-			record, err := r.Read()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				log.Println(err)
-				return nil, errors.Wrap(err, "cannot read line")
-
-			}
-			if first {
-				first = false
-				continue
-			}
-			if len(record) == 1 {
-				log.Println("Short record ", record)
-			}
-			awsRegion := record[1]
-			hubRegion := record[2]
-			locations[awsRegion] = hubRegion
-		}
-	}
-	return locations, nil
-}

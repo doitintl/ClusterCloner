@@ -1,5 +1,5 @@
-API Name,Display Name,Memory GiB,vCPUs,Supports EKS
-#TODO Does EKS supports all instance types, not just those shown in the GUI?
+API Name,Display Name,Memory GiB,vCPUs,Supports EKS (per EKS console)
+# See also list of all AWS instance types supported for unmanaged node groups (apparently)
 a1.2xlarge,A1 Double Extra Large,16,8,
 a1.4xlarge,A1 Quadruple Extra Large,32,16,
 a1.large,A1 Large,4,2,

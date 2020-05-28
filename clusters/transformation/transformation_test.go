@@ -43,13 +43,7 @@ func TestTransformAzureToGCP(t *testing.T) {
 		assert.Equal(t, gcpNP, azureNP)
 	}
 
-	mtGcp := gcp.NodePools[0].MachineType
 
-	expectedMachTypeName := "n1-highmem-32"
-	expectedMachineType := accessgke.MachineTypeByName(expectedMachTypeName)
-	if mtGcp != expectedMachineType {
-		t.Fatal(mtGcp.Name + " rather than the expected " + expectedMachTypeName)
-	}
 }
 
 func getSampleInputAKSCluster(t *testing.T) (scope string, aksCluster *clusters.ClusterInfo) {
@@ -76,7 +70,7 @@ func getSampleInputAKSCluster(t *testing.T) (scope string, aksCluster *clusters.
 	}
 
 	npis := []clusters.NodePoolInfo{npi, npi2}
-	nodePools := npis[:]
+	nodePoolInfos := npis[:]
 
 	aksCluster = &clusters.ClusterInfo{
 		Name:        "c",
@@ -84,7 +78,7 @@ func getSampleInputAKSCluster(t *testing.T) (scope string, aksCluster *clusters.
 		Location:    "westus2",
 		Scope:       scope,
 		K8sVersion:  "1.14.0",
-		NodePools:   nodePools,
+		NodePools:   nodePoolInfos,
 		Labels:      map[string]string{"a": "aa", "b": "bb"},
 		GeneratedBy: clusters.Mock,
 	}
@@ -120,8 +114,8 @@ func TestTransformGCPToAzure(t *testing.T) {
 		npIn.MachineType = clusters.MachineType{}
 		npOut := azOut.NodePools[i]
 		npOut.MachineType = clusters.MachineType{}
-		if npOut.K8sVersion != "1.15.7" && npOut.K8sVersion != "1.14.7" {
-			t.Fatal(npOut.K8sVersion)
+		if !strings.HasPrefix(npOut.K8sVersion, "1.15") && !strings.HasPrefix(npOut.K8sVersion, "1.14"){
+			t.Fatal(npOut.K8sVersion,"AKS may have upgraded versions")
 		}
 		npOut.K8sVersion = ""
 
@@ -133,6 +127,8 @@ func TestTransformGCPToAzure(t *testing.T) {
 	// Can vary because map is not deterministically ordered
 	expectedOutputMachineTypeNames := []string{
 		"Standard_F16s",
+		"Standard_F16",
+		"Standard_F16s_v2",
 	}
 	found := false
 	for _, mTypeName := range expectedOutputMachineTypeNames {

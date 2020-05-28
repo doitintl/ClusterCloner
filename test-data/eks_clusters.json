@@ -12,11 +12,11 @@
     },
     "NodePools": [
       {
-        "Name": "one-node-group",
+        "Name": "my-node-group",
         "NodeCount": 1,
         "K8sVersion": "1.15",
         "MachineType": {
-          "Name": "t2.small"
+          "Name": "t3.nano"
         },
         "DiskSizeGB": 33
       }

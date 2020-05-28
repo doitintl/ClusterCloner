@@ -30,7 +30,9 @@ func execTestClusterFromFile(t *testing.T, inputFile string) {
 	assert.Equal(t, 1, len(clustersFromFile), "we work with a single cluster in this test")
 
 	//create Cluster
-	out, err := transformation.Clone(inputFile, "", "", "", clusterFromFile.Labels, clusterFromFile.Cloud, scopeForTest, true, true)
+	inCloud := clusterFromFile.Cloud
+	outCloud := inCloud
+	out, err := transformation.Clone(inputFile, "", "", "", clusterFromFile.Labels, outCloud, scopeForTest, true, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +41,6 @@ func execTestClusterFromFile(t *testing.T, inputFile string) {
 	}
 
 	assertNumberClustersByLabel(t, clusterFromFile, 1)
-
 	ca := clusteraccess.GetClusterAccess(clusterFromFile.Cloud)
 	err = ca.Delete(out[0])
 	if err != nil {

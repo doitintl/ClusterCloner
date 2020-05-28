@@ -11,7 +11,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 )
 
 func init() {
@@ -90,7 +89,7 @@ func (ca EKSClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (descr
 		return nil, errors.Wrap(err, "cannot describe nodes for cluster "+searchTemplate.Name)
 	}
 	if err := addNodeGroupObjectsAsNodePoolInfo(eksNodes, described); err != nil {
-		return nil, errors.New("cannot add NodePoolInfos")
+		return nil, errors.Wrap(err, "cannot add NodePoolInfos")
 	}
 
 	return described, nil
@@ -172,7 +171,6 @@ func (ca EKSClusterAccess) GetSupportedK8sVersions(scope, location string) (vers
 
 // MachineTypeByName ...
 func MachineTypeByName(machineType string) clusters.MachineType {
-	log.Println(MachineTypes)
 	return MachineTypes[machineType]
 }
 
@@ -218,10 +216,11 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 			log.Println("Short record ", record)
 		}
 		// API Name; Display Name; Memory GiB; vCPUs; Supports EKS
-		supportsEks := record[4]
-		if strings.ToLower(supportsEks) != "true" {
-			continue
-		}
+		/*
+			supportsEks := record[4]
+				if strings.ToLower(supportsEks) != "true" {
+				continue
+			}*/
 
 		name := record[0]
 		ramGiBStr := record[2]

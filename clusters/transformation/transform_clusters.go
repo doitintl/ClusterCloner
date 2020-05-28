@@ -34,7 +34,7 @@ func getTransformer(cloud string) Transformer {
 		transformer = &transformgke.GKETransformer{}
 	case clusters.Azure:
 		transformer = &transformaks.AKSTransformer{}
-	case clusters.Azure:
+	case clusters.AWS:
 		transformer = &transformeks.EKSTransformer{}
 	default:
 		transformer = nil

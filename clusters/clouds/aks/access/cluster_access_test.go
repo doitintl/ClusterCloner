@@ -2,7 +2,6 @@ package access
 
 import (
 	"github.com/stretchr/testify/assert"
-	"log"
 	"testing"
 )
 
@@ -27,7 +26,6 @@ func TestParseMachineType(t *testing.T) {
 }
 func TestMachineTypes(t *testing.T) {
 	types := MachineTypes
-	log.Println(types)
 	machineTypeCount := len(types)
 	assert.Greater(t, machineTypeCount, 90)
 	mt := MachineTypeByName("Standard_A2_v2")

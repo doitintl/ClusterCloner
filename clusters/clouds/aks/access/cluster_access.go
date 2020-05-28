@@ -47,13 +47,13 @@ func (ca AKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) error {
 	}
 	future, err := aksClient.Delete(ctx, deleteThis.Scope, deleteThis.Name)
 	if err != nil {
-		return fmt.Errorf("cannot create AKS cluster: %v", err)
+		return fmt.Errorf("cannot delete cluster: %v", err)
 	}
 
 	log.Printf("About to delete Azure Cluster %s; wait for completion", deleteThis.Name)
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
-		return fmt.Errorf("cannot get the AKS create or update future response: %v", err)
+		return fmt.Errorf("cannot get the AKS deletion  future response: %v", err)
 	}
 	response, err := future.Result(aksClient)
 	if err != nil {
@@ -61,7 +61,7 @@ func (ca AKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) error {
 	}
 	status := response.StatusCode
 	if status != 200 {
-		return errors.New("could not created cluster, staate was " + response.Status)
+		return errors.New("could not delete cluster, staate was " + response.Status)
 	}
 	return nil
 }
@@ -164,14 +164,22 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 	}
 
 	agPoolProfiles := make([]containerservice.ManagedClusterAgentPoolProfile, 0)
-	for _, nodePool := range createThis.NodePools {
-		agPoolName := strings.ReplaceAll(nodePool.Name, "-", "")
+	for _, npi := range createThis.NodePools {
+
+		var scaleSetPriority containerservice.ScaleSetPriority
+		if npi.Preemptible {
+			scaleSetPriority = containerservice.Spot
+		} else {
+			scaleSetPriority = containerservice.Regular
+		}
+		agPoolName := strings.ReplaceAll(npi.Name, "-", "")
 		agPoolProfile := containerservice.ManagedClusterAgentPoolProfile{
-			Count:        to.Int32Ptr(int32(nodePool.NodeCount)),
-			Name:         to.StringPtr(agPoolName),
-			VMSize:       containerservice.VMSizeTypes(nodePool.MachineType.Name),
-			OsDiskSizeGB: to.Int32Ptr(int32(nodePool.DiskSizeGB)),
-			//TODO use the nodePool.K8sVersion. Does Az support that?
+			Count:            to.Int32Ptr(int32(npi.NodeCount)),
+			Name:             to.StringPtr(agPoolName),
+			VMSize:           containerservice.VMSizeTypes(npi.MachineType.Name),
+			OsDiskSizeGB:     to.Int32Ptr(int32(npi.DiskSizeGB)),
+			ScaleSetPriority: scaleSetPriority,
+			//TODO use the npi.K8sVersion. Does Az support that?
 		}
 		agPoolProfiles = append(agPoolProfiles, agPoolProfile)
 	}
@@ -292,7 +300,7 @@ func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, 
 		if machineTypeByName.Name == "" {
 			return nil, errors.New(fmt.Sprintf("cannot find machine type %v", agentPoolProfile.VMSize))
 		}
-		nodePool := clusters.NodePoolInfo{
+		npi := clusters.NodePoolInfo{
 			Name:        *agentPoolProfile.Name,
 			NodeCount:   int(*agentPoolProfile.Count),
 			MachineType: machineTypeByName,
@@ -300,9 +308,9 @@ func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, 
 			K8sVersion:  nodePoolK8sVersion,
 			Preemptible: spot,
 		}
-		foundCluster.AddNodePool(nodePool)
+		foundCluster.AddNodePool(npi)
 		zero := clusters.MachineType{}
-		if nodePool.MachineType == zero {
+		if npi.MachineType == zero {
 			panic("cannot read " + agentPoolProfile.VMSize)
 		}
 	}

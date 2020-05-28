@@ -136,9 +136,9 @@ func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) (*clu
 	for _, np := range nodePools {
 		machineType := MachineTypeByName(np.GetConfig().MachineType)
 		if machineType.Name == "" { //zero-object
-			return nil, errors.New("cannot find match for " + np.GetConfig().MachineType)
+			return nil, errors.New("cannot find machine type " + np.GetConfig().MachineType)
 		}
-		nodePool := clusters.NodePoolInfo{
+		npi := clusters.NodePoolInfo{
 			Name:        np.GetName(),
 			NodeCount:   int(np.GetInitialNodeCount()),
 			MachineType: machineType,
@@ -147,25 +147,22 @@ func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) (*clu
 			Preemptible: np.GetConfig().Preemptible,
 		}
 		zero := clusters.MachineType{}
-		if nodePool.MachineType == zero {
+		if npi.MachineType == zero {
 			panic("cannot read " + np.GetConfig().MachineType) //fix?
 		}
-		foundCluster.AddNodePool(nodePool)
+		foundCluster.AddNodePool(npi)
 	}
 	return foundCluster, nil
 }
 
 func projectLocationPath(project, location string) string {
-	path := fmt.Sprintf("projects/%s/locations/%s", project, location)
-	return path
+	return fmt.Sprintf("projects/%s/locations/%s", project, location)
 }
 func projectLocationClusterPath(project, location, clusterName string) string {
-	path := fmt.Sprintf("projects/%s/locations/%s/clusters/%s", project, location, clusterName)
-	return path
+	return fmt.Sprintf("projects/%s/locations/%s/clusters/%s", project, location, clusterName)
 }
 func projectLocationOperationPath(project, location, opName string) string {
-	path := fmt.Sprintf("projects/%s/locations/%s/operations/%s", project, location, opName)
-	return path
+	return fmt.Sprintf("projects/%s/locations/%s/operations/%s", project, location, opName)
 }
 
 // Create ...
@@ -177,6 +174,7 @@ func (ca GKEClusterAccess) Create(createThis *clusters.ClusterInfo) (*clusters.C
 		var nodeConfig = containerpb.NodeConfig{
 			MachineType: npi.MachineType.Name,
 			DiskSizeGb:  int32(npi.DiskSizeGB),
+			Preemptible: npi.Preemptible,
 		}
 		np := containerpb.NodePool{
 			Name:             npi.Name,
@@ -266,7 +264,7 @@ func getOperation(project, location, opName string) (*containerpb.Operation, err
 }
 func waitForClusterDeletion(project, location, opName string) error {
 	var counter = -1
-	log.Print("Waiting for deletion; it may take a while")
+	log.Println("Waiting for deletion; it may take a while")
 	var status containerpb.Operation_Status
 Waiting:
 	for {

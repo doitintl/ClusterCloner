@@ -1,5 +1,7 @@
 package util
 
+import "log"
+
 // LabelMatch ...
 func LabelMatch(labelFilter map[string]string, actualLabels map[string]string) bool {
 
@@ -42,4 +44,35 @@ func StrPtrMapToStrMap(m map[string]*string) map[string]string {
 	}
 	return ret
 
+}
+
+// ReverseStrMap ...
+func ReverseStrMap(m map[string]string) map[string]string {
+	reverse := make(map[string]string)
+	var dupes = make([][3]string, 0)
+	for k, v := range m {
+		existing, wasInMap := reverse[v]
+		if wasInMap {
+			var using, notUsing string
+			if k < existing {
+				using = k
+				notUsing = existing
+			} else {
+				using = existing
+				notUsing = k
+			}
+			dupeTriple := [3]string{v, using, notUsing}
+			dupes = append(dupes, dupeTriple)
+
+			reverse[v] = using
+		} else {
+			reverse[v] = k
+		}
+	}
+	dupesStr := ""
+	for _, triple := range dupes {
+		dupesStr += "Key \"" + triple[0] + "\"; using value \"" + triple[1] + "\"; dropping value \"" + triple[2] + "\"; "
+	}
+	log.Println("Duplicates in reversing map: ", dupesStr)
+	return reverse
 }
