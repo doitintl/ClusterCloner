@@ -3,6 +3,7 @@ package transformation
 import (
 	"clustercloner/clusters"
 	accessaks "clustercloner/clusters/clouds/aks/access"
+	accesseks "clustercloner/clusters/clouds/eks/access"
 	accessgke "clustercloner/clusters/clouds/gke/access"
 	"clustercloner/clusters/util"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +43,6 @@ func TestTransformAzureToGCP(t *testing.T) {
 		gcpNP.K8sVersion = ""
 		assert.Equal(t, gcpNP, azureNP)
 	}
-
 
 }
 
@@ -86,8 +86,8 @@ func getSampleInputAKSCluster(t *testing.T) (scope string, aksCluster *clusters.
 }
 
 func TestTransformGCPToAzure(t *testing.T) {
-	scope, machineType1, gcpIn := sampleInputGcpCluster(t)
-	azOut, err := transformCloudToCloud(gcpIn, clusters.Azure, scope, false)
+	gcpIn := sampleInputGCPCluster(t)
+	azOut, err := transformCloudToCloud(gcpIn, clusters.Azure, gcpIn.Scope, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestTransformGCPToAzure(t *testing.T) {
 	if azOut.Cloud != clusters.Azure {
 		t.Fatalf("Not the right cloud %s", azOut.Cloud)
 	}
-	if azOut.Scope != scope ||
+	if azOut.Scope != gcpIn.Scope ||
 		azOut.Name != gcpIn.Name ||
 		azOut.Location != "centralus" ||
 		//			azOut.K8sVersion != gcpIn.K8sVersion ||
@@ -114,8 +114,8 @@ func TestTransformGCPToAzure(t *testing.T) {
 		npIn.MachineType = clusters.MachineType{}
 		npOut := azOut.NodePools[i]
 		npOut.MachineType = clusters.MachineType{}
-		if !strings.HasPrefix(npOut.K8sVersion, "1.15") && !strings.HasPrefix(npOut.K8sVersion, "1.14"){
-			t.Fatal(npOut.K8sVersion,"AKS may have upgraded versions")
+		if !strings.HasPrefix(npOut.K8sVersion, "1.15") && !strings.HasPrefix(npOut.K8sVersion, "1.14") {
+			t.Fatal(npOut.K8sVersion, "AKS may have upgraded versions")
 		}
 		npOut.K8sVersion = ""
 
@@ -138,45 +138,35 @@ func TestTransformGCPToAzure(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Fatal(mtOut.Name + " was not an expected machine type for " + machineType1 + "; expected: " +
+		t.Fatal(mtOut.Name + " was not an expected machine type for " + gcpIn.NodePools[0].MachineType.Name + "; expected: " +
 			strings.Join(expectedOutputMachineTypeNames, ","))
 	}
 
 }
 
 func TestTransformGCPToAWS(t *testing.T) {
-	scope, machineType1, gcpIn := sampleInputGcpCluster(t)
-	awsOut, err := transformCloudToCloud(gcpIn, clusters.AWS, scope, false)
+	gcpIn := sampleInputGCPCluster(t)
+	awsOut, err := transformCloudToCloud(gcpIn, clusters.AWS, gcpIn.Scope, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(awsOut.Location, "centralus") {
-		t.Fatal(awsOut.Location)
-	}
-	if awsOut.Cloud != clusters.AWS {
-		t.Fatalf("Not the right cloud %s", awsOut.Cloud)
-	}
-	if awsOut.Scope != scope ||
-		awsOut.Name != gcpIn.Name ||
-		awsOut.Location != "centralus" ||
-		//			awsOut.K8sVersion != gcpIn.K8sVersion ||
-		len(awsOut.NodePools) != len(gcpIn.NodePools) {
-		outputStr := util.ToJSON(awsOut)
-		inputStr := util.ToJSON(gcpIn)
-		t.Fatal(outputStr + "!=" + inputStr)
+	assert.Equal(t, "us-east-2", awsOut.Location)
+	assert.Equal(t, clusters.AWS, awsOut.Cloud)
+
+	if awsOut.Scope != gcpIn.Scope || awsOut.Name != gcpIn.Name || awsOut.Location != "us-east-2" || awsOut.K8sVersion != "1.14" || len(awsOut.NodePools) != len(gcpIn.NodePools) {
+		t.Fatal(util.ToJSON(awsOut) + "!=" + util.ToJSON(gcpIn))
 	}
 
 	for i := range awsOut.NodePools {
-		//Zeroing out fields that are not expected to match
 		npIn := gcpIn.NodePools[i]
-		npIn.K8sVersion = ""
+		npIn.K8sVersion = "" //Zeroing out fields that are not expected to match
 		npIn.MachineType = clusters.MachineType{}
 		npOut := awsOut.NodePools[i]
 		npOut.MachineType = clusters.MachineType{}
-		if npOut.K8sVersion != "1.15.7" && npOut.K8sVersion != "1.14.7" {
+		if npOut.K8sVersion != "1.15" && npOut.K8sVersion != "1.14" { //The test has different K8s Versions on different NodePools
 			t.Fatal(npOut.K8sVersion)
 		}
-		npOut.K8sVersion = ""
+		npOut.K8sVersion = "" //Zeroing out fields that are not expected to match
 
 		assert.Equal(t, npOut, npIn)
 	}
@@ -185,24 +175,116 @@ func TestTransformGCPToAWS(t *testing.T) {
 
 	// Can vary because map is not deterministically ordered
 	expectedOutputMachineTypeNames := []string{
-		"Standard_F16s",
+		"c3.4xlarge",
+		"c4.4xlarge",
 	}
-	found := false
-	for _, mTypeName := range expectedOutputMachineTypeNames {
-		expectedMachType := accessaks.MachineTypeByName(mTypeName)
-		if expectedMachType == mtOut {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatal(mtOut.Name + " was not an expected machine type for " + machineType1)
+	if !util.ContainsStr(expectedOutputMachineTypeNames, mtOut.Name) {
+		t.Fatal(mtOut.Name + " was not an expected machine type for " + gcpIn.NodePools[0].MachineType.Name)
 	}
 
 }
 
-func sampleInputGcpCluster(t *testing.T) (scope, inputMachTypeFirstNode string, gcpCluster *clusters.ClusterInfo) {
-	scope = "sample-project"
-	inputMachTypeFirstNode = "e2-highcpu-16"
+func TestTransformAWSToAzure(t *testing.T) {
+	awsIn := sampleInputAWSCluster(t)
+	azOut, err := transformCloudToCloud(awsIn, clusters.Azure, awsIn.Scope, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(azOut.Location, "centralus") {
+		t.Fatal(azOut.Location)
+	}
+	if azOut.Cloud != clusters.Azure {
+		t.Fatalf("Not the right cloud %s", azOut.Cloud)
+	}
+	if azOut.Scope != awsIn.Scope ||
+		azOut.Name != awsIn.Name ||
+		azOut.Location != "centralus" ||
+		len(azOut.NodePools) != len(awsIn.NodePools) {
+		outputStr := util.ToJSON(azOut)
+		inputStr := util.ToJSON(awsIn)
+		t.Fatal(outputStr + "!=" + inputStr)
+	}
+
+	for i := range azOut.NodePools {
+		//Zeroing out fields that are not expected to match
+		npIn := awsIn.NodePools[i]
+		npIn.K8sVersion = ""
+		npIn.MachineType = clusters.MachineType{}
+		npOut := azOut.NodePools[i]
+		npOut.MachineType = clusters.MachineType{}
+		if !strings.HasPrefix(npOut.K8sVersion, "1.15") && !strings.HasPrefix(npOut.K8sVersion, "1.14") {
+			t.Fatal(npOut.K8sVersion, "AKS may have upgraded versions")
+		}
+		npOut.K8sVersion = ""
+
+		assert.Equal(t, npOut, npIn)
+	}
+
+	mtOut := azOut.NodePools[0].MachineType
+
+	// Can vary because map is not deterministically ordered
+	expectedOutputMachineTypeNames := []string{
+		"Standard_F16s",
+		"Standard_F16",
+		"Standard_F16s_v2",
+		"Standard_F8s",
+		"Standard_F8s_v2",
+	}
+	if !util.ContainsStr(expectedOutputMachineTypeNames, mtOut.Name) {
+		t.Fatal(mtOut.Name + " was not an expected machine type for " + awsIn.NodePools[0].MachineType.Name + "; expected: " +
+			strings.Join(expectedOutputMachineTypeNames, ","))
+	}
+
+}
+
+func sampleInputAWSCluster(t *testing.T) *clusters.ClusterInfo {
+
+	scope := "sample-project"
+	inputMachTypeFirstNode := "c3.2xlarge"
+	machTypeByName := accesseks.MachineTypeByName(inputMachTypeFirstNode)
+	if machTypeByName.Name == "" {
+		t.Fatal("cannot find machine type " + inputMachTypeFirstNode)
+	}
+	npi1 := clusters.NodePoolInfo{
+		Name:        "NP",
+		MachineType: machTypeByName,
+		NodeCount:   1,
+		K8sVersion:  "1.14",
+		DiskSizeGB:  10,
+		Preemptible: true,
+	}
+	machTypeByName2 := accesseks.MachineTypeByName("c3.4xlarge")
+	if machTypeByName2.Name == "" {
+		t.Fatal("cannot find machine type")
+	}
+	npi2 := clusters.NodePoolInfo{
+		Name:        "NP2",
+		MachineType: machTypeByName2,
+		NodeCount:   2,
+		K8sVersion:  "1.15",
+		DiskSizeGB:  20,
+		Preemptible: true,
+	}
+
+	npis := []clusters.NodePoolInfo{npi1, npi2}
+	nodePools := npis[:]
+
+	awsIn := &clusters.ClusterInfo{
+		Name:        "c",
+		Cloud:       clusters.AWS,
+		Location:    "us-east-2",
+		Scope:       scope,
+		K8sVersion:  "1.14",
+		Labels:      map[string]string{"a": "aa", "b": "bb"},
+		NodePools:   nodePools,
+		GeneratedBy: clusters.Mock,
+	}
+	return awsIn
+}
+
+func sampleInputGCPCluster(t *testing.T) *clusters.ClusterInfo {
+	scope := "sample-project"
+	inputMachTypeFirstNode := "e2-highcpu-16"
 	machTypeByName1 := accessgke.MachineTypeByName(inputMachTypeFirstNode)
 	if machTypeByName1.Name == "" {
 		t.Fatal("cannot find machine type")
@@ -231,7 +313,7 @@ func sampleInputGcpCluster(t *testing.T) (scope, inputMachTypeFirstNode string, 
 	npis := []clusters.NodePoolInfo{npi1, npi2}
 	nodePools := npis[:]
 
-	gcpIn := &clusters.ClusterInfo{
+	sampleGCPClsuter := &clusters.ClusterInfo{
 		Name:        "c",
 		Cloud:       clusters.GCP,
 		Location:    "us-central1-c",
@@ -241,5 +323,5 @@ func sampleInputGcpCluster(t *testing.T) (scope, inputMachTypeFirstNode string, 
 		NodePools:   nodePools,
 		GeneratedBy: clusters.Mock,
 	}
-	return scope, inputMachTypeFirstNode, gcpIn
+	return sampleGCPClsuter
 }

@@ -49,7 +49,7 @@ func (tr *AKSTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope strin
 func (*AKSTransformer) LocationCloudToHub(loc string) (string, error) {
 	mapping, err := LocationsCloudToHub()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "error getting LocationsCloudToHub")
 	}
 	hubValue, wasinMap := mapping[loc]
 	if !wasinMap {

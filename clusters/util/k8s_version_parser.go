@@ -2,6 +2,7 @@ package util
 
 import (
 	"github.com/pkg/errors"
+	"math"
 	"regexp"
 	"strconv"
 )
@@ -33,12 +34,20 @@ func MajorMinorVersion(fullVersion string) (vers string, err error) {
 
 }
 
+// NoPatchSpecified ...
+var NoPatchSpecified = -1
+
 // PatchVersion ...
 func PatchVersion(fullVersion string) (int, error) {
 	re := regexp.MustCompile(`^\d+\.\d+\.(\d+)?`)
 	match := re.FindStringSubmatch(fullVersion)
 	if match == nil {
-		return -1, errors.New("No match on " + fullVersion)
+		re = regexp.MustCompile(`^\d+\.\d+$`)
+		match = re.FindStringSubmatch(fullVersion)
+		if match != nil {
+			return NoPatchSpecified, nil //use -1 for nil, indicating no separate patch version
+		}
+		return math.MinInt32, errors.New("No match on " + fullVersion)
 	}
 	captureGroup := match[1]
 	ret, err := strconv.Atoi(captureGroup)

@@ -12,7 +12,7 @@ import (
 
 // TransformSpoke ...
 func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLoc,
-	targetClusterK8sVersion string, machineTypes map[string]clusters.MachineType,
+	clusterK8sVersion string, machineTypes map[string]clusters.MachineType,
 	adjustK8sVersions bool) (*clusters.ClusterInfo, error) {
 
 	var ret = &clusters.ClusterInfo{
@@ -22,7 +22,7 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 		Cloud:         targetCloud,
 		Scope:         outputScope,
 		Location:      targetLoc,
-		K8sVersion:    targetClusterK8sVersion,
+		K8sVersion:    clusterK8sVersion, //temp,replaced below
 		Labels:        clusterutil.CopyStringMap(in.Labels),
 	}
 
@@ -43,7 +43,7 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 		ret.AddNodePool(nodePoolOut)
 	}
 	if adjustK8sVersions {
-		err := fixK8sVersion(ret) //should not fix version post-facto like this
+		err := fixK8sVersion(ret) //Improve design: Should not fix version after setting it wrongly,  like this
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot fix K8s versions")
 		}
@@ -53,29 +53,28 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 }
 
 // fixK8sVersion ...
-func fixK8sVersion(ci *clusters.ClusterInfo) error {
-	ca := clusteraccess.GetClusterAccess(ci.Cloud)
+func fixK8sVersion(mutate *clusters.ClusterInfo) error {
+	ca := clusteraccess.GetClusterAccess(mutate.Cloud)
 	if ca == nil {
-		return errors.New("cannot get cluster access for " + ci.Cloud)
+		return errors.New("cannot get cluster access for " + mutate.Cloud)
 	}
-	supportedVersions := ca.GetSupportedK8sVersions(ci.Scope, ci.Location)
-	if supportedVersions == nil {
-		return errors.New("cannot find supported K8s versions")
-	}
-	var err error
-	ci.K8sVersion, err = findBestMatchingSupportedK8sVersion(ci.K8sVersion, supportedVersions)
+	supportedVersions, err := ca.GetSupportedK8sVersions(mutate.Scope, mutate.Location)
 	if err != nil {
-		return errors.Wrap(err, "cannot find the matching K8ss version")
+		return errors.Wrap(err, "cannot get SupportedK8sVersions")
 	}
-	nodePools := ci.NodePools[:]
-	ci.NodePools = make([]clusters.NodePoolInfo, 0)
+	mutate.K8sVersion, err = findBestMatchingSupportedK8sVersion(mutate.K8sVersion, supportedVersions)
+	if err != nil {
+		return errors.Wrap(err, "cannot find matching K8s version")
+	}
+	nodePools := mutate.NodePools[:]
+	mutate.NodePools = make([]clusters.NodePoolInfo, 0)
 	for _, np := range nodePools {
 		newNp := np
 		newNp.K8sVersion, err = findBestMatchingSupportedK8sVersion(np.K8sVersion, supportedVersions)
 		if err != nil {
-			return errors.Wrap(err, "cannot find matching AKS version")
+			return errors.Wrap(err, "cannot find matching K8s version")
 		}
-		ci.AddNodePool(newNp)
+		mutate.AddNodePool(newNp)
 	}
 	return nil
 
@@ -85,7 +84,7 @@ func fixK8sVersion(ci *clusters.ClusterInfo) error {
 greater or equal to  the supplied vers, but has the same major-minor version.
 If that not possible, get the largest patch version that has the same major-minor version
 */
-func findBestMatchingSupportedK8sVersion(vers string, supportedVersions []string) (string, error) {
+func findBestMatchingSupportedK8sVersion(vers string, supportedVersions []string) (bestVersion string, err error) {
 	potentialMatchPatchVersion, err := leastPatchGreaterThanThisWithSameMajorMinor(vers, supportedVersions)
 	if err != nil {
 		return "", errors.Wrap(err, "error in finding match")
@@ -100,8 +99,13 @@ func findBestMatchingSupportedK8sVersion(vers string, supportedVersions []string
 			return "", errors.Wrap(err, "error in finding match")
 		}
 	}
-	ret := fmt.Sprintf("%s.%d", majorMinor, potentialMatchPatchVersion)
-	return ret, nil
+
+	if potentialMatchPatchVersion == clusterutil.NoPatchSpecified {
+		bestVersion = majorMinor
+	} else {
+		bestVersion = fmt.Sprintf("%s.%d", majorMinor, potentialMatchPatchVersion)
+	}
+	return bestVersion, nil
 }
 
 func leastPatchGreaterThanThisWithSameMajorMinor(vers string, supportedVersions []string) (int, error) {
@@ -126,12 +130,14 @@ func leastPatchGreaterThanThisWithSameMajorMinor(vers string, supportedVersions 
 			if err != nil {
 				panic(err) //should not happen
 			}
-			if patchSupported < potentialMatchPatchVersion && patchSupported >= patchV {
+			if patchSupported == clusterutil.NoPatchSpecified { //as with EKS
+				potentialMatchPatchVersion = clusterutil.NoPatchSpecified
+			} else if patchSupported < potentialMatchPatchVersion && patchSupported >= patchV {
 				potentialMatchPatchVersion = patchSupported
 			}
 		}
 	}
-	return potentialMatchPatchVersion, err
+	return potentialMatchPatchVersion, nil
 }
 
 func biggestPatchVersionSameMajorMinor(vers string, supportedVersions []string) (int, error) {

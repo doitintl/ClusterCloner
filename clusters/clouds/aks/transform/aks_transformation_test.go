@@ -4,6 +4,7 @@ import (
 	"clustercloner/clusters"
 	"clustercloner/clusters/clouds/gke/transform"
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 )
 
@@ -64,7 +65,7 @@ func TestTransformHubToAzure(t *testing.T) {
 	if az.Cloud != clusters.Azure {
 		t.Fatalf("Not the expected cloud %s", az.Cloud)
 	}
-	if az.K8sVersion != "1.14.7" {
+	if !strings.HasPrefix(az.K8sVersion, "1.14") {
 		t.Fatalf("Bad K8s Version for Azure based on input: %s", az.K8sVersion)
 	}
 }

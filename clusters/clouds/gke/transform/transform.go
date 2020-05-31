@@ -76,7 +76,7 @@ func (tr *GKETransformer) LocationCloudToHub(zone string) (string, error) {
 	region := string(runes[0:endRegion])
 	locs, err := LocationsCloudToHub()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "error getting LocationsCloudToHUb")
 	}
 	if _, ok := locs[region]; !ok {
 		msg := fmt.Sprintf("Zone %s is not in a legal region for GCP", zone)
@@ -156,8 +156,7 @@ func LocationsCloudToHub() (map[string]string, error) {
 				break
 			}
 			if err != nil {
-				log.Println(err)
-				return nil, err
+				return nil, errors.Wrap(err, "error reading record")
 			}
 			if first {
 				first = false

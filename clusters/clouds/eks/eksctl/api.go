@@ -13,8 +13,7 @@ import (
 
 // CreateCluster ...
 func CreateCluster(clusterName, region, k8sVersion, tagsCsv string) error {
-	err := createClusterNoNodeGroup(clusterName, region, k8sVersion, tagsCsv)
-	return err
+	return createClusterNoNodeGroup(clusterName, region, k8sVersion, tagsCsv)
 }
 
 func createClusterNoNodeGroup(clusterName, region, k8sVersion, tagsCsv string) error {

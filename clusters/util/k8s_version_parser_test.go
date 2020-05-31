@@ -1,6 +1,7 @@
 package util
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -65,7 +66,8 @@ func TestPatchVersion2(t *testing.T) {
 
 func TestPatchVersionErr(t *testing.T) {
 	s, e := PatchVersion("1.14")
-	if e == nil {
-		t.Fatalf("Did not expect match: %d", s)
+	if e != nil {
+		t.Fatal(e)
 	}
+	assert.Equal(t, NoPatchSpecified, s)
 }

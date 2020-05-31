@@ -17,13 +17,12 @@ func LoadLocationMap(file string) (map[string]string, error) {
 	fn := util.RootPath() + filePath
 	csvfile, err := os.Open(fn)
 	if err != nil {
-		wd, _ := os.Getwd()
-		log.Println("At ", wd, ":", err)
-		return nil, err
+		return nil, errors.Wrap(err, "error opening "+fn)
 	}
 
 	r := csv.NewReader(csvfile)
 	r.Comma = ';'
+	r.Comment = '#'
 	first := true
 	for {
 		record, err := r.Read()
@@ -40,12 +39,11 @@ func LoadLocationMap(file string) (map[string]string, error) {
 		if len(record) == 1 {
 			log.Println("Short record", record)
 		}
-		cloudRegion := record[3]
-		hubRegion := record[5]
-		supportsAks := record[4]
-		if supportsAks != "true" {
-			return nil, errors.New(fmt.Sprintf("Azure region %s file not supported in %s", cloudRegion, file))
+		if len(record) != 3 {
+			return nil, errors.New(fmt.Sprintf("wrong length record, length %d (%v)", len(record), record))
 		}
+		cloudRegion := record[1]
+		hubRegion := record[2]
 		ret[cloudRegion] = hubRegion
 	}
 	return ret, nil

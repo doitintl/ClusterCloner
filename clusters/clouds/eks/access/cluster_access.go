@@ -48,7 +48,7 @@ func (ca EKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 	for _, ng := range createThis.NodePools {
 		//TODO support spot instances. Not now available in Managed Node Groups. See https: //github.com/aws/containers-roadmap/issues/583
 		err = eksctl.CreateNodeGroup(createThis.Name, ng.Name, createThis.Location, createThis.K8sVersion,
-			ng.MachineType.Name, tagsCsv, int(ng.NodeCount), int(ng.DiskSizeGB), ng.Preemptible)
+			ng.MachineType.Name, tagsCsv, ng.NodeCount, ng.DiskSizeGB, ng.Preemptible)
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot create NodeGroup "+ng.Name)
 		}
@@ -58,7 +58,7 @@ func (ca EKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 		return nil, errors.Wrap(err, "cannot describe created cluster "+createThis.Name)
 	}
 	created.GeneratedBy = clusters.Created
-	return created, err
+	return created, nil
 }
 
 // Delete ...
@@ -103,7 +103,7 @@ func addNodeGroupObjectsAsNodePoolInfo(eksNodeGroups []eksctl.EKSNodeGroup, desc
 		}
 		npi := clusters.NodePoolInfo{
 			Name:        eksNg.Name,
-			NodeCount:   int(eksNg.DesiredCapacity),
+			NodeCount:   eksNg.DesiredCapacity,
 			K8sVersion:  described.K8sVersion, //TODO: Is this available  per-NodeGroup? It is not in eksctl output
 			MachineType: mt,                   //TODO deal with missing instance tyoe ereT
 			DiskSizeGB:  22,                   //TODO Find this data. How? It is not in eksctl output
@@ -121,7 +121,7 @@ func clusterObjectToClusterInfo(eksClus eksctl.EKSCluster, loc, generatedBy stri
 		Name:        eksClus.Name,
 		K8sVersion:  eksClus.Version,
 		GeneratedBy: generatedBy,
-		Cloud:       clusters.Azure,
+		Cloud:       clusters.AWS,
 		Labels:      eksClus.Tags,
 	}
 
@@ -164,8 +164,8 @@ func (ca EKSClusterAccess) List(_, location string, tagFilter map[string]string)
 }
 
 // GetSupportedK8sVersions ...
-func (ca EKSClusterAccess) GetSupportedK8sVersions(scope, location string) (versions []string) {
-	return []string{"1.12", "1.13", "1.14", "1.15"} //TODO load dynamically; handle the lack of minor version andpatch
+func (ca EKSClusterAccess) GetSupportedK8sVersions(scope, location string) (versions []string, err error) {
+	return []string{"1.12", "1.13", "1.14", "1.15"}, nil //TODO load dynamically; handle the lack of minor version andpatch
 
 }
 

@@ -26,7 +26,7 @@ func (tr *EKSTransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.Cluste
 
 	ret, err := transformutil.TransformSpoke(in, "", clusters.Hub, loc, clusterK8sVersion, nil, false)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot TransformSpoke CloudToHub AKS")
+		return nil, errors.Wrap(err, "cannot TransformSpoke CloudToHub EKS")
 	}
 	return ret, nil
 }
@@ -37,10 +37,10 @@ func (tr *EKSTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope strin
 	if err != nil {
 		return nil, errors.Wrap(err, "error in converting location")
 	}
-	ret, err := transformutil.TransformSpoke(in, outputScope, clusters.Azure, loc, in.K8sVersion, access.MachineTypes, true)
+	ret, err := transformutil.TransformSpoke(in, outputScope, clusters.AWS, loc, in.K8sVersion, access.MachineTypes, true)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot TransformSpoke HubToCloud AKS")
+		return nil, errors.Wrap(err, "cannot TransformSpoke HubToCloud EKS")
 	}
 	return ret, nil
 }
@@ -62,7 +62,7 @@ func LocationsCloudToHub() (map[string]string, error) {
 func (*EKSTransformer) LocationCloudToHub(loc string) (string, error) {
 	mapping, err := LocationsCloudToHub()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "error getting LocationsCloudToHub")
 	}
 	hubValue, wasinMap := mapping[loc]
 	if !wasinMap {

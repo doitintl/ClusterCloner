@@ -36,8 +36,10 @@ func (ca GKEClusterAccess) Delete(ci *clusters.ClusterInfo) error {
 	}
 
 	err = waitForClusterDeletion(ci.Scope, ci.Location, op.Name)
-
-	return err
+	if err != nil {
+		return errors.Wrap(err, "waiting for cluster deletion")
+	}
+	return nil
 }
 
 // Describe ...
@@ -205,7 +207,7 @@ func (ca GKEClusterAccess) Create(createThis *clusters.ClusterInfo) (*clusters.C
 	if err != nil {
 		return nil, errors.Wrap(err, "error in waiting for cluster to be ready")
 	}
-	return createdCluster, err
+	return createdCluster, nil
 }
 
 func (ca GKEClusterAccess) waitForClusterReadiness(createThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
@@ -304,7 +306,11 @@ var MachineTypes map[string]clusters.MachineType
 func init() {
 	key := "GOOGLE_APPLICATION_CREDENTIALS"
 	cred := os.Getenv(key)
-	log.Println(key, cred)
+	if cred == "" {
+		log.Println(key + " not set; will use system gcloud authorization")
+	} else {
+		log.Println(key, "=", cred)
+	}
 }
 func init() {
 	var err error
@@ -318,9 +324,7 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 	fn := clusterutil.RootPath() + "/machine-types/gke-machine-types.csv"
 	csvfile, err := os.Open(fn)
 	if err != nil {
-		wd, _ := os.Getwd()
-		log.Println("At ", wd, ":", err)
-		return nil, err
+		return nil, errors.Wrap(err, "Error opening "+fn)
 	}
 
 	r := csv.NewReader(csvfile)
@@ -364,15 +368,14 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 var supportedVersions []string
 
 // GetSupportedK8sVersions ...
-func (ca GKEClusterAccess) GetSupportedK8sVersions(scope, location string) []string {
+func (ca GKEClusterAccess) GetSupportedK8sVersions(scope, location string) (versions []string, err error) {
 
 	if supportedVersions == nil {
 		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 		defer cancel()
 		client, err := containerv1.NewClusterManagerClient(ctx)
 		if err != nil {
-			log.Println(err)
-			return nil
+			return nil, errors.Wrap(err, "cannot create ClusterManagerClient")
 		}
 
 		supportedVersions = make([]string, 0)
@@ -381,11 +384,10 @@ func (ca GKEClusterAccess) GetSupportedK8sVersions(scope, location string) []str
 		}
 		resp, err := client.GetServerConfig(ctx, &req)
 		if err != nil {
-			log.Println(err)
-			return nil
+			return nil, errors.Wrap(err, "cannot GetServerConfig")
 		}
-		supportedVersions = resp.ValidMasterVersions[:] //TODO use .ValidNodeVersionsto supply versions to nodes
+		supportedVersions = resp.ValidMasterVersions[:] //TODO use .ValidNodeVersions to set  versions  for    node pools, not just cluster
 
 	}
-	return supportedVersions
+	return supportedVersions, nil
 }

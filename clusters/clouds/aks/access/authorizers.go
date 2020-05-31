@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -58,13 +59,13 @@ func getAuthorizerForResource(grantType OAuthGrantType, resource string) (autore
 		oauthConfig, err := adal.NewOAuthConfig(
 			Environment().ActiveDirectoryEndpoint, TenantID())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "cannot create inew OAuth Config")
 		}
 
 		token, err := adal.NewServicePrincipalToken(
 			*oauthConfig, ClientID(), ClientSecret(), resource)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "cannot create service principal token")
 		}
 		a = autorest.NewBearerAuthorizer(token)
 
@@ -73,12 +74,12 @@ func getAuthorizerForResource(grantType OAuthGrantType, resource string) (autore
 		deviceconfig.Resource = resource
 		a, err = deviceconfig.Authorizer()
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "cannot get Authorizer")
 		}
 
 	default:
 		return a, fmt.Errorf("invalid grant type specified")
 	}
 
-	return a, err
+	return a, nil
 }

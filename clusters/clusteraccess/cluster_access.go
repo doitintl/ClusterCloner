@@ -18,7 +18,7 @@ type ClusterAccess interface {
 	//Delete
 	Delete(ci *clusters.ClusterInfo) error
 	//GetSupportedK8sVersions
-	GetSupportedK8sVersions(scope, location string) []string
+	GetSupportedK8sVersions(scope, location string) ([]string, error)
 }
 
 // GetClusterAccess ...

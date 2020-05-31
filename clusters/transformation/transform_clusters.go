@@ -176,7 +176,7 @@ func getInputClusters(inputFile string, inputCloud string, inputScope string, in
 		}
 		inputClusterInfos, err = clusterAccessor.List(inputScope, inputLocation, labelFilter)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "error listing clusters")
 		}
 	}
 	return inputClusterInfos, nil
@@ -227,7 +227,7 @@ func createCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *cluste
 	} else {
 		assertSourceCluster(created, clusters.Created)
 	}
-	return created, err
+	return created, nil
 }
 
 func assertSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster string) {
@@ -298,9 +298,9 @@ func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string
 		out.Name = out.Name + "-" + sfx
 		return out, nil
 	} //two different clouds;so we use use hub
-	hub, err1 := toHubFormat(in)
-	if err1 != nil || hub == nil {
-		return nil, errors.Wrap(err1, "error in transforming toHubFormat")
+	hub, err := toHubFormat(in)
+	if err != nil || hub == nil {
+		return nil, errors.Wrap(err, "error in transforming toHubFormat")
 	}
 	out, err := fromHubFormat(hub, toCloud, outputScope, randSfx)
 	if err != nil {
@@ -322,7 +322,7 @@ func toHubFormat(input *clusters.ClusterInfo) (ret *clusters.ClusterInfo, err er
 		return nil, errors.Wrap(err, "cannot convert CloudToHub")
 	}
 
-	return ret, err
+	return ret, nil
 }
 
 func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string, randSuffix bool) (ret *clusters.ClusterInfo, err error) {
@@ -339,5 +339,5 @@ func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string
 		ret.Name = ret.Name + "-" + clusterutil.RandomWord()
 	}
 
-	return ret, err
+	return ret, nil
 }

@@ -127,7 +127,7 @@ func (ca AKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 				strings.Contains(errS, "The Resource group already exists in location")) {
 			log.Printf("Group %s already exists: %v", groupName, err)
 		} else {
-			return nil, err
+			return nil, errors.Wrap(err, "error creating group")
 		}
 	}
 
@@ -234,7 +234,7 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 	if state != "Succeeded" {
 		return containerservice.ManagedCluster{}, errors.New("could not created cluster, staate was " + state)
 	}
-	return clusterCreated, err
+	return clusterCreated, nil
 }
 
 // List ...
@@ -321,7 +321,7 @@ func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, 
 var supportedVersions []string
 
 // GetSupportedK8sVersions ...
-func (ca AKSClusterAccess) GetSupportedK8sVersions(scope, location string) []string {
+func (ca AKSClusterAccess) GetSupportedK8sVersions(scope, location string) ([]string, error) {
 
 	if supportedVersions == nil {
 		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
@@ -330,18 +330,17 @@ func (ca AKSClusterAccess) GetSupportedK8sVersions(scope, location string) []str
 
 		listOrch, err := getContainerServicesClient().ListOrchestrators(ctx, location, "")
 		if err != nil {
-			log.Println(err)
-		} else {
-			for _, orch := range *listOrch.Orchestrators {
-				t := *orch.OrchestratorType
-				//				log.Println(*orch.OrchestratorType, *orch.OrchestratorVersion)
-				if t == "Kubernetes" {
-					supportedVersions = append(supportedVersions, *orch.OrchestratorVersion)
-				}
+			return nil, errors.Wrap(err, "cannot ListOrchestrators for "+location)
+		}
+		for _, orch := range *listOrch.Orchestrators {
+			t := *orch.OrchestratorType
+			if t == "Kubernetes" {
+				supportedVersions = append(supportedVersions, *orch.OrchestratorVersion)
 			}
+
 		}
 	}
-	return supportedVersions
+	return supportedVersions, nil
 }
 
 // MachineTypeByName ...
@@ -412,7 +411,7 @@ func getManagedClustersClient() (mcc containerservice.ManagedClustersClient, err
 	client := containerservice.NewManagedClustersClient(SubscriptionID())
 	auth, err := GetResourceManagementAuthorizer()
 	if err != nil {
-		return mcc, err
+		return mcc, errors.Wrap(err, "cannot GetResourceManagementAuthorizer")
 	}
 	client.Authorizer = auth
 	_ = client.AddToUserAgent(UserAgent())
