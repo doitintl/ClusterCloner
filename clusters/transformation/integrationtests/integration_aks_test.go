@@ -6,10 +6,10 @@ import (
 
 // TestCreateAZClusterFromFile ...
 func TestCreateAzureClusterFromFile(t *testing.T) {
-	var inputFile = "test-data/aks_clusters.json"
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
+	var inputFile = "test-data/aks_clusters.json"
 	execTestClusterFromFile(t, inputFile)
 
 }
