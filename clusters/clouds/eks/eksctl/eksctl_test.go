@@ -19,7 +19,7 @@ func TestParseClusterList(t *testing.T) {
 }
 
 func TestParseClusterDescription(t *testing.T) {
-	file := "test-data/eks-describecluster.json"
+	file := "test-data/eksctl-describecluster.json"
 	path := util.RootPath() + "/" + file
 	content, err := ioutil.ReadFile(path)
 	if err != nil {

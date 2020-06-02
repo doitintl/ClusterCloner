@@ -1,0 +1,56 @@
+{
+  "Nodegroup": {
+    "AmiType": "AL2_x86_64",
+    "ClusterName": "clus-nonself",
+    "CreatedAt": "2020-06-01T13:33:37Z",
+    "DiskSize": 33,
+    "Health": {
+      "Issues": []
+    },
+    "InstanceTypes": [
+      "t3.nano"
+    ],
+    "Labels": {
+      "alpha.eksctl.io/cluster-name": "clus-nonself",
+      "alpha.eksctl.io/nodegroup-name": "my-node-group"
+    },
+    "ModifiedAt": "2020-06-01T13:50:00Z",
+    "NodeRole": "arn:aws:iam::649592902942:role/eksctl-clus-nonself-nodegroup-my-NodeInstanceRole-11MEDAJ41GM9L",
+    "NodegroupArn": "arn:aws:eks:us-east-2:649592902942:nodegroup/clus-nonself/my-node-group/9cb9380b-3511-3867-b8ff-fcde9addd8cd",
+    "NodegroupName": "my-node-group",
+    "ReleaseVersion": "1.15.11-20200507",
+    "RemoteAccess": null,
+    "Resources": {
+      "AutoScalingGroups": [
+        {
+          "Name": "eks-9cb9380b-3511-3867-b8ff-fcde9addd8cd"
+        }
+      ],
+      "RemoteAccessSecurityGroup": null
+    },
+    "ScalingConfig": {
+      "DesiredSize": 1,
+      "MaxSize": 1,
+      "MinSize": 1
+    },
+    "Status": "ACTIVE",
+    "Subnets": [
+      "subnet-0b2faf2a8276381d0",
+      "subnet-0eb259fbaad355bbf",
+      "subnet-05daeda30c16ffe8d"
+    ],
+    "Tags": {
+      "alpha.eksctl.io/cluster-name": "clus-nonself",
+      "alpha.eksctl.io/eksctl-version": "0.21.0-dev",
+      "alpha.eksctl.io/nodegroup-name": "my-node-group",
+      "alpha.eksctl.io/nodegroup-type": "managed",
+      "also-for-testing-please-delete": "true",
+      "aws:cloudformation:logical-id": "ManagedNodeGroup",
+      "aws:cloudformation:stack-id": "arn:aws:cloudformation:us-east-2:649592902942:stack/eksctl-clus-nonself-nodegroup-my-node-group/614758d0-a40c-11ea-a7c9-0a76b6c12f42",
+      "aws:cloudformation:stack-name": "eksctl-clus-nonself-nodegroup-my-node-group",
+      "eksctl.cluster.k8s.io/v1alpha1/cluster-name": "clus-nonself",
+      "for-testing-please-delete": "true"
+    },
+    "Version": "1.15"
+  }
+}

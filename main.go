@@ -32,11 +32,9 @@ func init() {
 
 func mainCmd(cliCtx *cli.Context) error {
 	printFlags(cliCtx)
-	launcher.Launch(cliCtx)
-
-	return nil
+	err := launcher.Launch(cliCtx)
+	return err
 }
-
 func printFlags(cliCtx *cli.Context) {
 	var s = "\n"
 	for _, flagName := range cliCtx.FlagNames() {

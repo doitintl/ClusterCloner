@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 )
@@ -16,18 +17,26 @@ func TestRootPath(t *testing.T) {
 	}
 }
 func TestReplaceStdout(t *testing.T) {
+	execReplaceStdOutOrErr(t, true)
+}
 
-	fmt.Println("Before Stdout replaced")
-	tempFile, old := ReplaceStdout()
-	inString := "tempfile Stdout"
-	fmt.Print(inString)
-	RestoreStdout(old, "")
-	fmt.Println("Stdout restored")
+func TestReplaceStderr(t *testing.T) {
+	execReplaceStdOutOrErr(t, false)
+}
+func execReplaceStdOutOrErr(t *testing.T, isStdOut bool) {
+	tempFile, old := ReplaceStdoutOrErr(isStdOut)
+	inputString := "tempfile content"
+	fmt.Print(inputString)
 	read, err := ioutil.ReadFile(tempFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 	readS := string(read)
-	assert.Equal(t, inString, readS)
 
+	RestoreStdoutOrError(tempFile, old, isStdOut)
+	assert.Equal(t, inputString, readS)
+	fmt.Println("Stdout restored")
+	if _, err := os.Stat(tempFile); err == nil {
+		t.Fatal(tempFile + " should not exist")
+	}
 }

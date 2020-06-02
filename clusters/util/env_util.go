@@ -38,21 +38,33 @@ func (m NoopWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// ReplaceStdout ...
-func ReplaceStdout() (tempStdoutFullPath string, oldStdout *os.File) {
-	tempStdoutFullPath = filepath.Join(os.TempDir(), "stdout")
-	oldStdout = os.Stdout // keep backup of the real stdout
-	temp, err := os.Create(tempStdoutFullPath)
+// ReplaceStdoutOrErr ...
+func ReplaceStdoutOrErr(isStdOut bool) (tempFilePath string, oldStdoutOrErr *os.File) {
+	var tmpFileName string
+	if isStdOut {
+		oldStdoutOrErr = os.Stdout
+		tmpFileName = "stdout"
+	} else {
+		oldStdoutOrErr = os.Stderr
+		tmpFileName = "stderr"
+	}
+	tempFilePath = filepath.Join(os.TempDir(), tmpFileName)
+
+	temp, err := os.Create(tempFilePath)
 	if err != nil {
 		panic(err)
 	}
 	os.Stdout = temp
-	return tempStdoutFullPath, oldStdout
+	return tempFilePath, oldStdoutOrErr
 }
 
-// RestoreStdout ...
-func RestoreStdout(oldStdout *os.File, tempFile string) {
-	os.Stdout = oldStdout
+// RestoreStdoutOrError ...
+func RestoreStdoutOrError(tempFile string, oldStdoutOrErr *os.File, isStdout bool) {
+	if isStdout {
+		os.Stdout = oldStdoutOrErr
+	} else {
+		os.Stderr = oldStdoutOrErr
+	}
 	err := os.Remove(tempFile)
 	if err != nil {
 		log.Println("Error removing " + tempFile + " " + err.Error())

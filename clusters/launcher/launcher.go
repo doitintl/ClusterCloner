@@ -3,8 +3,9 @@ package launcher
 import (
 	"clustercloner/clusters/transformation"
 	"clustercloner/clusters/util"
+	"fmt"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
-	"log"
 	"os"
 )
 
@@ -53,16 +54,17 @@ func CLIFlags() []cli.Flag {
 }
 
 // Launch ...
-func Launch(cliCtx *cli.Context) {
+func Launch(cliCtx *cli.Context) (err error) {
 
 	outputClusters, err := transformation.CloneFromCli(cliCtx)
 	if err != nil {
-		log.Fatalf("Error in transformation: %v", err)
+		return errors.Wrap(err, "error in transformation")
 	}
 
 	outputString := util.ToJSON(outputClusters)
-	exitCode, err := os.Stdout.WriteString(outputString + "\n")
+	errorCode, err := os.Stdout.WriteString(outputString + "\n")
 	if err != nil {
-		log.Fatalf("Error on exit %v, code %d", err, exitCode)
+		return errors.Wrap(err, fmt.Sprintf("error writing output (error code %d)", errorCode))
 	}
+	return nil
 }

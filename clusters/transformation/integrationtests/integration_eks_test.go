@@ -11,4 +11,5 @@ func TestCreateAWSClusterFromFile(t *testing.T) {
 	}
 	var inputFile = "test-data/eks_clusters.json"
 	execTestClusterFromFile(t, inputFile)
+
 }

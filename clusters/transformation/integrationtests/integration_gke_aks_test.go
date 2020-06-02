@@ -32,9 +32,9 @@ func TestCreateGCPClusterFromFileThenCloneToAKS(t *testing.T) {
 		t.Fatalf("%s does not have %s as prefix", createdGCPCluster.Name, clusterFromFile.Name)
 	}
 
-	// assertNumberClustersByLabel the created files, by label
+	// createdClusterByLabel the created files, by label
 	gkeAccess := clusteraccess.GetClusterAccess(clusterFromFile.Cloud)
-	assertNumberClustersByLabel(t, clusterFromFile, 1)
+	createdClusterByLabel(t, clusterFromFile, 1)
 	createdAKSClusters, err := transformation.Clone("",
 		createdGCPCluster.Cloud,
 		createdGCPCluster.Scope,
@@ -49,20 +49,20 @@ func TestCreateGCPClusterFromFileThenCloneToAKS(t *testing.T) {
 		t.Fatal(err)
 	}
 	createdAKSCluster := createdAKSClusters[0]
-	assertNumberClustersByLabel(t, createdAKSCluster, 1)
+	createdClusterByLabel(t, createdAKSCluster, 1)
 
 	//Delete both
 	err = gkeAccess.Delete(createdGCPCluster)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertNumberClustersByLabel(t, createdGCPCluster, 0)
+	createdClusterByLabel(t, createdGCPCluster, 0)
 
 	var aksAccess = clusteraccess.GetClusterAccess(createdAKSCluster.Cloud)
 	err = aksAccess.Delete(createdAKSCluster)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertNumberClustersByLabel(t, createdAKSCluster, 0)
+	createdClusterByLabel(t, createdAKSCluster, 0)
 
 }

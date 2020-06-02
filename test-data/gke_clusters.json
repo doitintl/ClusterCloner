@@ -1,7 +1,7 @@
 [
   {
     "Cloud": "GCP",
-    "Scope": "joshua-playground",
+    "Scope": "scope-test1",
     "Location": "us-central1-c",
     "Name": "for-testing-clustercloner",
     "K8sVersion": "1.14.10-gke.27",
@@ -24,7 +24,7 @@
     ],
     "SourceCluster": {
       "Cloud": "GCP",
-      "Scope": "joshua-playground",
+      "Scope": "scope-test",
       "Location": "us-central1-c",
       "Name": "cluster-2-uli8z-dqlgm",
       "K8sVersion": "1.14.10-gke.27",
@@ -44,7 +44,7 @@
       ],
       "SourceCluster": {
         "Cloud": "GCP",
-        "Scope": "joshua-playground",
+        "Scope": "scope-test",
         "Location": "us-central1-c",
         "Name": "cluster-2-uli8z",
         "K8sVersion": "1.14.10-gke.27",

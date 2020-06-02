@@ -2,10 +2,12 @@ package access
 
 import (
 	"clustercloner/clusters"
+	"clustercloner/clusters/clouds/eks/awssdk"
 	"clustercloner/clusters/clouds/eks/eksctl"
 	"clustercloner/clusters/util"
 	"encoding/csv"
 	"fmt"
+	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
 	"io"
 	"log"
@@ -37,9 +39,14 @@ type EKSClusterAccess struct {
 // Create ...
 func (ca EKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
 	tagsCsv := util.ToCommaSeparateKeyValuePairs(createThis.Labels)
-	err = eksctl.CreateCluster(createThis.Name, createThis.Location, createThis.K8sVersion, tagsCsv)
+	err = eksctl.CreateClusterNoNodeGroup(createThis.Name, createThis.Location, createThis.K8sVersion, tagsCsv)
 	if err != nil {
+		err2 := ca.Delete(createThis)
+		if err2 != nil {
+			return nil, errors.Wrap(err2, "error deleting cluster after failing to create it; original error "+err.Error())
+		}
 		return nil, errors.Wrap(err, "cannot create cluster")
+
 	}
 	err = eksctl.AddLogging(createThis.Name, createThis.Location, createThis.K8sVersion, tagsCsv)
 	if err != nil {
@@ -50,6 +57,10 @@ func (ca EKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 		err = eksctl.CreateNodeGroup(createThis.Name, ng.Name, createThis.Location, createThis.K8sVersion,
 			ng.MachineType.Name, tagsCsv, ng.NodeCount, ng.DiskSizeGB, ng.Preemptible)
 		if err != nil {
+			err2 := ca.Delete(createThis)
+			if err2 != nil {
+				return nil, errors.Wrap(err2, "error deleting cluster after failing to create NodeGroup "+ng.Name+"; original error "+err.Error())
+			}
 			return nil, errors.Wrap(err, "cannot create NodeGroup "+ng.Name)
 		}
 	}
@@ -84,32 +95,43 @@ func (ca EKSClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (descr
 		return nil, errors.Wrap(err, "cannot describe cluster "+searchTemplate.Name)
 	}
 	described = clusterObjectToClusterInfo(eksCluster, searchTemplate.Location, clusters.Read)
-	eksNodes, err := eksctl.DescribeNodeGroups(searchTemplate.Name, searchTemplate.Location)
+	describeNodegroupOutputs, err := awssdk.DescribeNodeGroups(searchTemplate.Name, searchTemplate.Location)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot describe nodes for cluster "+searchTemplate.Name)
 	}
-	if err := addNodeGroupObjectsAsNodePoolInfo(eksNodes, described); err != nil {
+	if err := addNodeGroupObjectsAsNodePoolInfo(describeNodegroupOutputs, described); err != nil {
 		return nil, errors.Wrap(err, "cannot add NodePoolInfos")
 	}
 
 	return described, nil
 }
 
-func addNodeGroupObjectsAsNodePoolInfo(eksNodeGroups []eksctl.EKSNodeGroup, described *clusters.ClusterInfo) error {
-	for _, eksNg := range eksNodeGroups {
-		mt := MachineTypeByName(eksNg.InstanceType)
-		if mt.Name == "" {
-			return errors.New("cannot find " + eksNg.InstanceType)
+func addNodeGroupObjectsAsNodePoolInfo(eksNodeGroups []*eks.DescribeNodegroupOutput, cluster *clusters.ClusterInfo) error {
+	for _, describeNg := range eksNodeGroups {
+		ng := describeNg.Nodegroup
+		if len(ng.InstanceTypes) > 1 {
+			log.Println("NodeGroup has multiple InstanceTypes; support having only 1")
+
 		}
+		mt := MachineTypeByName(*ng.InstanceTypes[0]) //TODO support multi-instance-type NG
+		if mt.Name == "" {
+			return errors.New("cannot find " + *ng.InstanceTypes[0])
+		}
+		scaling := ng.ScalingConfig
+		if *scaling.MaxSize != *scaling.DesiredSize || *scaling.MinSize != *scaling.DesiredSize {
+			log.Println(fmt.Sprintf("Dynamic scaling unsupported: %v", scaling))
+		}
+		ngName := *ng.Labels["alpha.eksctl.io/nodegroup-name"]
+
 		npi := clusters.NodePoolInfo{
-			Name:        eksNg.Name,
-			NodeCount:   eksNg.DesiredCapacity,
-			K8sVersion:  described.K8sVersion, //TODO: Is this available  per-NodeGroup? It is not in eksctl output
-			MachineType: mt,                   //TODO deal with missing instance tyoe ereT
-			DiskSizeGB:  22,                   //TODO Find this data. How? It is not in eksctl output
+			Name:        ngName,
+			NodeCount:   int(*scaling.DesiredSize),
+			K8sVersion:  *ng.Version, //TODO: Is this available  per-NodeGroup? It is not in eksctl output
+			MachineType: mt,          //TODO Deal with missing instance types
+			DiskSizeGB:  int(*ng.DiskSize),
 		}
 
-		described.AddNodePool(npi)
+		cluster.AddNodePool(npi)
 	}
 	return nil
 }
@@ -153,9 +175,7 @@ func (ca EKSClusterAccess) List(_, location string, tagFilter map[string]string)
 			continue
 		}
 		matchedNames = append(matchedNames, ci.Name)
-
 		listedClusters = append(listedClusters, ci)
-		//TODO describe nodegroups too?
 	}
 
 	log.Printf("In listing clusters, these matched the label filter %v; and these did not %v\n", matchedNames, unmatchedNames)
@@ -215,12 +235,6 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 		if len(record) == 1 {
 			log.Println("Short record ", record)
 		}
-		// API Name; Display Name; Memory GiB; vCPUs; Supports EKS
-		/*
-			supportsEks := record[4]
-				if strings.ToLower(supportsEks) != "true" {
-				continue
-			}*/
 
 		name := record[0]
 		ramGiBStr := record[2]

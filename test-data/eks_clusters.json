@@ -1,7 +1,7 @@
 [
   {
     "Cloud": "AWS",
-    "Scope": "joshua-playground",
+    "Scope": "scope-test1",
     "Location": "us-east-2",
     "Name": "clus",
     "K8sVersion": "1.15",

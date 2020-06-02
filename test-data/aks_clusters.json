@@ -1,7 +1,7 @@
 [
   {
     "Cloud": "Azure",
-    "Scope": "joshua-playground",
+    "Scope": "scope-test1",
     "Location": "centralus",
     "K8sVersion": "1.14.8",
     "GeneratedBy": "Created",

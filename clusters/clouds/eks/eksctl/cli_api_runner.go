@@ -24,6 +24,8 @@ import (
 	"os"
 )
 
+// Runs eksctl command-line interface as a library. Code in this file based on eksctl source-code.
+
 func addCommands(rootCmd *cobra.Command, flagGrouping *cmdutils.FlagGrouping) {
 	rootCmd.AddCommand(create.Command(flagGrouping))
 	rootCmd.AddCommand(get.Command(flagGrouping))
@@ -43,7 +45,7 @@ func addCommands(rootCmd *cobra.Command, flagGrouping *cmdutils.FlagGrouping) {
 }
 
 func runEksctl(args []string) error {
-	if args[0] != "eksctl" {
+	if len(args) == 0 || args[0] != "eksctl" {
 		return errors.New(fmt.Sprintf("must pass \"eksctl\" as first arg %v", args))
 	}
 	oldArgs := os.Args[:]
@@ -82,7 +84,6 @@ func runEksctl(args []string) error {
 	})
 
 	rootCmd.SetUsageFunc(flagGrouping.Usage)
-
 	if err := rootCmd.Execute(); err != nil {
 		return errors.Wrap(err, "Cannot execute")
 	}
