@@ -4,6 +4,7 @@ import (
 	"clustercloner/clusters"
 	"clustercloner/clusters/clouds/eks/awssdk"
 	"clustercloner/clusters/clouds/eks/eksctl"
+	"clustercloner/clusters/machinetypes"
 	"clustercloner/clusters/util"
 	"encoding/csv"
 	"fmt"
@@ -190,23 +191,30 @@ func (ca EKSClusterAccess) GetSupportedK8sVersions(scope, location string) (vers
 }
 
 // MachineTypeByName ...
-func MachineTypeByName(machineType string) clusters.MachineType {
-	return MachineTypes[machineType]
+// TODO Reduce is repetition of the MachineTYpes code in EKS/AKS/GKE
+func MachineTypeByName(machineType string) machinetypes.MachineType {
+	mt, err := MachineTypes.Get(machineType)
+	if err != nil {
+		log.Println("cannot get " + machineType + "; " + err.Error())
+		return machinetypes.MachineType{}
+	}
+	return mt
 }
 
 // MachineTypes ...
-var MachineTypes map[string]clusters.MachineType
+var MachineTypes *machinetypes.MachineTypeMap
 
 func init() {
 	var err error
 	MachineTypes, err = loadMachineTypes()
-	if len(MachineTypes) == 0 || err != nil {
+
+	if err != nil && MachineTypes.Length() == 0 {
 		panic(fmt.Sprintf("cannot load machine types %v", err))
 	}
 }
 
-func loadMachineTypes() (map[string]clusters.MachineType, error) {
-	ret := make(map[string]clusters.MachineType)
+func loadMachineTypes() (*machinetypes.MachineTypeMap, error) {
+	ret := machinetypes.NewMachineTypeMap()
 
 	fn := util.RootPath() + "/machine-types/aws-instance-types.csv"
 	csvfile, err := os.Open(fn)
@@ -248,9 +256,9 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 		if err != nil || cpuInteger == 0 {
 			return nil, errors.Wrap(err, "cannot parse cpus "+cpus)
 		}
-		ret[name] = clusters.MachineType{Name: name, CPU: int(cpuInteger), RAMMB: int(ramGiBFloat * 1024)}
+		ret.Set(name, machinetypes.MachineType{Name: name, CPU: int(cpuInteger), RAMMB: int(ramGiBFloat * 1024)})
 	}
-	return ret, nil
+	return &ret, nil
 }
 
 //

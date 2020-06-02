@@ -3,6 +3,7 @@ package access
 import (
 	containerv1 "cloud.google.com/go/container/apiv1"
 	"clustercloner/clusters"
+	"clustercloner/clusters/machinetypes"
 	clusterutil "clustercloner/clusters/util"
 	"context"
 	"encoding/csv"
@@ -148,7 +149,7 @@ func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) (*clu
 			DiskSizeGB:  int(np.GetConfig().GetDiskSizeGb()),
 			Preemptible: np.GetConfig().Preemptible,
 		}
-		zero := clusters.MachineType{}
+		zero := machinetypes.MachineType{}
 		if npi.MachineType == zero {
 			panic("cannot read " + np.GetConfig().MachineType) //fix?
 		}
@@ -294,15 +295,6 @@ Waiting:
 	}
 	return nil
 }
-
-// MachineTypeByName ...
-func MachineTypeByName(machineType string) clusters.MachineType {
-	return MachineTypes[machineType]
-}
-
-// MachineTypes ...
-var MachineTypes map[string]clusters.MachineType
-
 func init() {
 	key := "GOOGLE_APPLICATION_CREDENTIALS"
 	cred := os.Getenv(key)
@@ -312,15 +304,31 @@ func init() {
 		log.Println(key, "=", cred)
 	}
 }
+
+// MachineTypeByName ...
+func MachineTypeByName(machineType string) machinetypes.MachineType {
+	mt, err := MachineTypes.Get(machineType)
+	if err != nil {
+		log.Println("cannot get " + machineType + "; " + err.Error())
+		return machinetypes.MachineType{}
+	}
+	return mt
+}
+
+// MachineTypes ...
+var MachineTypes *machinetypes.MachineTypeMap
+
 func init() {
 	var err error
 	MachineTypes, err = loadMachineTypes()
-	if len(MachineTypes) == 0 || err != nil {
+
+	if err != nil && MachineTypes.Length() == 0 {
 		panic(fmt.Sprintf("cannot load machine types %v", err))
 	}
 }
-func loadMachineTypes() (map[string]clusters.MachineType, error) {
-	ret := make(map[string]clusters.MachineType)
+
+func loadMachineTypes() (*machinetypes.MachineTypeMap, error) {
+	ret := machinetypes.NewMachineTypeMap()
 	fn := clusterutil.RootPath() + "/machine-types/gke-machine-types.csv"
 	csvfile, err := os.Open(fn)
 	if err != nil {
@@ -359,9 +367,10 @@ func loadMachineTypes() (map[string]clusters.MachineType, error) {
 		}
 		ramMB := ramGbFlt * 1000
 
-		ret[name] = clusters.MachineType{Name: name, CPU: int(cpuInteger), RAMMB: int(ramMB)}
+		ret.Set(name, machinetypes.MachineType{Name: name, CPU: int(cpuInteger), RAMMB: int(ramMB)})
 	}
-	return ret, nil
+
+	return &ret, nil
 }
 
 // supportedVersions ...

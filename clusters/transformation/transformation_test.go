@@ -5,6 +5,7 @@ import (
 	accessaks "clustercloner/clusters/clouds/aks/access"
 	accesseks "clustercloner/clusters/clouds/eks/access"
 	accessgke "clustercloner/clusters/clouds/gke/access"
+	"clustercloner/clusters/machinetypes"
 	"clustercloner/clusters/util"
 	"github.com/stretchr/testify/assert"
 	"strings"
@@ -36,10 +37,10 @@ func TestTransformAzureToGCP(t *testing.T) {
 	for i := range gcp.NodePools {
 		azureNP := azure.NodePools[i]
 		//Machine types and K8s versions will not match, so comparing NodePools with zeroed  Machine Types and K8s version
-		azureNP.MachineType = clusters.MachineType{}
+		azureNP.MachineType = machinetypes.MachineType{}
 		azureNP.K8sVersion = ""
 		gcpNP := gcp.NodePools[i]
-		gcpNP.MachineType = clusters.MachineType{}
+		gcpNP.MachineType = machinetypes.MachineType{}
 		gcpNP.K8sVersion = ""
 		assert.Equal(t, gcpNP, azureNP)
 	}
@@ -111,9 +112,9 @@ func TestTransformGCPToAzure(t *testing.T) {
 		//Zeroing out fields that are not expected to match
 		npIn := gcpIn.NodePools[i]
 		npIn.K8sVersion = ""
-		npIn.MachineType = clusters.MachineType{}
+		npIn.MachineType = machinetypes.MachineType{}
 		npOut := azOut.NodePools[i]
-		npOut.MachineType = clusters.MachineType{}
+		npOut.MachineType = machinetypes.MachineType{}
 		if !strings.HasPrefix(npOut.K8sVersion, "1.15") && !strings.HasPrefix(npOut.K8sVersion, "1.14") {
 			t.Fatal(npOut.K8sVersion, "AKS may have upgraded versions")
 		}
@@ -160,9 +161,9 @@ func TestTransformGCPToAWS(t *testing.T) {
 	for i := range awsOut.NodePools {
 		npIn := gcpIn.NodePools[i]
 		npIn.K8sVersion = "" //Zeroing out fields that are not expected to match
-		npIn.MachineType = clusters.MachineType{}
+		npIn.MachineType = machinetypes.MachineType{}
 		npOut := awsOut.NodePools[i]
-		npOut.MachineType = clusters.MachineType{}
+		npOut.MachineType = machinetypes.MachineType{}
 		if npOut.K8sVersion != "1.15" && npOut.K8sVersion != "1.14" { //The test has different K8s Versions on different NodePools
 			t.Fatal(npOut.K8sVersion)
 		}
@@ -209,9 +210,9 @@ func TestTransformAWSToAzure(t *testing.T) {
 		//Zeroing out fields that are not expected to match
 		npIn := awsIn.NodePools[i]
 		npIn.K8sVersion = ""
-		npIn.MachineType = clusters.MachineType{}
+		npIn.MachineType = machinetypes.MachineType{}
 		npOut := azOut.NodePools[i]
-		npOut.MachineType = clusters.MachineType{}
+		npOut.MachineType = machinetypes.MachineType{}
 		if !strings.HasPrefix(npOut.K8sVersion, "1.15") && !strings.HasPrefix(npOut.K8sVersion, "1.14") {
 			t.Fatal(npOut.K8sVersion, "AKS may have upgraded versions")
 		}
@@ -229,6 +230,7 @@ func TestTransformAWSToAzure(t *testing.T) {
 		"Standard_F16s_v2",
 		"Standard_F8s",
 		"Standard_F8s_v2",
+		"Standard_A8_v2",
 	}
 	if !util.ContainsStr(expectedOutputMachineTypeNames, mtOut.Name) {
 		t.Fatal(mtOut.Name + " was not an expected machine type for " + awsIn.NodePools[0].MachineType.Name + "; expected: " +

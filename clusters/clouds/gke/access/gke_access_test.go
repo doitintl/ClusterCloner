@@ -1,7 +1,7 @@
 package access
 
 import (
-	"clustercloner/clusters"
+	"clustercloner/clusters/machinetypes"
 	"testing"
 )
 
@@ -35,7 +35,7 @@ func TestParseMachineType2(t *testing.T) {
 func TestParseMissingMachineType2(t *testing.T) {
 	name := "xx-xx-40"
 	mt := MachineTypeByName(name)
-	zero := clusters.MachineType{}
+	zero := machinetypes.MachineType{}
 	if mt != zero {
 		t.Fatalf("expect failure with %s", mt.Name)
 	}

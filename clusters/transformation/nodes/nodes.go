@@ -2,16 +2,17 @@ package nodes
 
 import (
 	"clustercloner/clusters"
+	"clustercloner/clusters/machinetypes"
 	"clustercloner/clusters/util"
 	"github.com/pkg/errors"
 	"math"
 )
 
 // MachineTypeConverter ...
-type MachineTypeConverter func(mt clusters.MachineType) clusters.MachineType
+type MachineTypeConverter func(mt machinetypes.MachineType) machinetypes.MachineType
 
 // TransformNodePool ...
-func TransformNodePool(np clusters.NodePoolInfo, machineTypes map[string]clusters.MachineType) (clusters.NodePoolInfo, error) {
+func TransformNodePool(np clusters.NodePoolInfo, machineTypes *machinetypes.MachineTypeMap) (clusters.NodePoolInfo, error) {
 	nodePoolK8sVersion, err := util.MajorMinorPatchVersion(np.K8sVersion)
 	if err != nil {
 		return clusters.NodePoolInfo{}, errors.New("cannot convert K8s Version \"" + np.K8sVersion + "\" for node pool")
@@ -32,12 +33,12 @@ func TransformNodePool(np clusters.NodePoolInfo, machineTypes map[string]cluster
 }
 
 // FindMatchingMachineType chooses the weakest machine which equals or exceeeds in the inputMachineType in CPU amd RAM. If there are several some such, one is chosen arbitrarily
-func FindMatchingMachineType(inputMachineType clusters.MachineType, machineTypes map[string]clusters.MachineType) clusters.MachineType {
+func FindMatchingMachineType(inputMachineType machinetypes.MachineType, machineTypes *machinetypes.MachineTypeMap) machinetypes.MachineType {
 	if machineTypes == nil { //Transforming to Hub, no change
 		return inputMachineType
 	}
-	leastUpperBound := clusters.MachineType{Name: "<NONE KNOWN>", CPU: math.MaxInt32, RAMMB: math.MaxInt32}
-	for _, candidateMachineType := range machineTypes {
+	leastUpperBound := machinetypes.MachineType{Name: "<NONE KNOWN>", CPU: math.MaxInt32, RAMMB: math.MaxInt32}
+	for _, candidateMachineType := range machineTypes.List() {
 		if candidateMachineType.RAMMB >= inputMachineType.RAMMB && candidateMachineType.CPU >= inputMachineType.CPU {
 			if candidateMachineType.RAMMB <= leastUpperBound.RAMMB && candidateMachineType.CPU <= leastUpperBound.CPU {
 				leastUpperBound = candidateMachineType

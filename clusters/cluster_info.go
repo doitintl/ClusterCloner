@@ -1,6 +1,7 @@
 package clusters
 
 import (
+	"clustercloner/clusters/machinetypes"
 	"clustercloner/clusters/util"
 	"encoding/json"
 	"github.com/pkg/errors"
@@ -28,19 +29,12 @@ func (ci *ClusterInfo) AddNodePool(pool NodePoolInfo) {
 	ci.NodePools = append(ci.NodePools, pool)
 }
 
-// MachineType ...
-type MachineType struct {
-	Name  string
-	CPU   int
-	RAMMB int
-}
-
 // NodePoolInfo ...
 type NodePoolInfo struct {
 	Name        string
 	NodeCount   int
 	K8sVersion  string
-	MachineType MachineType
+	MachineType machinetypes.MachineType
 	DiskSizeGB  int
 	Preemptible bool
 }

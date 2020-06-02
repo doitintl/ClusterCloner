@@ -6,7 +6,7 @@ import (
 )
 
 func TestMachineTypes(t *testing.T) {
-	machineTypeCount := len(MachineTypes)
+	machineTypeCount := MachineTypes.Length()
 	assert.Greater(t, machineTypeCount, 250)
 	assert.Less(t, machineTypeCount, 350) //check the filter for only EKS-supported machine types
 	mt := MachineTypeByName("m5.12xlarge")

@@ -3,6 +3,7 @@ package util
 import (
 	"clustercloner/clusters"
 	"clustercloner/clusters/clusteraccess"
+	"clustercloner/clusters/machinetypes"
 	"clustercloner/clusters/transformation/nodes"
 	clusterutil "clustercloner/clusters/util"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 
 // TransformSpoke ...
 func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLoc,
-	clusterK8sVersion string, machineTypes map[string]clusters.MachineType,
+	clusterK8sVersion string, machineTypes *machinetypes.MachineTypeMap,
 	adjustK8sVersions bool) (*clusters.ClusterInfo, error) {
 
 	var ret = &clusters.ClusterInfo{

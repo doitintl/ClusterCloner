@@ -26,7 +26,7 @@ func TestParseMachineType(t *testing.T) {
 }
 func TestMachineTypes(t *testing.T) {
 	types := MachineTypes
-	machineTypeCount := len(types)
+	machineTypeCount := types.Length()
 	assert.Greater(t, machineTypeCount, 90)
 	mt := MachineTypeByName("Standard_A2_v2")
 	assert.Equal(t, "Standard_A2_v2", mt.Name)
