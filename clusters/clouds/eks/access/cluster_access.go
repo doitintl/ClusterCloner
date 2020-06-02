@@ -191,7 +191,7 @@ func (ca EKSClusterAccess) GetSupportedK8sVersions(scope, location string) (vers
 }
 
 // MachineTypeByName ...
-// TODO Reduce is repetition of the MachineTYpes code in EKS/AKS/GKE
+// TODO Reduce  repetition of the MachineTypes code in EKS/AKS/GKE
 func MachineTypeByName(machineType string) machinetypes.MachineType {
 	mt, err := MachineTypes.Get(machineType)
 	if err != nil {
