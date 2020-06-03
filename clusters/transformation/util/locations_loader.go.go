@@ -3,6 +3,7 @@ package util
 import (
 	"clustercloner/clusters/util"
 	"encoding/csv"
+	"github.com/iancoleman/orderedmap"
 	"github.com/pkg/errors"
 	"io"
 	"log"
@@ -10,8 +11,8 @@ import (
 )
 
 // LoadLocationMap ...
-func LoadLocationMap(file string) (map[string]string, error) {
-	ret := make(map[string]string)
+func LoadLocationMap(file string) (*orderedmap.OrderedMap, error) {
+	var ret *orderedmap.OrderedMap = orderedmap.New()
 	filePath := "/locations/" + file
 	fn := util.RootPath() + filePath
 	csvfile, err := os.Open(fn)
@@ -43,7 +44,7 @@ func LoadLocationMap(file string) (map[string]string, error) {
 		}
 		cloudRegion := record[1]
 		hubRegion := record[2]
-		ret[cloudRegion] = hubRegion
+		ret.Set(cloudRegion, hubRegion)
 	}
 	return ret, nil
 }

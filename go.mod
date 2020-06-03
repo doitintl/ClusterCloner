@@ -10,8 +10,6 @@ require (
 	github.com/Azure/go-autorest/autorest/azure/auth v0.4.2
 	github.com/Azure/go-autorest/autorest/to v0.3.0
 	github.com/Azure/go-autorest/autorest/validation v0.2.0 // indirect
-	github.com/cuonglm/gocmt v0.0.0-20191202104510-7f323a1ee08c // indirect
-	github.com/hashicorp/hcl/v2 v2.5.0 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.5.1
@@ -22,14 +20,12 @@ require (
 
 require (
 	github.com/aws/aws-sdk-go v1.30.11
-	github.com/kr/fs v0.1.0 // indirect
+	github.com/google/go-cmp v0.3.1 // indirect
+	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0
 	github.com/kris-nova/logger v0.0.0-20181127235838-fd0d87064b06
-	github.com/kris-nova/lolgopher v0.0.0-20180921204813-313b3abb0d9b // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
-	github.com/tidwall/match v1.0.1 // indirect
 	github.com/tjarratt/babble v0.0.0-20191209142150-eecdf8c2339d
-	golang.org/x/sys v0.0.0-20200428200454-593003d681fa // indirect
 )
 
 replace (

@@ -1,6 +1,10 @@
 package util
 
-import "log"
+import (
+	"fmt"
+	"github.com/iancoleman/orderedmap"
+	"log"
+)
 
 // LabelMatch ...
 func LabelMatch(labelFilter map[string]string, actualLabels map[string]string) bool {
@@ -44,6 +48,23 @@ func StrPtrMapToStrMap(m map[string]*string) map[string]string {
 	}
 	return ret
 
+}
+
+// ReverseOrderedMap ...
+func ReverseOrderedMap(m *orderedmap.OrderedMap) *orderedmap.OrderedMap {
+	reverse := orderedmap.New()
+	for _, k := range m.Keys() {
+		v, ok := m.Get(k)
+		if !ok {
+			panic(k)
+		}
+		vStr, wasStr := v.(string)
+		if !wasStr {
+			panic(fmt.Sprintf("expect string values %v", v))
+		}
+		reverse.Set(vStr, k)
+	}
+	return reverse
 }
 
 // ReverseStrMap ...

@@ -5,6 +5,7 @@ import (
 	"clustercloner/clusters/clouds/eks/access"
 	transformutil "clustercloner/clusters/transformation/util"
 	clusterutil "clustercloner/clusters/util"
+	"github.com/iancoleman/orderedmap"
 	"github.com/pkg/errors"
 )
 
@@ -45,7 +46,7 @@ func (tr *EKSTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope strin
 }
 
 // LocationsCloudToHub ...
-func LocationsCloudToHub() (map[string]string, error) {
+func LocationsCloudToHub() (*orderedmap.OrderedMap, error) {
 	file := "aws_locations.csv"
 	if locations == nil {
 		var err error
@@ -63,11 +64,11 @@ func (*EKSTransformer) LocationCloudToHub(loc string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "error getting LocationsCloudToHub")
 	}
-	hubValue, wasinMap := mapping[loc]
+	hubValue, wasinMap := mapping.Get(loc)
 	if !wasinMap {
 		return "", errors.Errorf("Not found: %s", loc)
 	}
-	return hubValue, nil
+	return hubValue.(string), nil
 }
 
 //LocationHubToCloud ...
@@ -76,14 +77,14 @@ func (EKSTransformer) LocationHubToCloud(location string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "cannot get LocationsCloudToHub AWS")
 	}
-	hubToAws := clusterutil.ReverseStrMap(awsToHub) // //TODO make it deterministic
-	azLoc, ok := hubToAws[location]
+	hubToAws := clusterutil.ReverseOrderedMap(awsToHub) // //TODO make it deterministic
+	azLoc, ok := hubToAws.Get(location)
 	if !ok {
 		return "", errors.Errorf("Cannot find %s", location)
 	}
-	return azLoc, nil
+	return azLoc.(string), nil
 
 }
 
 // Locations ...
-var locations map[string]string
+var locations *orderedmap.OrderedMap

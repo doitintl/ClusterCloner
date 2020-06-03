@@ -68,15 +68,11 @@ func TestTransformHubToAzure(t *testing.T) {
 
 func TestTransformLocToHub(t *testing.T) {
 	loc := "eastus"
-	locationMap, err := LocationsCloudToHub()
+	locationMap, err := locationsCloudToHub()
 	assert.Nil(t, err)
-	hub := locationMap[loc]
+	hub, ok := locationMap.Get(loc)
+	assert.True(t, ok)
 	assert.Equal(t, "us-east4", hub)
-	gcpLoc, err := transform.LocationsCloudToHub()
+	_, err = transform.LocationsCloudToHub()
 	assert.Nil(t, err)
-	for _, gcp := range locationMap {
-		if _, ok := gcpLoc[gcp]; !ok {
-			t.Fatal(gcp)
-		}
-	}
 }
