@@ -257,13 +257,11 @@ func validateSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster str
 		panic("unknown " + ci.GeneratedBy)
 	}
 
-	var actual string
-	sourceCluster := ci.SourceCluster
-	if sourceCluster == nil {
-		actual = ""
-	} else {
-		actual = sourceCluster.GeneratedBy
+	if ci.SourceCluster == nil {
+		return
 	}
+	actual := ci.SourceCluster.GeneratedBy
+
 	actualIsExpected := false
 	if expectedGenByForSource == nil { //nil means "don't check"
 		actualIsExpected = true
@@ -273,9 +271,7 @@ func validateSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster str
 	if !actualIsExpected {
 		log.Printf("unexpected GeneratedBy for SourceCluster: \"%s\" is not one of \"%s\"\n%s", actual, expectedGenByForSource, clusterutil.ToJSON(ci))
 	} else {
-		if sourceCluster != nil {
-			validateSourceCluster(sourceCluster, sourceCluster.GeneratedBy)
-		}
+		validateSourceCluster(ci.SourceCluster, ci.SourceCluster.GeneratedBy)
 	}
 
 }

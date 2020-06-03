@@ -51,7 +51,7 @@ func (ca AKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) error {
 		return fmt.Errorf("cannot delete cluster: %v", err)
 	}
 
-	log.Printf("About to delete Azure Cluster %s; wait for completion", deleteThis.Name)
+	log.Printf("About to delete Azure Cluster %s; waiting for completion", deleteThis.Name)
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
 		return fmt.Errorf("cannot get the AKS deletion  future response: %v", err)
@@ -220,7 +220,7 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 		return containerservice.ManagedCluster{}, fmt.Errorf("cannot create AKS cluster: %v", err)
 	}
 
-	log.Printf("About to create Azure Cluster %s; wait for completion", createThis.Name)
+	log.Printf("About to create Azure Cluster %s; waiting for completion", createThis.Name)
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
 		return containerservice.ManagedCluster{}, fmt.Errorf("cannot WaitForCompletion on the response from CreateOrUpdate: %v", err)
@@ -250,7 +250,7 @@ func (ca AKSClusterAccess) List(subscription, location string, labelFilter map[s
 	ret := make([]*clusters.ClusterInfo, 0)
 
 	clusterList, err := aksClient.List(ctx)
-	// TODO Check if we need paging
+	// TODO paging
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot list")
 	}

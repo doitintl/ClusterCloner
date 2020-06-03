@@ -140,7 +140,6 @@ func addNodeGroupObjectsAsNodePoolInfo(eksNodeGroups []*eks.DescribeNodegroupOut
 	return nil
 }
 
-//TODO replace
 func clusterObjectToClusterInfo(clusterOutput *eks.DescribeClusterOutput, loc, generatedBy string) *clusters.ClusterInfo {
 	cluster := clusterOutput.Cluster
 	ci := &clusters.ClusterInfo{
