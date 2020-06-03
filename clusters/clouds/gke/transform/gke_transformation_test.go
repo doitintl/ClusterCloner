@@ -4,13 +4,15 @@ import (
 	"clustercloner/clusters"
 	"clustercloner/clusters/clouds/gke/access"
 	"clustercloner/clusters/util"
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 )
 
 func TestTransformGcpToHubAndBack(t *testing.T) {
 	scope := "sample-project"
-	mt := access.MachineTypeByName("e2-highcpu-8")
+	mt, err := access.MachineTypes.Get("e2-highcpu-8")
+	assert.Nil(t, err)
 	var npi1 = clusters.NodePoolInfo{
 		Name:        "NPName",
 		NodeCount:   2,

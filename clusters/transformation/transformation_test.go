@@ -49,7 +49,8 @@ func TestTransformAzureToGCP(t *testing.T) {
 
 func getSampleInputAKSCluster(t *testing.T) (scope string, aksCluster *clusters.ClusterInfo) {
 	scope = "sample-scope"
-	machineType1ByName := accessaks.MachineTypeByName("Standard_D32s_v3")
+	machineType1ByName, err := accessaks.MachineTypes.Get("Standard_D32s_v3")
+	assert.Nil(t, err)
 	assert.NotEqual(t, machineType1ByName.Name, "")
 	npi := clusters.NodePoolInfo{
 		Name:        "NP",
@@ -59,7 +60,8 @@ func getSampleInputAKSCluster(t *testing.T) (scope string, aksCluster *clusters.
 		DiskSizeGB:  10,
 		Preemptible: true,
 	}
-	machineType2ByName := accessaks.MachineTypeByName("Standard_A2_v2")
+	machineType2ByName, err := accessaks.MachineTypes.Get("Standard_A2_v2")
+	assert.Nil(t, err)
 	assert.NotEqual(t, machineType2ByName.Name, "")
 	npi2 := clusters.NodePoolInfo{
 		Name:        "NP2",
@@ -133,8 +135,9 @@ func TestTransformGCPToAzure(t *testing.T) {
 	}
 	found := false
 	for _, mTypeName := range expectedOutputMachineTypeNames {
-		expectedMachType := accessaks.MachineTypeByName(mTypeName)
-		if expectedMachType == mtOut {
+		expectedMachineType, err := accessaks.MachineTypes.Get(mTypeName)
+		assert.Nil(t, err)
+		if expectedMachineType == mtOut {
 			found = true
 		}
 	}
@@ -243,7 +246,8 @@ func sampleInputAWSCluster(t *testing.T) *clusters.ClusterInfo {
 
 	scope := "sample-project"
 	inputMachTypeFirstNode := "c3.2xlarge"
-	machTypeByName := accesseks.MachineTypeByName(inputMachTypeFirstNode)
+	machTypeByName, err := accesseks.MachineTypes.Get(inputMachTypeFirstNode)
+	assert.Nil(t, err)
 	if machTypeByName.Name == "" {
 		t.Fatal("cannot find machine type " + inputMachTypeFirstNode)
 	}
@@ -255,7 +259,8 @@ func sampleInputAWSCluster(t *testing.T) *clusters.ClusterInfo {
 		DiskSizeGB:  10,
 		Preemptible: true,
 	}
-	machTypeByName2 := accesseks.MachineTypeByName("c3.4xlarge")
+	machTypeByName2, err := accesseks.MachineTypes.Get("c3.4xlarge")
+	assert.Nil(t, err)
 	if machTypeByName2.Name == "" {
 		t.Fatal("cannot find machine type")
 	}
@@ -287,7 +292,8 @@ func sampleInputAWSCluster(t *testing.T) *clusters.ClusterInfo {
 func sampleInputGCPCluster(t *testing.T) *clusters.ClusterInfo {
 	scope := "sample-project"
 	inputMachTypeFirstNode := "e2-highcpu-16"
-	machTypeByName1 := accessgke.MachineTypeByName(inputMachTypeFirstNode)
+	machTypeByName1, err := accessgke.MachineTypes.Get(inputMachTypeFirstNode)
+	assert.Nil(t, err)
 	if machTypeByName1.Name == "" {
 		t.Fatal("cannot find machine type")
 	}
@@ -299,7 +305,8 @@ func sampleInputGCPCluster(t *testing.T) *clusters.ClusterInfo {
 		DiskSizeGB:  10,
 		Preemptible: true,
 	}
-	machTypeByName2 := accessgke.MachineTypeByName("c2-standard-60")
+	machTypeByName2, err := accessgke.MachineTypes.Get("c2-standard-60")
+	assert.Nil(t, err)
 	if machTypeByName2.Name == "" {
 		t.Fatal("cannot find machine type")
 	}

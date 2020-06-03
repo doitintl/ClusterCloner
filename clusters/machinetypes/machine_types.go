@@ -13,19 +13,19 @@ type MachineType struct {
 }
 
 // NewMachineTypeMap ...
-func NewMachineTypeMap() MachineTypeMap {
-	ret := MachineTypeMap{}
+func NewMachineTypeMap() MachineTypes {
+	ret := MachineTypes{}
 	ret.mts = make([]MachineType, 0)
 	return ret
 }
 
-// MachineTypeMap ...
-type MachineTypeMap struct {
+// MachineTypes ...
+type MachineTypes struct {
 	mts []MachineType
 }
 
 // Get ...
-func (m *MachineTypeMap) Get(key string) (machineType MachineType, err error) {
+func (m *MachineTypes) Get(key string) (machineType MachineType, err error) {
 	for _, mt := range m.mts {
 		if mt.Name == key {
 			if machineType.Name != "" {
@@ -41,7 +41,7 @@ func (m *MachineTypeMap) Get(key string) (machineType MachineType, err error) {
 }
 
 // Set ...
-func (m *MachineTypeMap) Set(key string, value MachineType) {
+func (m *MachineTypes) Set(key string, value MachineType) {
 	found := -1
 	for idx, mt := range m.mts {
 		if mt.Name == key {
@@ -61,12 +61,12 @@ func (m *MachineTypeMap) Set(key string, value MachineType) {
 }
 
 // Length ...
-func (m *MachineTypeMap) Length() int {
+func (m *MachineTypes) Length() int {
 	return len(m.mts)
 
 }
 
 // List ...
-func (m *MachineTypeMap) List() []MachineType {
+func (m *MachineTypes) List() []MachineType {
 	return m.mts
 }

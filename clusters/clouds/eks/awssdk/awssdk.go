@@ -10,6 +10,57 @@ import (
 	"log"
 )
 
+// DescribeClusters ...
+func DescribeClusters(region string) ([]*eks.DescribeClusterOutput, error) {
+
+	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
+	if err != nil {
+		printAwsErr(err)
+		return nil, errors.Wrap(err, "cannot create NewSession with AWS SDK")
+	}
+	svc := eks.New(sess)
+
+	input := &eks.ListClustersInput{}
+
+	result, err := svc.ListClusters(input) //TODO use paging
+	if err != nil {
+		printAwsErr(err)
+		return nil, errors.Wrap(err, "cannot DescribeClusters  with AWS SDK")
+	}
+	ret := make([]*eks.DescribeClusterOutput, 0)
+	for _, clusterName := range result.Clusters {
+		clusterDescription, err := DescribeCluster(*clusterName, region)
+
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot DescribeCluster ("+*clusterName+")")
+		}
+		ret = append(ret, clusterDescription)
+	}
+	return ret, nil
+}
+
+// DescribeCluster ...
+func DescribeCluster(clusterName, region string) (*eks.DescribeClusterOutput, error) {
+
+	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot create NewSession")
+	}
+	svc := eks.New(sess)
+
+	input := &eks.DescribeClusterInput{
+		Name: aws.String(clusterName),
+	}
+
+	result, err := svc.DescribeCluster(input)
+	if err != nil {
+		printAwsErr(err)
+		return nil, errors.Wrap(err, "cannot DescribeCluster with AWS SDK")
+	}
+
+	return result, nil
+}
+
 // DescribeNodeGroups ...
 func DescribeNodeGroups(clusterName string, region string) ([]*eks.DescribeNodegroupOutput, error) {
 
@@ -33,7 +84,7 @@ func DescribeNodeGroups(clusterName string, region string) ([]*eks.DescribeNodeg
 	for _, ngName := range result.Nodegroups {
 		eksNodeGroup, err := DescribeNodeGroup(clusterName, region, *ngName)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot DescribeNodeGroup ("+*ngName+")")
+			return nil, errors.Wrap(err, "cannot DescribeCluster ("+*ngName+")")
 		}
 		ret = append(ret, eksNodeGroup)
 	}
@@ -57,29 +108,16 @@ func DescribeNodeGroup(clusterName string, region string, ngName string) (*eks.D
 	result, err := svc.DescribeNodegroup(input)
 	if err != nil {
 		printAwsErr(err)
-		return nil, errors.Wrap(err, "cannot DescribeNodeGroup with AWS SDK")
+		return nil, errors.Wrap(err, "cannot DescribeCluster with AWS SDK")
 	}
 
 	return result, nil
 }
 
 func printAwsErr(err error) {
-	if aerr, ok := err.(awserr.Error); ok {
-		switch aerr.Code() {
-		case eks.ErrCodeInvalidParameterException:
-			log.Println(eks.ErrCodeInvalidParameterException, aerr.Error())
-		case eks.ErrCodeClientException:
-			log.Println(eks.ErrCodeClientException, aerr.Error())
-		case eks.ErrCodeServerException:
-			log.Println(eks.ErrCodeServerException, aerr.Error())
-		case eks.ErrCodeServiceUnavailableException:
-			log.Println(eks.ErrCodeServiceUnavailableException, aerr.Error())
-		default:
-			log.Println(aerr.Error())
-		}
+	if awsErr, ok := err.(awserr.Error); ok {
+		log.Println(awsErr.Code(), "; ", awsErr.Error(), "; ", awsErr.Message(), "; ", awsErr.OrigErr())
 	} else {
-		// cast err to awserror.Error to get the Code and Message from an error.
-		awserror := err.(awserr.Error)
-		fmt.Println(awserror.Message())
+		fmt.Println(err)
 	}
 }

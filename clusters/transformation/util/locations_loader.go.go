@@ -3,7 +3,6 @@ package util
 import (
 	"clustercloner/clusters/util"
 	"encoding/csv"
-	"fmt"
 	"github.com/pkg/errors"
 	"io"
 	"log"
@@ -40,7 +39,7 @@ func LoadLocationMap(file string) (map[string]string, error) {
 			log.Println("Short record", record)
 		}
 		if len(record) != 3 {
-			return nil, errors.New(fmt.Sprintf("wrong length record, length %d (%v)", len(record), record))
+			return nil, errors.Errorf("wrong length record, length %d (%v)", len(record), record)
 		}
 		cloudRegion := record[1]
 		hubRegion := record[2]

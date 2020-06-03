@@ -54,7 +54,6 @@ func (ca EKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 		return nil, errors.Wrap(err, "cannot add logging")
 	}
 	for _, ng := range createThis.NodePools {
-		//TODO support spot instances. Not now available in Managed Node Groups. See https: //github.com/aws/containers-roadmap/issues/583
 		err = eksctl.CreateNodeGroup(createThis.Name, ng.Name, createThis.Location, createThis.K8sVersion,
 			ng.MachineType.Name, tagsCsv, ng.NodeCount, ng.DiskSizeGB, ng.Preemptible)
 		if err != nil {
@@ -91,11 +90,11 @@ func (ca EKSClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (descr
 	if searchTemplate.Location == "" {
 		return nil, errors.New("must provide location to describe cluster")
 	}
-	eksCluster, err := eksctl.DescribeCluster(searchTemplate.Name, searchTemplate.Location)
+	clusterOutput, err := awssdk.DescribeCluster(searchTemplate.Name, searchTemplate.Location)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot describe cluster "+searchTemplate.Name)
 	}
-	described = clusterObjectToClusterInfo(eksCluster, searchTemplate.Location, clusters.Read)
+	described = clusterObjectToClusterInfo(clusterOutput, searchTemplate.Location, clusters.Read)
 	describeNodegroupOutputs, err := awssdk.DescribeNodeGroups(searchTemplate.Name, searchTemplate.Location)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot describe nodes for cluster "+searchTemplate.Name)
@@ -114,9 +113,13 @@ func addNodeGroupObjectsAsNodePoolInfo(eksNodeGroups []*eks.DescribeNodegroupOut
 			log.Println("NodeGroup has multiple InstanceTypes; support having only 1")
 
 		}
-		mt := MachineTypeByName(*ng.InstanceTypes[0]) //TODO support multi-instance-type NG
+		instanceType := *ng.InstanceTypes[0]
+		mt, err := MachineTypes.Get(instanceType) //TODO support multi-instance-type NG
+		if err != nil {
+			return errors.Wrap(err, "cannot get instance type "+instanceType)
+		}
 		if mt.Name == "" {
-			return errors.New("cannot find " + *ng.InstanceTypes[0])
+			return errors.New("cannot find " + instanceType)
 		}
 		scaling := ng.ScalingConfig
 		if *scaling.MaxSize != *scaling.DesiredSize || *scaling.MinSize != *scaling.DesiredSize {
@@ -127,8 +130,8 @@ func addNodeGroupObjectsAsNodePoolInfo(eksNodeGroups []*eks.DescribeNodegroupOut
 		npi := clusters.NodePoolInfo{
 			Name:        ngName,
 			NodeCount:   int(*scaling.DesiredSize),
-			K8sVersion:  *ng.Version, //TODO: Is this available  per-NodeGroup? It is not in eksctl output
-			MachineType: mt,          //TODO Deal with missing instance types
+			K8sVersion:  *ng.Version,
+			MachineType: mt, //TODO Deal with missing instance types. What instance types are allowed in EKS?
 			DiskSizeGB:  int(*ng.DiskSize),
 		}
 
@@ -137,15 +140,17 @@ func addNodeGroupObjectsAsNodePoolInfo(eksNodeGroups []*eks.DescribeNodegroupOut
 	return nil
 }
 
-func clusterObjectToClusterInfo(eksClus eksctl.EKSCluster, loc, generatedBy string) *clusters.ClusterInfo {
+//TODO replace
+func clusterObjectToClusterInfo(clusterOutput *eks.DescribeClusterOutput, loc, generatedBy string) *clusters.ClusterInfo {
+	cluster := clusterOutput.Cluster
 	ci := &clusters.ClusterInfo{
 		Scope:       "",
 		Location:    loc,
-		Name:        eksClus.Name,
-		K8sVersion:  eksClus.Version,
+		Name:        *cluster.Name,
+		K8sVersion:  *cluster.Version,
 		GeneratedBy: generatedBy,
 		Cloud:       clusters.AWS,
-		Labels:      eksClus.Tags,
+		Labels:      util.StrPtrMapToStrMap(cluster.Tags),
 	}
 
 	return ci
@@ -154,15 +159,15 @@ func clusterObjectToClusterInfo(eksClus eksctl.EKSCluster, loc, generatedBy stri
 // List ...
 func (ca EKSClusterAccess) List(_, location string, tagFilter map[string]string) (listedClusters []*clusters.ClusterInfo, err error) {
 
-	tagsCsv := util.ToCommaSeparateKeyValuePairs(tagFilter)
-	listedClusterNames, err := eksctl.ListClusters(location, tagsCsv)
+	listedClusterNames, err := awssdk.DescribeClusters(location)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot list clusters")
 	}
 	listedClusters = make([]*clusters.ClusterInfo, 0)
 	unmatchedNames := make([]string, 0)
 	matchedNames := make([]string, 0)
-	for _, clusterName := range listedClusterNames {
+	for _, clusterOutput := range listedClusterNames {
+		clusterName := *clusterOutput.Cluster.Name
 		searchTemplate := &clusters.ClusterInfo{Cloud: clusters.AWS, Name: clusterName, Location: location, GeneratedBy: clusters.SearchTemplate}
 		ci, err := ca.Describe(searchTemplate)
 		if err != nil {
@@ -179,7 +184,7 @@ func (ca EKSClusterAccess) List(_, location string, tagFilter map[string]string)
 		listedClusters = append(listedClusters, ci)
 	}
 
-	log.Printf("In listing clusters, these matched the label filter %v; and these did not %v\n", matchedNames, unmatchedNames)
+	log.Printf("In listing EKS clusters, the label filter was %v. These matched %v; and these did not %v", tagFilter, matchedNames, unmatchedNames)
 
 	return listedClusters, nil
 }
@@ -190,30 +195,20 @@ func (ca EKSClusterAccess) GetSupportedK8sVersions(scope, location string) (vers
 
 }
 
-// MachineTypeByName ...
-// TODO Reduce  repetition of the MachineTypes code in EKS/AKS/GKE
-func MachineTypeByName(machineType string) machinetypes.MachineType {
-	mt, err := MachineTypes.Get(machineType)
-	if err != nil {
-		log.Println("cannot get " + machineType + "; " + err.Error())
-		return machinetypes.MachineType{}
-	}
-	return mt
-}
-
 // MachineTypes ...
-var MachineTypes *machinetypes.MachineTypeMap
+var MachineTypes *machinetypes.MachineTypes
 
 func init() {
-	var err error
-	MachineTypes, err = loadMachineTypes()
-
-	if err != nil && MachineTypes.Length() == 0 {
-		panic(fmt.Sprintf("cannot load machine types %v", err))
+	MachineTypes, err := loadMachineTypes()
+	if err != nil {
+		panic(fmt.Sprintf("cannot load EKS machine types %v", err))
+	}
+	if MachineTypes.Length() == 0 {
+		panic(fmt.Sprintf("cannot load EKS machine types %v", err))
 	}
 }
 
-func loadMachineTypes() (*machinetypes.MachineTypeMap, error) {
+func loadMachineTypes() (*machinetypes.MachineTypes, error) {
 	ret := machinetypes.NewMachineTypeMap()
 
 	fn := util.RootPath() + "/machine-types/aws-instance-types.csv"

@@ -7,15 +7,19 @@ import (
 	"strconv"
 )
 
+var regexMajorMinorAndOptionalPatch = regexp.MustCompile(`^\d+\.\d+(\.\d+)?`)
+var regexMajorMinorOnly = regexp.MustCompile(`^\d+\.\d+$`)
+var regexMajorMinorPfx = regexp.MustCompile(`^\d+\.\d+`)
+var regexMajorMinorAndDotBeforePatch = regexp.MustCompile(`^\d+\.\d+\.(\d+)`)
+
 // MajorMinorPatchVersion ...
 func MajorMinorPatchVersion(fullVersion string) (vers string, err error) {
-	re := regexp.MustCompile(`^\d+\.\d+(\.\d+)?`)
-	re2 := regexp.MustCompile(`^\d+\.\d+$`)
-	match := re.FindString(fullVersion)
+
+	match := regexMajorMinorAndOptionalPatch.FindString(fullVersion)
 	if match == "" {
 		return "", errors.New("No match on " + fullVersion)
 	}
-	majorMinorOnly := re2.FindString(fullVersion)
+	majorMinorOnly := regexMajorMinorOnly.FindString(fullVersion)
 	if majorMinorOnly != "" {
 		return match + ".0", nil
 	}
@@ -25,8 +29,7 @@ func MajorMinorPatchVersion(fullVersion string) (vers string, err error) {
 
 // MajorMinorVersion ...
 func MajorMinorVersion(fullVersion string) (vers string, err error) {
-	re := regexp.MustCompile(`^\d+\.\d+`)
-	match := re.FindString(fullVersion)
+	match := regexMajorMinorPfx.FindString(fullVersion)
 	if match == "" {
 		return "", errors.New("No match on " + fullVersion)
 	}
@@ -39,11 +42,9 @@ var NoPatchSpecified = -1
 
 // PatchVersion ...
 func PatchVersion(fullVersion string) (int, error) {
-	re := regexp.MustCompile(`^\d+\.\d+\.(\d+)?`)
-	match := re.FindStringSubmatch(fullVersion)
+	match := regexMajorMinorAndDotBeforePatch.FindStringSubmatch(fullVersion)
 	if match == nil {
-		re = regexp.MustCompile(`^\d+\.\d+$`)
-		match = re.FindStringSubmatch(fullVersion)
+		match = regexMajorMinorOnly.FindStringSubmatch(fullVersion)
 		if match != nil {
 			return NoPatchSpecified, nil //use -1 for nil, indicating no separate patch version
 		}

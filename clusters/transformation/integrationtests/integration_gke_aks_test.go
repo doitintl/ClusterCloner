@@ -2,10 +2,7 @@ package integrationtests
 
 import (
 	"clustercloner/clusters"
-	"clustercloner/clusters/clusteraccess"
 	"clustercloner/clusters/transformation"
-	"github.com/stretchr/testify/assert"
-	"strings"
 	"testing"
 )
 
@@ -14,55 +11,27 @@ func TestCreateGCPClusterFromFileThenCloneToAKS(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	var inputFile = "test-data/gke_clusters.json"
-	clustersFromFile, err := clusters.LoadFromFile(inputFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	clusterFromFile := clustersFromFile[0]
-	assert.Equal(t, 1, len(clustersFromFile), "we work with a single cluster in this test")
 
-	//create Cluster from file
-	createdGCPClusters, err := transformation.Clone(inputFile, "", "", "", clusterFromFile.Labels, clusters.GCP, scopeForTest, true, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	createdGCPCluster := createdGCPClusters[0]
-	if !strings.HasPrefix(createdGCPCluster.Name, clusterFromFile.Name) {
-		t.Fatalf("%s does not have %s as prefix", createdGCPCluster.Name, clusterFromFile.Name)
-	}
+	created := make([]*clusters.ClusterInfo, 0)
+	createdGCPClusters := cleanAndCreateClusterFromFile(t, "test-data/gke_clusters.json")
+	for _, createdGCPCluster := range createdGCPClusters {
 
-	// createdClusterByLabel the created files, by label
-	gkeAccess := clusteraccess.GetClusterAccess(clusterFromFile.Cloud)
-	createdClusterByLabel(t, clusterFromFile, 1)
-	createdAKSClusters, err := transformation.Clone("",
-		createdGCPCluster.Cloud,
-		createdGCPCluster.Scope,
-		createdGCPCluster.Location,
-		createdGCPCluster.Labels,
-		clusters.Azure,
-		scopeForTest,
-		true,
-		true,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	createdAKSCluster := createdAKSClusters[0]
-	createdClusterByLabel(t, createdAKSCluster, 1)
+		cloneOutput, err := transformation.Clone("",
+			createdGCPCluster.Cloud,
+			createdGCPCluster.Scope,
+			createdGCPCluster.Location,
+			createdGCPCluster.Labels,
+			clusters.Azure,
+			scopeForTest,
+			true,
+			true,
+		)
+		created = append(created, cloneOutput...)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	//Delete both
-	err = gkeAccess.Delete(createdGCPCluster)
-	if err != nil {
-		t.Fatal(err)
 	}
-	createdClusterByLabel(t, createdGCPCluster, 0)
-
-	var aksAccess = clusteraccess.GetClusterAccess(createdAKSCluster.Cloud)
-	err = aksAccess.Delete(createdAKSCluster)
-	if err != nil {
-		t.Fatal(err)
-	}
-	createdClusterByLabel(t, createdAKSCluster, 0)
-
+	deleteAllMatchingByLabel(t, createdGCPClusters)
+	deleteAllMatchingByLabel(t, created)
 }

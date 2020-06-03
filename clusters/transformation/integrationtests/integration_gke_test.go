@@ -9,6 +9,6 @@ func TestCreateGCPClusterFromFile(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	var inputFile = "test-data/gke_clusters.json"
-	execTestClusterFromFile(t, inputFile)
+
+	execTestClusterFromFile(t, "test-data/gke_clusters.json")
 }

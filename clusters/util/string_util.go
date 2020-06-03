@@ -13,6 +13,8 @@ func init() {
 
 }
 
+var notLegalLabelChar = regexp.MustCompile("[^0-9A-Za-z_]")
+
 // RandomWord , lowercase, ASCII-only, max 7 letters. Meant for human-memorable identifers.
 func RandomWord() string {
 	babbler := babble.NewBabbler()
@@ -21,10 +23,13 @@ func RandomWord() string {
 	for len(word) > 7 {
 		word = babbler.Babble()
 	}
+	return ToLowerCaseAlphaNumDashAndUnderscore(word)
+}
+
+// ToLowerCaseAlphaNumDashAndUnderscore ...
+func ToLowerCaseAlphaNumDashAndUnderscore(word string) string {
 	wordLC := strings.ToLower(word)
-	re := regexp.MustCompile("[[:^ascii:]]")
-	wordASCII := re.ReplaceAllLiteralString(wordLC, "")
-	return wordASCII
+	return notLegalLabelChar.ReplaceAllLiteralString(wordLC, "")
 }
 
 // RandomAlphaNumSequence ...

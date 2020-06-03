@@ -5,7 +5,6 @@ import (
 	"clustercloner/clusters/clouds/aks/access"
 	transformutil "clustercloner/clusters/transformation/util"
 	clusterutil "clustercloner/clusters/util"
-	"fmt"
 	"github.com/pkg/errors"
 )
 
@@ -53,7 +52,7 @@ func (*AKSTransformer) LocationCloudToHub(loc string) (string, error) {
 	}
 	hubValue, wasinMap := mapping[loc]
 	if !wasinMap {
-		return "", errors.New(fmt.Sprintf("Not found: %s", loc))
+		return "", errors.Errorf("Not found: %s", loc)
 	}
 	return hubValue, nil
 }
@@ -80,10 +79,10 @@ func (AKSTransformer) LocationHubToCloud(location string) (string, error) {
 		return "", errors.Wrap(err, "cannot get LocationsCloudToHub Azure")
 
 	}
-	hubToAz := clusterutil.ReverseStrMap(azToHub)
+	hubToAz := clusterutil.ReverseStrMap(azToHub) //TODO make it deterministic
 	azLoc, ok := hubToAz[location]
 	if !ok {
-		return "", errors.New(fmt.Sprintf("Cannot find %s", location))
+		return "", errors.Errorf("Cannot find %s", location)
 	}
 	return azLoc, nil
 

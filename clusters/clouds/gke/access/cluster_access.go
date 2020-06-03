@@ -29,14 +29,14 @@ func (ca GKEClusterAccess) Delete(ci *clusters.ClusterInfo) error {
 		return errors.Wrap(err, "cannot make client")
 	}
 	req := containerpb.DeleteClusterRequest{Name: projectLocationClusterPath(ci.Scope, ci.Location, ci.Name)}
-	log.Println("About to delete ", ci.Name)
+	log.Println("About to delete GKE cluster", ci.Name)
 
 	op, err := client.DeleteCluster(bkgdCtx, &req)
 	if err != nil {
 		return errors.Wrap(err, "cannot delete")
 	}
 
-	err = waitForClusterDeletion(ci.Scope, ci.Location, op.Name)
+	err = waitForClusterDeletion(ci.Scope, ci.Location, ci.Name, op.Name)
 	if err != nil {
 		return errors.Wrap(err, "waiting for cluster deletion")
 	}
@@ -117,7 +117,7 @@ func (ca GKEClusterAccess) List(project, location string, labelFilter map[string
 		}
 		ret = append(ret, foundClusterInfo)
 	}
-	log.Printf("In listing clusters, these matched the label filter %v; and these did not %v", matchedNames, unmatchedNames)
+	log.Printf("In listing GKE clusters, the label filter was %v. These matched %v; and these did not %v", labelFilter, matchedNames, unmatchedNames)
 
 	return ret, nil
 
@@ -137,7 +137,10 @@ func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) (*clu
 
 	var nodePools = clus.GetNodePools()
 	for _, np := range nodePools {
-		machineType := MachineTypeByName(np.GetConfig().MachineType)
+		machineType, err := MachineTypes.Get(np.GetConfig().MachineType)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot get machien type "+np.GetConfig().MachineType)
+		}
 		if machineType.Name == "" { //zero-object
 			return nil, errors.New("cannot find machine type " + np.GetConfig().MachineType)
 		}
@@ -230,7 +233,7 @@ Waiting:
 			log.Printf("Cluster %s now running", createThis.Name)
 			break Waiting
 		case containerpb.Cluster_ERROR, containerpb.Cluster_STOPPING, containerpb.Cluster_DEGRADED:
-			return nil, errors.New(fmt.Sprintf("Cluster in error status %s", status))
+			return nil, errors.Errorf("Cluster in error status %s", status)
 		default:
 			panic(fmt.Sprintf("unknown status %s", status))
 		}
@@ -265,23 +268,23 @@ func getOperation(project, location, opName string) (*containerpb.Operation, err
 
 	return operation, nil
 }
-func waitForClusterDeletion(project, location, opName string) error {
+func waitForClusterDeletion(project, location, clusterName, opName string) error {
 	var counter = -1
-	log.Println("Waiting for deletion; it may take a while")
+	log.Println("Waiting for deletion of " + clusterName + "; it may take a while")
 	var status containerpb.Operation_Status
 Waiting:
 	for {
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second)
 		counter++
 		op, err := getOperation(project, location, opName)
 		if err != nil {
-			return errors.Wrap(err, "cannot get operation to wait for shutdown")
+			return errors.Wrap(err, "cannot get operation to wait for shutdown of "+clusterName)
 		}
 		status = op.Status
 		switch status {
 		case containerpb.Operation_STATUS_UNSPECIFIED, containerpb.Operation_RUNNING, containerpb.Operation_PENDING:
 			if counter%10 == 0 {
-				log.Println("Waiting for deletion, operation status", status)
+				log.Println("Waiting for deletion of "+clusterName+", operation status", status)
 			}
 			continue
 		case containerpb.Operation_ABORTING:
@@ -305,29 +308,19 @@ func init() {
 	}
 }
 
-// MachineTypeByName ...
-func MachineTypeByName(machineType string) machinetypes.MachineType {
-	mt, err := MachineTypes.Get(machineType)
-	if err != nil {
-		log.Println("cannot get " + machineType + "; " + err.Error())
-		return machinetypes.MachineType{}
-	}
-	return mt
-}
-
 // MachineTypes ...
-var MachineTypes *machinetypes.MachineTypeMap
+var MachineTypes *machinetypes.MachineTypes
 
 func init() {
-	var err error
-	MachineTypes, err = loadMachineTypes()
-
-	if err != nil && MachineTypes.Length() == 0 {
-		panic(fmt.Sprintf("cannot load machine types %v", err))
+	MachineTypes, err := loadMachineTypes()
+	if err != nil {
+		panic(fmt.Sprintf("cannot load GKE machine types %v", err))
+	}
+	if MachineTypes.Length() == 0 {
+		panic(fmt.Sprintf("cannot load GKE machine types %v", err))
 	}
 }
-
-func loadMachineTypes() (*machinetypes.MachineTypeMap, error) {
+func loadMachineTypes() (*machinetypes.MachineTypes, error) {
 	ret := machinetypes.NewMachineTypeMap()
 	fn := clusterutil.RootPath() + "/machine-types/gke-machine-types.csv"
 	csvfile, err := os.Open(fn)
@@ -395,7 +388,7 @@ func (ca GKEClusterAccess) GetSupportedK8sVersions(scope, location string) (vers
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot GetServerConfig")
 		}
-		supportedVersions = resp.ValidMasterVersions[:] //TODO use .ValidNodeVersions to set  versions  for    node pools, not just cluster
+		supportedVersions = resp.ValidMasterVersions[:]
 
 	}
 	return supportedVersions, nil

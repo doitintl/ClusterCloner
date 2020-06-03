@@ -5,7 +5,6 @@ import (
 	"clustercloner/clusters/clouds/eks/access"
 	transformutil "clustercloner/clusters/transformation/util"
 	clusterutil "clustercloner/clusters/util"
-	"fmt"
 	"github.com/pkg/errors"
 )
 
@@ -66,7 +65,7 @@ func (*EKSTransformer) LocationCloudToHub(loc string) (string, error) {
 	}
 	hubValue, wasinMap := mapping[loc]
 	if !wasinMap {
-		return "", errors.New(fmt.Sprintf("Not found: %s", loc))
+		return "", errors.Errorf("Not found: %s", loc)
 	}
 	return hubValue, nil
 }
@@ -77,10 +76,10 @@ func (EKSTransformer) LocationHubToCloud(location string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "cannot get LocationsCloudToHub AWS")
 	}
-	hubToAws := clusterutil.ReverseStrMap(awsToHub)
+	hubToAws := clusterutil.ReverseStrMap(awsToHub) // //TODO make it deterministic
 	azLoc, ok := hubToAws[location]
 	if !ok {
-		return "", errors.New(fmt.Sprintf("Cannot find %s", location))
+		return "", errors.Errorf("Cannot find %s", location)
 	}
 	return azLoc, nil
 

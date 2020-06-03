@@ -13,7 +13,7 @@ import (
 
 // TransformSpoke ...
 func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLoc,
-	clusterK8sVersion string, machineTypes *machinetypes.MachineTypeMap,
+	clusterK8sVersion string, machineTypes *machinetypes.MachineTypes,
 	adjustK8sVersions bool) (*clusters.ClusterInfo, error) {
 
 	var ret = &clusters.ClusterInfo{
@@ -38,7 +38,7 @@ func TransformSpoke(in *clusters.ClusterInfo, outputScope, targetCloud, targetLo
 		}
 		zero := clusters.NodePoolInfo{}
 		if nodePoolOut == zero {
-			return nil, errors.New(fmt.Sprintf("Empty result of converting %v", nodePoolIn))
+			return nil, errors.Errorf("Empty result of converting %v", nodePoolIn)
 		}
 
 		ret.AddNodePool(nodePoolOut)

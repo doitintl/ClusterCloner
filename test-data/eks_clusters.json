@@ -7,8 +7,8 @@
     "K8sVersion": "1.15",
     "GeneratedBy": "Created",
     "Labels": {
-      "for-testing-please-delete": "true",
-      "also-for-testing-please-delete": "true"
+      "for-testing-only": "true",
+      "for-testing-only-2": "true"
     },
     "NodePools": [
       {

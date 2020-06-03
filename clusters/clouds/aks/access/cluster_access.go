@@ -126,7 +126,7 @@ func (ca AKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 		if strings.Contains(errS, "already exists, proceeding") ||
 			(strings.Contains(errS, "Invalid resource group location") &&
 				strings.Contains(errS, "The Resource group already exists in location")) {
-			log.Printf("Group %s already exists: %v", groupName, err)
+			log.Printf("Group %s already exists; no need to create", groupName)
 		} else {
 			return nil, errors.Wrap(err, "error creating group")
 		}
@@ -180,7 +180,6 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 			VMSize:           containerservice.VMSizeTypes(npi.MachineType.Name),
 			OsDiskSizeGB:     to.Int32Ptr(int32(npi.DiskSizeGB)),
 			ScaleSetPriority: scaleSetPriority,
-			//TODO use the npi.K8sVersion. Does Az support that?
 		}
 		agPoolProfiles = append(agPoolProfiles, agPoolProfile)
 	}
@@ -224,7 +223,8 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 	log.Printf("About to create Azure Cluster %s; wait for completion", createThis.Name)
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
-		return containerservice.ManagedCluster{}, fmt.Errorf("cannot get the AKS create or update future response: %v", err)
+		return containerservice.ManagedCluster{}, fmt.Errorf("cannot WaitForCompletion on the response from CreateOrUpdate: %v", err)
+
 	}
 	clusterCreated, err = future.Result(aksClient)
 	if err != nil {
@@ -250,7 +250,7 @@ func (ca AKSClusterAccess) List(subscription, location string, labelFilter map[s
 	ret := make([]*clusters.ClusterInfo, 0)
 
 	clusterList, err := aksClient.List(ctx)
-	// TODO check if we need paging
+	// TODO Check if we need paging
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot list")
 	}
@@ -276,7 +276,7 @@ func (ca AKSClusterAccess) List(subscription, location string, labelFilter map[s
 		ret = append(ret, foundCluster)
 
 	}
-	log.Printf("In listing clusters, these matched the label filter %v; and these did not %v\n", matchedNames, unmatchedNames)
+	log.Printf("In listing AKS clusters, the label filter was %v. These matched  %v; and these did not %v", labelFilter, matchedNames, unmatchedNames)
 
 	return ret, nil
 }
@@ -297,14 +297,17 @@ func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, 
 	for _, agentPoolProfile := range *props.AgentPoolProfiles {
 		var scaleSetPriority = agentPoolProfile.ScaleSetPriority
 		var spot = scaleSetPriority == containerservice.Spot
-		machineTypeByName := MachineTypeByName(fmt.Sprintf("%v", agentPoolProfile.VMSize))
-		if machineTypeByName.Name == "" {
-			return nil, errors.New(fmt.Sprintf("cannot find machine type %v", agentPoolProfile.VMSize))
+		machType, err := MachineTypes.Get(fmt.Sprintf("%v", agentPoolProfile.VMSize))
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("cannot get machine type %v", agentPoolProfile.VMSize))
+		}
+		if machType.Name == "" {
+			return nil, errors.Errorf("cannot find machine type %v", agentPoolProfile.VMSize)
 		}
 		npi := clusters.NodePoolInfo{
 			Name:        *agentPoolProfile.Name,
 			NodeCount:   int(*agentPoolProfile.Count),
-			MachineType: machineTypeByName,
+			MachineType: machType,
 			DiskSizeGB:  int(*agentPoolProfile.OsDiskSizeGB),
 			K8sVersion:  nodePoolK8sVersion,
 			Preemptible: spot,
@@ -344,29 +347,20 @@ func (ca AKSClusterAccess) GetSupportedK8sVersions(scope, location string) ([]st
 	return supportedVersions, nil
 }
 
-// MachineTypeByName ...
-func MachineTypeByName(machineType string) machinetypes.MachineType {
-	mt, err := MachineTypes.Get(machineType)
-	if err != nil {
-		log.Println("cannot get " + machineType + "; " + err.Error())
-		return machinetypes.MachineType{}
-	}
-	return mt
-}
-
 // MachineTypes ...
-var MachineTypes *machinetypes.MachineTypeMap
+var MachineTypes *machinetypes.MachineTypes
 
 func init() {
-	var err error
-	MachineTypes, err = loadMachineTypes()
-
-	if err != nil && MachineTypes.Length() == 0 {
-		panic(fmt.Sprintf("cannot load machine types %v", err))
+	MachineTypes, err := loadMachineTypes()
+	if err != nil {
+		panic(fmt.Sprintf("cannot load AKS machine types %v", err))
+	}
+	if MachineTypes.Length() == 0 {
+		panic(fmt.Sprintf("cannot load AKS machine types %v", err))
 	}
 }
 
-func loadMachineTypes() (*machinetypes.MachineTypeMap, error) {
+func loadMachineTypes() (*machinetypes.MachineTypes, error) {
 	ret := machinetypes.NewMachineTypeMap()
 
 	fn := clusterutil.RootPath() + "/machine-types/aks-vm-sizes.csv"

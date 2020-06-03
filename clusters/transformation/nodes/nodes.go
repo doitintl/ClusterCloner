@@ -12,7 +12,7 @@ import (
 type MachineTypeConverter func(mt machinetypes.MachineType) machinetypes.MachineType
 
 // TransformNodePool ...
-func TransformNodePool(np clusters.NodePoolInfo, machineTypes *machinetypes.MachineTypeMap) (clusters.NodePoolInfo, error) {
+func TransformNodePool(np clusters.NodePoolInfo, machineTypes *machinetypes.MachineTypes) (clusters.NodePoolInfo, error) {
 	nodePoolK8sVersion, err := util.MajorMinorPatchVersion(np.K8sVersion)
 	if err != nil {
 		return clusters.NodePoolInfo{}, errors.New("cannot convert K8s Version \"" + np.K8sVersion + "\" for node pool")
@@ -33,7 +33,7 @@ func TransformNodePool(np clusters.NodePoolInfo, machineTypes *machinetypes.Mach
 }
 
 // FindMatchingMachineType chooses the weakest machine which equals or exceeeds in the inputMachineType in CPU amd RAM. If there are several some such, one is chosen arbitrarily
-func FindMatchingMachineType(inputMachineType machinetypes.MachineType, machineTypes *machinetypes.MachineTypeMap) machinetypes.MachineType {
+func FindMatchingMachineType(inputMachineType machinetypes.MachineType, machineTypes *machinetypes.MachineTypes) machinetypes.MachineType {
 	if machineTypes == nil { //Transforming to Hub, no change
 		return inputMachineType
 	}

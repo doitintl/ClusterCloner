@@ -74,7 +74,7 @@ func CloneFromCli(cliCtx *cli.Context) ([]*clusters.ClusterInfo, error) {
 
 // Clone ...
 func Clone(inputFile string, inputCloud string, inputScope string, inputLocation string, labelFilter map[string]string, outputCloud string, outputScope string, randSfx bool, shouldCreate bool) ([]*clusters.ClusterInfo, error) {
-	if labelFilter == nil { // enforce non-nil labelFilter to make sure we copy it. Here, nil is acceptable
+	if labelFilter == nil { // We usually enforce non-nil labelFilter to make sure we copy it. Here, nil is acceptable
 		labelFilter = make(map[string]string)
 	}
 	inputClusterInfos, err := getInputClusters(inputFile, inputCloud, inputScope, inputLocation, labelFilter)
@@ -280,14 +280,12 @@ func assertSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster strin
 }
 
 func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string, randSfx bool) (c *clusters.ClusterInfo, err error) {
+	var out *clusters.ClusterInfo
 	if in.Cloud == toCloud { //don't use hub
 		t := getSameCloudTransformer(toCloud)
-		out, err := t.HubToCloud(in, outputScope)
+		out, err = t.HubToCloud(in, outputScope)
 		if err != nil {
 			return nil, errors.Wrap(err, "Error in transforming to same cloud")
-		}
-		if out == nil {
-			panic("should not be nil")
 		}
 		var sfx string
 		if randSfx {
@@ -296,16 +294,18 @@ func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string
 			sfx = "copy"
 		}
 		out.Name = out.Name + "-" + sfx
-		return out, nil
-	} //two different clouds;so we use use hub
-	hub, err := toHubFormat(in)
-	if err != nil || hub == nil {
-		return nil, errors.Wrap(err, "error in transforming toHubFormat")
+	} else { //two different clouds;so we use use hub
+		hub, err := toHubFormat(in)
+		if err != nil || hub == nil {
+			return nil, errors.Wrap(err, "error in transforming toHubFormat")
+		}
+		out, err = fromHubFormat(hub, toCloud, outputScope, randSfx)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot convert from Hub format")
+		}
 	}
-	out, err := fromHubFormat(hub, toCloud, outputScope, randSfx)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot convert from Hub format")
-	}
+
+	out.Labels["clustercloner-source-cloud"] = clusterutil.ToLowerCaseAlphaNumDashAndUnderscore(in.Cloud)
 	out.GeneratedBy = clusters.Transformation
 	return out, nil
 
@@ -327,7 +327,7 @@ func toHubFormat(input *clusters.ClusterInfo) (ret *clusters.ClusterInfo, err er
 
 func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string, randSuffix bool) (ret *clusters.ClusterInfo, err error) {
 	if hub.Cloud != clusters.Hub {
-		return nil, errors.New(fmt.Sprintf("wrong Cloud %s", hub.Cloud))
+		return nil, errors.Errorf("wrong Cloud %s", hub.Cloud)
 	}
 
 	var transformer = getTransformer(toCloud)
