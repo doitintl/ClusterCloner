@@ -17,16 +17,17 @@ func copyNodePools(in *clusters.ClusterInfo) []clusters.NodePoolInfo {
 	return copyNPs
 }
 
-func copyClusterInfo(in *clusters.ClusterInfo) clusters.ClusterInfo {
-	retVal := *in //copy
-	retVal.Labels = util.CopyStringMap(in.Labels)
-	retVal.NodePools = copyNodePools(in) //array isa pointer type, needs copying
-	return retVal
+// CopyClusterInfo ...
+func CopyClusterInfo(in *clusters.ClusterInfo) clusters.ClusterInfo {
+	ret := *in //copy
+	ret.Labels = util.CopyStringMap(in.Labels)
+	ret.NodePools = copyNodePools(in) //array isa pointer type, needs copying
+	return ret
 }
 
 // CloudToHub ...
 func (it *IdentityTransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
-	ret := copyClusterInfo(in)
+	ret := CopyClusterInfo(in)
 	ret.SourceCluster = in
 	ret.Cloud = clusters.Hub
 	ret.GeneratedBy = clusters.Transformation
@@ -35,7 +36,7 @@ func (it *IdentityTransformer) CloudToHub(in *clusters.ClusterInfo) (*clusters.C
 
 // HubToCloud ...
 func (it *IdentityTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope string) (*clusters.ClusterInfo, error) {
-	ret := copyClusterInfo(in)
+	ret := CopyClusterInfo(in)
 	ret.SourceCluster = in
 	ret.GeneratedBy = clusters.Transformation
 	if it.TargetCloud == "" {

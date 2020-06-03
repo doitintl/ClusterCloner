@@ -137,7 +137,7 @@ func clusterObjectToClusterInfo(clus *containerpb.Cluster, project string) (*clu
 
 	var nodePools = clus.GetNodePools()
 	for _, np := range nodePools {
-		machineType, err := MachineTypes.Get(np.GetConfig().MachineType)
+		machineType, err := gkeMachineTypes.Get(np.GetConfig().MachineType)
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot get machien type "+np.GetConfig().MachineType)
 		}
@@ -308,15 +308,20 @@ func init() {
 	}
 }
 
-// MachineTypes ...
-var MachineTypes *machinetypes.MachineTypes
+// gkeMachineTypes ...
+var gkeMachineTypes *machinetypes.MachineTypes
 
+// GetMachineTypes ...
+func GetMachineTypes() *machinetypes.MachineTypes {
+	return gkeMachineTypes
+}
 func init() {
-	MachineTypes, err := loadMachineTypes()
+	var err error
+	gkeMachineTypes, err = loadMachineTypes()
 	if err != nil {
 		panic(fmt.Sprintf("cannot load GKE machine types %v", err))
 	}
-	if MachineTypes.Length() == 0 {
+	if gkeMachineTypes.Length() == 0 {
 		panic(fmt.Sprintf("cannot load GKE machine types %v", err))
 	}
 }

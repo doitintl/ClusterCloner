@@ -54,7 +54,7 @@ func (tr *GKETransformer) HubToCloud(in *clusters.ClusterInfo, outputScope strin
 	if err != nil {
 		return nil, errors.Wrap(err, "error in converting location")
 	}
-	ret, err := transformutil.TransformSpoke(in, outputScope, clusters.GCP, loc, in.K8sVersion, access.MachineTypes, true)
+	ret, err := transformutil.TransformSpoke(in, outputScope, clusters.GCP, loc, in.K8sVersion, access.GetMachineTypes(), true)
 
 	return ret, err
 }
@@ -93,7 +93,7 @@ func (tr *GKEToGKETransformer) HubToCloud(in *clusters.ClusterInfo, outputScope 
 	if err != nil {
 		return nil, errors.Wrap(err, "error in converting location")
 	}
-	ret, err := transformutil.TransformSpoke(in, outputScope, clusters.GCP, loc, in.K8sVersion, access.MachineTypes, true)
+	ret, err := transformutil.TransformSpoke(in, outputScope, clusters.GCP, loc, in.K8sVersion, access.GetMachineTypes(), true)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not TransformSpoke")
 	}

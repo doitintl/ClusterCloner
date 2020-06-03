@@ -28,9 +28,7 @@ func execReplaceStdOutOrErr(t *testing.T, isStdOut bool) {
 	inputString := "tempfile content"
 	fmt.Print(inputString)
 	read, err := ioutil.ReadFile(tempFile)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	readS := string(read)
 
 	RestoreStdoutOrError(tempFile, old, isStdOut)

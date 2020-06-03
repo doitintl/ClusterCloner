@@ -36,7 +36,7 @@ func (tr *AKSTransformer) HubToCloud(in *clusters.ClusterInfo, outputScope strin
 	if err != nil {
 		return nil, errors.Wrap(err, "error in converting location")
 	}
-	ret, err := transformutil.TransformSpoke(in, outputScope, clusters.Azure, loc, in.K8sVersion, access.MachineTypes, true)
+	ret, err := transformutil.TransformSpoke(in, outputScope, clusters.Azure, loc, in.K8sVersion, access.GetMachineTypes(), true)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot TransformSpoke HubToCloud AKS")

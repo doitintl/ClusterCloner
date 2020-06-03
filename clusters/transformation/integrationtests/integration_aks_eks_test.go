@@ -5,12 +5,12 @@ import (
 	"testing"
 )
 
-func TestCreateGCPClusterFromFileThenCloneToAzure(t *testing.T) {
+func TestCreateAzureClusterFromFileThenCloneToAWS(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
 
-	file := "test-data/gke_clusters.json"
-	outputCloud := clusters.Azure
+	file := "test-data/aks_clusters.json"
+	outputCloud := clusters.AWS
 	runClusterCloning(t, file, outputCloud)
 }

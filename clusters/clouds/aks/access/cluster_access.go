@@ -297,7 +297,7 @@ func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, 
 	for _, agentPoolProfile := range *props.AgentPoolProfiles {
 		var scaleSetPriority = agentPoolProfile.ScaleSetPriority
 		var spot = scaleSetPriority == containerservice.Spot
-		machType, err := MachineTypes.Get(fmt.Sprintf("%v", agentPoolProfile.VMSize))
+		machType, err := aksMachineTypes.Get(fmt.Sprintf("%v", agentPoolProfile.VMSize))
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("cannot get machine type %v", agentPoolProfile.VMSize))
 		}
@@ -347,15 +347,21 @@ func (ca AKSClusterAccess) GetSupportedK8sVersions(scope, location string) ([]st
 	return supportedVersions, nil
 }
 
-// MachineTypes ...
-var MachineTypes *machinetypes.MachineTypes
+// aksMachineTypes ...
+var aksMachineTypes *machinetypes.MachineTypes
+
+// GetMachineTypes ...
+func GetMachineTypes() *machinetypes.MachineTypes {
+	return aksMachineTypes
+}
 
 func init() {
-	MachineTypes, err := loadMachineTypes()
+	var err error
+	aksMachineTypes, err = loadMachineTypes()
 	if err != nil {
 		panic(fmt.Sprintf("cannot load AKS machine types %v", err))
 	}
-	if MachineTypes.Length() == 0 {
+	if aksMachineTypes == nil || aksMachineTypes.Length() == 0 {
 		panic(fmt.Sprintf("cannot load AKS machine types %v", err))
 	}
 }

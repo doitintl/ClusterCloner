@@ -114,7 +114,7 @@ func addNodeGroupObjectsAsNodePoolInfo(eksNodeGroups []*eks.DescribeNodegroupOut
 
 		}
 		instanceType := *ng.InstanceTypes[0]
-		mt, err := MachineTypes.Get(instanceType) //TODO support multi-instance-type NG
+		mt, err := GetMachineTypes().Get(instanceType) //TODO support multi-instance-type NG
 		if err != nil {
 			return errors.Wrap(err, "cannot get instance type "+instanceType)
 		}
@@ -196,14 +196,19 @@ func (ca EKSClusterAccess) GetSupportedK8sVersions(scope, location string) (vers
 }
 
 // MachineTypes ...
-var MachineTypes *machinetypes.MachineTypes
+var eksMachineTypes *machinetypes.MachineTypes
 
+// GetMachineTypes ...
+func GetMachineTypes() *machinetypes.MachineTypes {
+	return eksMachineTypes
+}
 func init() {
-	MachineTypes, err := loadMachineTypes()
+	var err error
+	eksMachineTypes, err = loadMachineTypes()
 	if err != nil {
 		panic(fmt.Sprintf("cannot load EKS machine types %v", err))
 	}
-	if MachineTypes.Length() == 0 {
+	if eksMachineTypes.Length() == 0 {
 		panic(fmt.Sprintf("cannot load EKS machine types %v", err))
 	}
 }

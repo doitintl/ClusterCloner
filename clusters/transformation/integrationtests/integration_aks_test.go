@@ -10,6 +10,6 @@ func TestCreateAzureClusterFromFile(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 	}
 
-	execTestClusterFromFile(t, "test-data/aks_clusters.json")
+	creanCreateDeleteCluster(t, "test-data/aks_clusters.json")
 
 }

@@ -153,7 +153,7 @@ func transform(inputClusterInfos []*clusters.ClusterInfo, outputCloud string, ou
 		if outputClusterInfo == nil {
 			panic("should not be nil")
 		}
-		assertSourceCluster(outputClusterInfo, clusters.Transformation)
+		validateSourceCluster(outputClusterInfo, clusters.Transformation)
 		transformationOutput = append(transformationOutput, outputClusterInfo)
 
 	}
@@ -216,28 +216,29 @@ func createClusters0( /*immutable*/ createThese []*clusters.ClusterInfo) (create
 	return createdClusters, createdIndexes
 }
 
-func createCluster(createThis *clusters.ClusterInfo) (createdClusterInfo *clusters.ClusterInfo, err error) {
+func createCluster(createThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
 	var ca = clusteraccess.GetClusterAccess(createThis.Cloud)
 	if ca == nil {
 		return nil, errors.New("cannot create ClusterAccess")
 	}
-	created, err := ca.Create(createThis)
+	created, err = ca.Create(createThis)
 	if err != nil {
-		log.Println("error creating cluster", err)
-	} else {
-		assertSourceCluster(created, clusters.Created)
+		return nil, errors.Wrap(err, "error creating cluster "+createThis.Name)
 	}
+	validateSourceCluster(created, clusters.Created)
+
 	return created, nil
 }
 
-func assertSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster string) {
-	var expectedGenByForSource []string = nil
+func validateSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster string) {
 	if ci.GeneratedBy != expectedGenByForCluster {
-		panic(fmt.Sprintf("Actual %s != expected %s", ci.GeneratedBy, expectedGenByForCluster))
+		log.Printf("Error: Actual %s != expected %s", ci.GeneratedBy, expectedGenByForCluster)
 	}
 	if ci.Labels == nil {
 		panic("Must initialize Labels")
 	}
+
+	var expectedGenByForSource []string = nil
 	switch ci.GeneratedBy {
 	case clusters.Mock:
 		expectedGenByForSource = []string{""}
@@ -270,10 +271,10 @@ func assertSourceCluster(ci *clusters.ClusterInfo, expectedGenByForCluster strin
 		actualIsExpected = clusterutil.ContainsStr(expectedGenByForSource, actual)
 	}
 	if !actualIsExpected {
-		panic(fmt.Sprintf("unexpected GeneratedBy for SourceCluster: \"%s\" is not one of \"%s\"\n%s", actual, expectedGenByForSource, clusterutil.ToJSON(ci)))
+		log.Printf("unexpected GeneratedBy for SourceCluster: \"%s\" is not one of \"%s\"\n%s", actual, expectedGenByForSource, clusterutil.ToJSON(ci))
 	} else {
 		if sourceCluster != nil {
-			assertSourceCluster(sourceCluster, sourceCluster.GeneratedBy)
+			validateSourceCluster(sourceCluster, sourceCluster.GeneratedBy)
 		}
 	}
 

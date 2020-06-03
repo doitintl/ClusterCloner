@@ -15,9 +15,7 @@ import (
 func TestTransformAzureToGCP(t *testing.T) {
 	scope, azure := getSampleInputAKSCluster(t)
 	gcp, err := transformCloudToCloud(azure, clusters.GCP, scope, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	if !strings.HasPrefix(gcp.Location, "us-west1") {
 		t.Fatal(gcp.Location)
 	}
@@ -49,7 +47,7 @@ func TestTransformAzureToGCP(t *testing.T) {
 
 func getSampleInputAKSCluster(t *testing.T) (scope string, aksCluster *clusters.ClusterInfo) {
 	scope = "sample-scope"
-	machineType1ByName, err := accessaks.MachineTypes.Get("Standard_D32s_v3")
+	machineType1ByName, err := accessaks.GetMachineTypes().Get("Standard_D32s_v3")
 	assert.Nil(t, err)
 	assert.NotEqual(t, machineType1ByName.Name, "")
 	npi := clusters.NodePoolInfo{
@@ -60,7 +58,7 @@ func getSampleInputAKSCluster(t *testing.T) (scope string, aksCluster *clusters.
 		DiskSizeGB:  10,
 		Preemptible: true,
 	}
-	machineType2ByName, err := accessaks.MachineTypes.Get("Standard_A2_v2")
+	machineType2ByName, err := accessaks.GetMachineTypes().Get("Standard_A2_v2")
 	assert.Nil(t, err)
 	assert.NotEqual(t, machineType2ByName.Name, "")
 	npi2 := clusters.NodePoolInfo{
@@ -91,9 +89,7 @@ func getSampleInputAKSCluster(t *testing.T) (scope string, aksCluster *clusters.
 func TestTransformGCPToAzure(t *testing.T) {
 	gcpIn := sampleInputGCPCluster(t)
 	azOut, err := transformCloudToCloud(gcpIn, clusters.Azure, gcpIn.Scope, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	if !strings.HasPrefix(azOut.Location, "centralus") {
 		t.Fatal(azOut.Location)
 	}
@@ -135,7 +131,7 @@ func TestTransformGCPToAzure(t *testing.T) {
 	}
 	found := false
 	for _, mTypeName := range expectedOutputMachineTypeNames {
-		expectedMachineType, err := accessaks.MachineTypes.Get(mTypeName)
+		expectedMachineType, err := accessaks.GetMachineTypes().Get(mTypeName)
 		assert.Nil(t, err)
 		if expectedMachineType == mtOut {
 			found = true
@@ -151,9 +147,7 @@ func TestTransformGCPToAzure(t *testing.T) {
 func TestTransformGCPToAWS(t *testing.T) {
 	gcpIn := sampleInputGCPCluster(t)
 	awsOut, err := transformCloudToCloud(gcpIn, clusters.AWS, gcpIn.Scope, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	assert.Equal(t, "us-east-2", awsOut.Location)
 	assert.Equal(t, clusters.AWS, awsOut.Cloud)
 
@@ -191,9 +185,7 @@ func TestTransformGCPToAWS(t *testing.T) {
 func TestTransformAWSToAzure(t *testing.T) {
 	awsIn := sampleInputAWSCluster(t)
 	azOut, err := transformCloudToCloud(awsIn, clusters.Azure, awsIn.Scope, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	if !strings.HasPrefix(azOut.Location, "centralus") {
 		t.Fatal(azOut.Location)
 	}
@@ -246,7 +238,7 @@ func sampleInputAWSCluster(t *testing.T) *clusters.ClusterInfo {
 
 	scope := "sample-project"
 	inputMachTypeFirstNode := "c3.2xlarge"
-	machTypeByName, err := accesseks.MachineTypes.Get(inputMachTypeFirstNode)
+	machTypeByName, err := accesseks.GetMachineTypes().Get(inputMachTypeFirstNode)
 	assert.Nil(t, err)
 	if machTypeByName.Name == "" {
 		t.Fatal("cannot find machine type " + inputMachTypeFirstNode)
@@ -259,7 +251,7 @@ func sampleInputAWSCluster(t *testing.T) *clusters.ClusterInfo {
 		DiskSizeGB:  10,
 		Preemptible: true,
 	}
-	machTypeByName2, err := accesseks.MachineTypes.Get("c3.4xlarge")
+	machTypeByName2, err := accesseks.GetMachineTypes().Get("c3.4xlarge")
 	assert.Nil(t, err)
 	if machTypeByName2.Name == "" {
 		t.Fatal("cannot find machine type")
@@ -292,7 +284,7 @@ func sampleInputAWSCluster(t *testing.T) *clusters.ClusterInfo {
 func sampleInputGCPCluster(t *testing.T) *clusters.ClusterInfo {
 	scope := "sample-project"
 	inputMachTypeFirstNode := "e2-highcpu-16"
-	machTypeByName1, err := accessgke.MachineTypes.Get(inputMachTypeFirstNode)
+	machTypeByName1, err := accessgke.GetMachineTypes().Get(inputMachTypeFirstNode)
 	assert.Nil(t, err)
 	if machTypeByName1.Name == "" {
 		t.Fatal("cannot find machine type")
@@ -305,7 +297,7 @@ func sampleInputGCPCluster(t *testing.T) *clusters.ClusterInfo {
 		DiskSizeGB:  10,
 		Preemptible: true,
 	}
-	machTypeByName2, err := accessgke.MachineTypes.Get("c2-standard-60")
+	machTypeByName2, err := accessgke.GetMachineTypes().Get("c2-standard-60")
 	assert.Nil(t, err)
 	if machTypeByName2.Name == "" {
 		t.Fatal("cannot find machine type")

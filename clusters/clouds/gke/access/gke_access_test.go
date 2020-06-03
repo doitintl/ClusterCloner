@@ -8,7 +8,7 @@ import (
 
 func TestParseMachineType(t *testing.T) {
 	machineType := "e2-highcpu-8"
-	mt, err := MachineTypes.Get(machineType)
+	mt, err := GetMachineTypes().Get(machineType)
 	assert.Nil(t, err)
 	if mt.Name != machineType {
 		t.Fatal(mt.Name)
@@ -23,7 +23,7 @@ func TestParseMachineType(t *testing.T) {
 }
 func TestParseMachineType2(t *testing.T) {
 	name := "n1-ultramem-40"
-	mt, err := MachineTypes.Get(name)
+	mt, err := GetMachineTypes().Get(name)
 	assert.Nil(t, err)
 	if mt.Name != name {
 		t.Fatal(mt.Name)
@@ -37,7 +37,7 @@ func TestParseMachineType2(t *testing.T) {
 }
 func TestParseMissingMachineType2(t *testing.T) {
 	name := "xx-xx-40"
-	mt, err := MachineTypes.Get(name)
+	mt, err := gkeMachineTypes.Get(name)
 	assert.NotNil(t, err)
 	zero := machinetypes.MachineType{}
 	if mt != zero {

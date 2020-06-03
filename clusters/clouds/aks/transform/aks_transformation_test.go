@@ -19,9 +19,7 @@ func TestTransformAzureToHub(t *testing.T) {
 		GeneratedBy: clusters.Mock}
 	tr := AKSTransformer{}
 	std, err := tr.CloudToHub(ci)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	if std.Location != "us-west1" {
 		t.Fatal(std.Location)
 	}
@@ -56,9 +54,7 @@ func TestTransformHubToAzure(t *testing.T) {
 	}
 	tr := AKSTransformer{}
 	az, err := tr.HubToCloud(ci, "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	if az.Location != "centralus" {
 		t.Fatal(az.Location)
 	}
@@ -73,15 +69,11 @@ func TestTransformHubToAzure(t *testing.T) {
 func TestTransformLocToHub(t *testing.T) {
 	loc := "eastus"
 	locationMap, err := LocationsCloudToHub()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	hub := locationMap[loc]
 	assert.Equal(t, "us-east4", hub)
 	gcpLoc, err := transform.LocationsCloudToHub()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	for _, gcp := range locationMap {
 		if _, ok := gcpLoc[gcp]; !ok {
 			t.Fatal(gcp)

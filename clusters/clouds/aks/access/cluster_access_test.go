@@ -12,8 +12,10 @@ func init() {
 func TestParseMachineType(t *testing.T) {
 	machineType := "Standard_D1_v2"
 
-	mt, err := MachineTypes.Get(machineType)
+	machineTypes := GetMachineTypes()
+	mt, err := machineTypes.Get(machineType)
 	assert.Nil(t, err)
+
 	if mt.Name != machineType {
 		t.Fatal(mt.Name)
 	}
@@ -26,10 +28,9 @@ func TestParseMachineType(t *testing.T) {
 	}
 }
 func TestMachineTypes(t *testing.T) {
-	types := MachineTypes
-	machineTypeCount := types.Length()
+	machineTypeCount := GetMachineTypes().Length()
 	assert.Greater(t, machineTypeCount, 90)
-	mt, err := MachineTypes.Get("Standard_A2_v2")
+	mt, err := GetMachineTypes().Get("Standard_A2_v2")
 	assert.Nil(t, err)
 	assert.Equal(t, "Standard_A2_v2", mt.Name)
 	assert.Equal(t, 4096, mt.RAMMB)

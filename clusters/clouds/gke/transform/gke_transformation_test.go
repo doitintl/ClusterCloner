@@ -11,7 +11,7 @@ import (
 
 func TestTransformGcpToHubAndBack(t *testing.T) {
 	scope := "sample-project"
-	mt, err := access.MachineTypes.Get("e2-highcpu-8")
+	mt, err := access.GetMachineTypes().Get("e2-highcpu-8")
 	assert.Nil(t, err)
 	var npi1 = clusters.NodePoolInfo{
 		Name:        "NPName",
@@ -36,9 +36,7 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	}
 	tr := GKETransformer{}
 	hub, err := tr.CloudToHub(input)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	if !strings.HasPrefix(input.Location, hub.Location) {
 		t.Fatal(hub.Location)
 	}
@@ -47,9 +45,7 @@ func TestTransformGcpToHubAndBack(t *testing.T) {
 	}
 
 	output, err := tr.HubToCloud(hub, scope)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 
 	if output.Scope != scope || output.Name != input.Name ||
 		output.Cloud != input.Cloud {
