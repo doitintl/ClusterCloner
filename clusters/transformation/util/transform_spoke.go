@@ -82,7 +82,7 @@ func fixK8sVersion(mutate *clusters.ClusterInfo) error {
 }
 
 /*FindBestMatchingSupportedK8sVersion  find the least patch version that is
-greater or equal to  the supplied vers, but has the same major-minor version.
+greater or equal to  the supplied version, but has the same major-minor version.
 If that not possible, get the largest patch version that has the same major-minor version
 */
 func findBestMatchingSupportedK8sVersion(vers string, supportedVersions []string) (bestVersion string, err error) {

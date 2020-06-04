@@ -20,7 +20,7 @@ func RandomWord() string {
 	babbler := babble.NewBabbler()
 	babbler.Count = 1
 	word := babbler.Babble()
-	for len(word) > 7 {
+	for len(word) > 5 {
 		word = babbler.Babble()
 	}
 	return ToLowerCaseAlphaNumDashAndUnderscore(word)

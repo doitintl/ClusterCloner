@@ -6,7 +6,6 @@ import (
 )
 
 func TestMapToCsv(t *testing.T) {
-
 	s := "a=b,cc=ddd,eee=f,g,h="
 	m := CommaSeparatedKeyValPairsToMap(s)
 	s2 := ToCommaSeparateKeyValuePairs(m)

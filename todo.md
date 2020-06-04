@@ -1,7 +1,7 @@
 
 # Plans to copy more fields
 
-## Fields of GKE Cluster
+## Fields of Cluster (Based on GKE)
 - Name: Copied
 - Description: Will not copy (Cloud-specific)
 - InitialNodeCount: Will not copy (in NodePool)
@@ -42,7 +42,7 @@
 - Location: Copied
 
 -----------------------------
-## GKE  Node fields
+## Fields of Node (Based on GKE)
 - Name: Copied
 - Config: See below
 - InitialNodeCount: Copied
@@ -53,8 +53,9 @@
 - StatusMessage: Will not copy (ephemeral)
 - Autoscaling: Should copy
 - Management: Should copy (Auto-repair and Auto-upgrade)
-
-## GKE  NodeConfig fields
+- InstanceType: Support multi-instance type
+-------------------------------
+## Feelds of NodeConfig (Based on GKE)
 -  MachineType: Copied
 -  DiskSizeGb: Copied
 -  OauthScopes: Will not copy (Cloud-specific)
@@ -67,4 +68,19 @@
 -  Preemptible: Should copy
 -  Accelerators: Should copy (in EKS, to get a GPU, use a different machine type)
 -  DiskType: Should copy
--  MinCpuPlatform: Will not copy (Cloud-specific)
+
+
+### Clusters and NodeGroups
+- Use Paging in EKS
+
+### Converting reference data
+#### Machine Types
+Now converted with a simple algorithm. (We choose the smallest target machine type bigger than the input machine type in CPU and RAM.)
+The results of the algorithm may be low-quality. Improve this algorithm, or created a manual conversion table.
+### Kubernetes versions
+Now converted with a simple algorithm. (For clouds that support patch versions, namely AKS and GKE,
+we choose the least patch version that is
+greater or equal to  the supplied version, but has the same major-minor version.
+If that is not possible, we get the largest patch version that has the same major-minor version.
+For EKS, that does not support patch versions, we just choose the same major-minor version.
+The results of the algorithm may be low-quality. Improve this algorithm.

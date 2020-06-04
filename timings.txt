@@ -1,0 +1,12 @@
+Create,AKS,1046
+Create,GKE,154.8
+Create,GKE,186.6
+Delete,AKS,1217
+Delete,EKS,938.6
+Delete,GKE,219.7
+Describe,EKS,1.7
+Describe,EKS,81.3
+Describe,GKE,0.6
+Create,AKS,379.9
+Delete,AKS,489.3
+Create,AKS,318.4

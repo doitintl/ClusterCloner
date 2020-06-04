@@ -56,7 +56,6 @@ func (m *MachineTypes) Set(key string, value MachineType) {
 	} else {
 		m.mts = append(m.mts, value)
 	}
-	//	log.Println(m.mts)
 
 }
 

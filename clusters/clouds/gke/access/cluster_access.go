@@ -3,6 +3,7 @@ package access
 import (
 	containerv1 "cloud.google.com/go/container/apiv1"
 	"clustercloner/clusters"
+	accessutil "clustercloner/clusters/clusteraccess/util"
 	"clustercloner/clusters/machinetypes"
 	clusterutil "clustercloner/clusters/util"
 	"context"
@@ -23,6 +24,7 @@ type GKEClusterAccess struct {
 
 // Delete ...
 func (ca GKEClusterAccess) Delete(ci *clusters.ClusterInfo) error {
+	defer clusterutil.TrackTime("Delete GKE", time.Now())
 	bkgdCtx := context.Background()
 	client, err := containerv1.NewClusterManagerClient(bkgdCtx)
 	if err != nil {
@@ -45,6 +47,7 @@ func (ca GKEClusterAccess) Delete(ci *clusters.ClusterInfo) error {
 
 // Describe ...
 func (ca GKEClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+	defer clusterutil.TrackTime("Describe GKE", time.Now())
 	if searchTemplate.GeneratedBy == "" {
 		searchTemplate.GeneratedBy = clusters.SearchTemplate
 	}
@@ -117,8 +120,7 @@ func (ca GKEClusterAccess) List(project, location string, labelFilter map[string
 		}
 		ret = append(ret, foundClusterInfo)
 	}
-	log.Printf("In listing GKE clusters, the label filter was %v. These matched %v; and these did not %v", labelFilter, matchedNames, unmatchedNames)
-
+	accessutil.PrintFilteringResults(clusters.GCP, labelFilter, matchedNames, unmatchedNames)
 	return ret, nil
 
 }
@@ -173,6 +175,8 @@ func projectLocationOperationPath(project, location, opName string) string {
 
 // Create ...
 func (ca GKEClusterAccess) Create(createThis *clusters.ClusterInfo) (*clusters.ClusterInfo, error) {
+	defer clusterutil.TrackTime("Create GKE", time.Now())
+
 	path := projectLocationPath(createThis.Scope, createThis.Location)
 
 	var nodePools = make([]*containerpb.NodePool, len(createThis.NodePools))
@@ -283,7 +287,7 @@ Waiting:
 		status = op.Status
 		switch status {
 		case containerpb.Operation_STATUS_UNSPECIFIED, containerpb.Operation_RUNNING, containerpb.Operation_PENDING:
-			if counter%10 == 0 {
+			if counter%30 == 0 { //waiting 1 minute between each output
 				log.Println("Waiting for deletion of "+clusterName+", operation status", status)
 			}
 			continue
@@ -302,7 +306,7 @@ func init() {
 	key := "GOOGLE_APPLICATION_CREDENTIALS"
 	cred := os.Getenv(key)
 	if cred == "" {
-		log.Println(key + " not set; will use system gcloud authorization")
+		log.Println(key + " not set; will use system gcloud authentication")
 	} else {
 		log.Println(key, "=", cred)
 	}

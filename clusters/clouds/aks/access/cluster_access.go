@@ -2,6 +2,7 @@ package access
 
 import (
 	"clustercloner/clusters"
+	"clustercloner/clusters/clusteraccess/util"
 	"clustercloner/clusters/machinetypes"
 	clusterutil "clustercloner/clusters/util"
 	"context"
@@ -40,6 +41,8 @@ type AKSClusterAccess struct {
 
 // Delete ...
 func (ca AKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) error {
+	defer clusterutil.TrackTime("Delete AKS", time.Now())
+
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
 	aksClient, err := getManagedClustersClient()
@@ -51,7 +54,7 @@ func (ca AKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) error {
 		return fmt.Errorf("cannot delete cluster: %v", err)
 	}
 
-	log.Printf("About to delete Azure Cluster %s; waiting for completion", deleteThis.Name)
+	log.Printf("About to delete AKS Cluster %s; waiting for completion", deleteThis.Name)
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
 		return fmt.Errorf("cannot get the AKS deletion  future response: %v", err)
@@ -85,28 +88,33 @@ func getCluster(resourceGroupName, resourceName string) (cluster containerservic
 }
 func createGroup(ctx context.Context, groupName string, region string) (resources.Group, error) {
 	groupsClient := getGroupsClient()
-	log.Println(fmt.Sprintf("Creating resource group '%s' on location: %v", groupName, region))
-	group := resources.Group{Location: to.StringPtr(DefaultLocation())}
+	group := resources.Group{Location: &region}
 	return groupsClient.CreateOrUpdate(ctx, groupName, group)
 }
 
 //Describe ...
 func (ca AKSClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (described *clusters.ClusterInfo, err error) {
+	defer clusterutil.TrackTime("Describe AKS", time.Now())
+	groupName := searchTemplate.Scope
+	name := searchTemplate.Name
+	log.Println("Describe AKS cluster", groupName, ": ", name)
 	if searchTemplate.GeneratedBy == "" {
 		searchTemplate.GeneratedBy = clusters.SearchTemplate
 	}
 	if searchTemplate.GeneratedBy != clusters.SearchTemplate {
-		panic(fmt.Sprintf("Wrong GeneratedBy: %s" + searchTemplate.GeneratedBy))
+		log.Printf("Wrong GeneratedBy: %s\n", searchTemplate.GeneratedBy)
 	}
-	groupName := searchTemplate.Scope
 
-	cluster, err := getCluster(groupName, searchTemplate.Name)
+	cluster, err := getCluster(groupName, name)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot get cluster")
+		if strings.Contains(err.Error(), "not found") {
+			return nil, errors.Wrap(err, "cluster "+name+"not found")
+		}
+		return nil, errors.Wrap(err, "cannot get cluster "+name)
 	}
 	clusterInfo, err := clusterObjectToClusterInfo(cluster, searchTemplate.Scope, clusters.Read)
 	if err != nil {
-		return nil, errors.New("cannot convert cluster object")
+		return nil, errors.New("cannot convert cluster object for " + name)
 	}
 
 	clusterInfo.SourceCluster = searchTemplate
@@ -115,9 +123,10 @@ func (ca AKSClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (descr
 
 // Create ...
 func (ca AKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
+	defer clusterutil.TrackTime("Create AKS", time.Now())
 
 	groupName := createThis.Scope
-	log.Printf("Create Cluster: Group %s, Cluster %s, Location %s", groupName, createThis.Name, createThis.Location)
+	log.Printf("Create AKS Cluster: Group %s, Name %s, Location %s", groupName, createThis.Name, createThis.Location)
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Hour*1))
 	defer cancel()
 	_, err = createGroup(ctx, groupName, createThis.Location)
@@ -130,9 +139,11 @@ func (ca AKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 		} else {
 			return nil, errors.Wrap(err, "error creating group")
 		}
+	} else {
+		log.Println("Created resource group " + groupName)
 	}
 
-	createdCluster, err := createAKSCluster(ctx, createThis, groupName, aksUsername, aksSSHPublicKeyPath, ClientID(), ClientSecret())
+	createdCluster, err := createAKSCluster(ctx, createThis, aksUsername, aksSSHPublicKeyPath, ClientID(), ClientSecret())
 	if err != nil {
 		log.Println(err)
 		return nil, errors.Wrap(err, "cannot create cluster")
@@ -147,8 +158,9 @@ func (ca AKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 }
 
 // createAKSCluster creates a new managed Kubernetes cluster
-func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
-	resourceGroupName, username, sshPublicKeyPath, clientID, clientSecret string) (clusterCreated containerservice.ManagedCluster, err error) {
+func createAKSCluster(ctx context.Context,
+	createThis *clusters.ClusterInfo,
+	username, sshPublicKeyPath, clientID, clientSecret string) (created containerservice.ManagedCluster, err error) {
 	var sshKeyData string
 	if _, err := os.Stat(sshPublicKeyPath); err == nil {
 		sshBytes, err := ioutil.ReadFile(sshPublicKeyPath)
@@ -212,7 +224,7 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 	}
 	future, err := aksClient.CreateOrUpdate(
 		ctx,
-		resourceGroupName,
+		createThis.Scope,
 		createThis.Name,
 		clusterToCreate,
 	)
@@ -226,16 +238,16 @@ func createAKSCluster(ctx context.Context, createThis *clusters.ClusterInfo,
 		return containerservice.ManagedCluster{}, fmt.Errorf("cannot WaitForCompletion on the response from CreateOrUpdate: %v", err)
 
 	}
-	clusterCreated, err = future.Result(aksClient)
+	created, err = future.Result(aksClient)
 	if err != nil {
 		return containerservice.ManagedCluster{}, errors.Wrap(err, "error waiting for result")
 	}
-	clusterProperties := clusterCreated.ManagedClusterProperties
+	clusterProperties := created.ManagedClusterProperties
 	state := *clusterProperties.ProvisioningState
 	if state != "Succeeded" {
 		return containerservice.ManagedCluster{}, errors.New("could not created cluster, staate was " + state)
 	}
-	return clusterCreated, nil
+	return created, nil
 }
 
 // List ...
@@ -250,7 +262,6 @@ func (ca AKSClusterAccess) List(subscription, location string, labelFilter map[s
 	ret := make([]*clusters.ClusterInfo, 0)
 
 	clusterList, err := aksClient.List(ctx)
-	// TODO paging
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot list")
 	}
@@ -276,7 +287,7 @@ func (ca AKSClusterAccess) List(subscription, location string, labelFilter map[s
 		ret = append(ret, foundCluster)
 
 	}
-	log.Printf("In listing AKS clusters, the label filter was %v. These matched  %v; and these did not %v", labelFilter, matchedNames, unmatchedNames)
+	util.PrintFilteringResults(clusters.Azure, labelFilter, matchedNames, unmatchedNames)
 
 	return ret, nil
 }
@@ -294,7 +305,12 @@ func clusterObjectToClusterInfo(managedCluster containerservice.ManagedCluster, 
 	}
 	//AgentPoolProfile is not showing AgentPool K8s Version, so copying from the Cluster
 	var nodePoolK8sVersion = foundCluster.K8sVersion
-	for _, agentPoolProfile := range *props.AgentPoolProfiles {
+	agentPoolProfilesPtr := props.AgentPoolProfiles
+	var agentPoolProfiles []containerservice.ManagedClusterAgentPoolProfile = nil
+	if agentPoolProfilesPtr != nil {
+		agentPoolProfiles = *agentPoolProfilesPtr
+	}
+	for _, agentPoolProfile := range agentPoolProfiles {
 		var scaleSetPriority = agentPoolProfile.ScaleSetPriority
 		var spot = scaleSetPriority == containerservice.Spot
 		machType, err := aksMachineTypes.Get(fmt.Sprintf("%v", agentPoolProfile.VMSize))

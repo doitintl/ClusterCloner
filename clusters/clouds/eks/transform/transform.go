@@ -77,7 +77,7 @@ func (EKSTransformer) LocationHubToCloud(location string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "cannot get LocationsCloudToHub AWS")
 	}
-	hubToAws := clusterutil.ReverseOrderedMap(awsToHub) // //TODO make it deterministic
+	hubToAws := clusterutil.ReverseOrderedMap(awsToHub)
 	azLoc, ok := hubToAws.Get(location)
 	if !ok {
 		return "", errors.Errorf("Cannot find %s", location)

@@ -10,5 +10,5 @@ func TestCreateGCPClusterFromFile(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 	}
 
-	creanCreateDeleteCluster(t, "test-data/gke_clusters.json")
+	cleanCreateDeleteCluster(t, "test-data/gke_clusters.json", false)
 }

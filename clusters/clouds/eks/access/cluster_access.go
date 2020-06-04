@@ -4,8 +4,9 @@ import (
 	"clustercloner/clusters"
 	"clustercloner/clusters/clouds/eks/awssdk"
 	"clustercloner/clusters/clouds/eks/eksctl"
+	accessutil "clustercloner/clusters/clusteraccess/util"
 	"clustercloner/clusters/machinetypes"
-	"clustercloner/clusters/util"
+	clusterutil "clustercloner/clusters/util"
 	"encoding/csv"
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -14,6 +15,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 func init() {
@@ -23,7 +25,7 @@ func init() {
 		log.Println("No " + key + " env variable, so using awscredentials in application root as default")
 		cred = "awscredentials"
 	}
-	rootPath := util.RootPath() + "/" + cred
+	rootPath := clusterutil.RootPath() + "/" + cred
 	err := os.Setenv(key, rootPath)
 	if err != nil {
 		panic(err)
@@ -39,7 +41,9 @@ type EKSClusterAccess struct {
 
 // Create ...
 func (ca EKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
-	tagsCsv := util.ToCommaSeparateKeyValuePairs(createThis.Labels)
+	defer clusterutil.TrackTime("Create EKS", time.Now())
+
+	tagsCsv := clusterutil.ToCommaSeparateKeyValuePairs(createThis.Labels)
 	err = eksctl.CreateClusterNoNodeGroup(createThis.Name, createThis.Location, createThis.K8sVersion, tagsCsv)
 	if err != nil {
 		err2 := ca.Delete(createThis)
@@ -74,6 +78,8 @@ func (ca EKSClusterAccess) Create(createThis *clusters.ClusterInfo) (created *cl
 
 // Delete ...
 func (ca EKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) (err error) {
+	defer clusterutil.TrackTime("Delete EKS", time.Now())
+
 	err = eksctl.DeleteCluster(deleteThis.Name, deleteThis.Location)
 	if err != nil {
 		return errors.Wrap(err, "cannot delete cluster")
@@ -84,6 +90,7 @@ func (ca EKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) (err error) 
 
 //Describe ...
 func (ca EKSClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (described *clusters.ClusterInfo, err error) {
+	defer clusterutil.TrackTime("Describe EKS", time.Now())
 	if searchTemplate.GeneratedBy == "" {
 		searchTemplate.GeneratedBy = clusters.SearchTemplate
 	}
@@ -107,32 +114,32 @@ func (ca EKSClusterAccess) Describe(searchTemplate *clusters.ClusterInfo) (descr
 }
 
 func addNodeGroupObjectsAsNodePoolInfo(eksNodeGroups []*eks.DescribeNodegroupOutput, cluster *clusters.ClusterInfo) error {
-	for _, describeNg := range eksNodeGroups {
-		ng := describeNg.Nodegroup
-		if len(ng.InstanceTypes) > 1 {
+	for _, describeNodeGroup := range eksNodeGroups {
+		nodeGroup := describeNodeGroup.Nodegroup
+		if len(nodeGroup.InstanceTypes) > 1 {
 			log.Println("NodeGroup has multiple InstanceTypes; support having only 1")
 
 		}
-		instanceType := *ng.InstanceTypes[0]
-		mt, err := GetMachineTypes().Get(instanceType) //TODO support multi-instance-type NG
+		instanceType := *nodeGroup.InstanceTypes[0]
+		machineType, err := GetMachineTypes().Get(instanceType) //TODO support multi-instance-type NG
 		if err != nil {
 			return errors.Wrap(err, "cannot get instance type "+instanceType)
 		}
-		if mt.Name == "" {
+		if machineType.Name == "" {
 			return errors.New("cannot find " + instanceType)
 		}
-		scaling := ng.ScalingConfig
+		scaling := nodeGroup.ScalingConfig
 		if *scaling.MaxSize != *scaling.DesiredSize || *scaling.MinSize != *scaling.DesiredSize {
 			log.Println(fmt.Sprintf("Dynamic scaling unsupported: %v", scaling))
 		}
-		ngName := *ng.Labels["alpha.eksctl.io/nodegroup-name"]
-
+		//NodeGroup name also available  nodeGroup.Labels["alpha.eksctl.io/nodegroup-name"]
+		ngName := *nodeGroup.NodegroupName
 		npi := clusters.NodePoolInfo{
 			Name:        ngName,
 			NodeCount:   int(*scaling.DesiredSize),
-			K8sVersion:  *ng.Version,
-			MachineType: mt, //TODO Deal with missing instance types. What instance types are allowed in EKS?
-			DiskSizeGB:  int(*ng.DiskSize),
+			K8sVersion:  *nodeGroup.Version,
+			MachineType: machineType, //TODO Deal with missing instance types. What instance types are allowed in EKS?
+			DiskSizeGB:  int(*nodeGroup.DiskSize),
 		}
 
 		cluster.AddNodePool(npi)
@@ -149,7 +156,7 @@ func clusterObjectToClusterInfo(clusterOutput *eks.DescribeClusterOutput, loc, g
 		K8sVersion:  *cluster.Version,
 		GeneratedBy: generatedBy,
 		Cloud:       clusters.AWS,
-		Labels:      util.StrPtrMapToStrMap(cluster.Tags),
+		Labels:      clusterutil.StrPtrMapToStrMap(cluster.Tags),
 	}
 
 	return ci
@@ -173,7 +180,7 @@ func (ca EKSClusterAccess) List(_, location string, tagFilter map[string]string)
 			return nil, errors.Wrap(err, "cannot describe cluster "+clusterName)
 		}
 
-		match := util.LabelMatch(tagFilter, ci.Labels)
+		match := clusterutil.LabelMatch(tagFilter, ci.Labels)
 		if !match {
 			log.Printf("Skipping cluster %s because labels do not match", ci.Name)
 			unmatchedNames = append(unmatchedNames, ci.Name)
@@ -183,14 +190,13 @@ func (ca EKSClusterAccess) List(_, location string, tagFilter map[string]string)
 		listedClusters = append(listedClusters, ci)
 	}
 
-	log.Printf("In listing EKS clusters, the label filter was %v. These matched %v; and these did not %v", tagFilter, matchedNames, unmatchedNames)
-
+	accessutil.PrintFilteringResults(clusters.AWS, tagFilter, matchedNames, unmatchedNames)
 	return listedClusters, nil
 }
 
 // GetSupportedK8sVersions ...
 func (ca EKSClusterAccess) GetSupportedK8sVersions(scope, location string) (versions []string, err error) {
-	return []string{"1.12", "1.13", "1.14", "1.15"}, nil //TODO load dynamically; handle the lack of minor version andpatch
+	return []string{"1.12", "1.13", "1.14", "1.15"}, nil //TODO load dynamically
 
 }
 
@@ -215,7 +221,7 @@ func init() {
 func loadMachineTypes() (*machinetypes.MachineTypes, error) {
 	ret := machinetypes.NewMachineTypeMap()
 
-	fn := util.RootPath() + "/machine-types/aws-instance-types.csv"
+	fn := clusterutil.RootPath() + "/machine-types/aws-instance-types.csv"
 	csvfile, err := os.Open(fn)
 	if err != nil {
 		wd, _ := os.Getwd()

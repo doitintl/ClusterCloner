@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iancoleman/orderedmap"
 	"log"
+	"strings"
 )
 
 // LabelMatch ...
@@ -48,6 +49,19 @@ func StrPtrMapToStrMap(m map[string]*string) map[string]string {
 	}
 	return ret
 
+}
+
+// StrMapToStr ...
+func StrMapToStr(m map[string]string) string {
+	s := "{"
+	for k, v := range m {
+		s += fmt.Sprintf("%v:%v, ", k, v)
+	}
+	if strings.HasSuffix(s, ", ") { //avoid trying to shorten for empty map
+		s = s[:len(s)-2]
+	}
+	s += "}"
+	return s
 }
 
 // ReverseOrderedMap ...

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iancoleman/orderedmap"
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 )
 
@@ -39,6 +40,17 @@ func TestReverseOrderedMap(t *testing.T) {
 		assert.True(t, ok)
 		s += fmt.Sprintf("%v:%v,", k, v)
 	}
-	s=s[:len(s)-1]
+	s = s[:len(s)-1]
 	assert.Equal(t, "aaa:a,bb:B,cc:c", s)
+}
+func TestStrMapToStr(t *testing.T) {
+	m := map[string]string{"x": "y", "a": "b", "e": "f"}
+	s := StrMapToStr(m)
+	assert.True(t, strings.Contains(s, "e:f"))
+	assert.True(t, strings.HasPrefix(s, "{"))
+}
+func TestStrMapToStrEmpty(t *testing.T) {
+	m := map[string]string{}
+	s := StrMapToStr(m)
+	assert.Equal(t, "{}", s)
 }

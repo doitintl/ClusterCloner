@@ -22,7 +22,7 @@ func DescribeClusters(region string) ([]*eks.DescribeClusterOutput, error) {
 
 	input := &eks.ListClustersInput{}
 
-	result, err := svc.ListClusters(input) //TODO use paging
+	result, err := svc.ListClusters(input)
 	if err != nil {
 		printAwsErr(err)
 		return nil, errors.Wrap(err, "cannot DescribeClusters  with AWS SDK")
@@ -75,7 +75,7 @@ func DescribeNodeGroups(clusterName string, region string) ([]*eks.DescribeNodeg
 		ClusterName: aws.String(clusterName),
 	}
 
-	result, err := svc.ListNodegroups(input) //TODO use paging
+	result, err := svc.ListNodegroups(input)
 	if err != nil {
 		printAwsErr(err)
 		return nil, errors.Wrap(err, "cannot ListNodegroups with AWS SDK")

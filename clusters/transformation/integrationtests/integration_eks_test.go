@@ -10,6 +10,6 @@ func TestCreateAWSClusterFromFile(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 	}
 
-	creanCreateDeleteCluster(t, "test-data/eks_clusters.json")
+	cleanCreateDeleteCluster(t, "test-data/eks_clusters.json", false)
 
 }

@@ -36,7 +36,7 @@ func mainCmd(cliCtx *cli.Context) error {
 	return err
 }
 func printFlags(cliCtx *cli.Context) {
-	var s = "\n"
+	var s = "Command line flags\n:"
 	for _, flagName := range cliCtx.FlagNames() {
 		value := cliCtx.String(flagName)
 		s += fmt.Sprintf("\t\t%s: %s\n", flagName, value)

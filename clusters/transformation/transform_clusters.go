@@ -5,7 +5,6 @@ import (
 	transformaks "clustercloner/clusters/clouds/aks/transform"
 	transformeks "clustercloner/clusters/clouds/eks/transform"
 	transformgke "clustercloner/clusters/clouds/gke/transform"
-
 	"clustercloner/clusters/clusteraccess"
 	"clustercloner/clusters/transformation/util"
 	clusterutil "clustercloner/clusters/util"
@@ -27,20 +26,17 @@ type Transformer interface {
 }
 
 // getTransformer, from or to hub to the cloud specified by the parameter.
-func getTransformer(cloud string) Transformer {
-	var transformer Transformer
+func getTransformer(cloud string) (Transformer, error) {
 	switch cloud {
 	case clusters.GCP:
-		transformer = &transformgke.GKETransformer{}
+		return &transformgke.GKETransformer{}, nil
 	case clusters.Azure:
-		transformer = &transformaks.AKSTransformer{}
+		return &transformaks.AKSTransformer{}, nil
 	case clusters.AWS:
-		transformer = &transformeks.EKSTransformer{}
+		return &transformeks.EKSTransformer{}, nil
 	default:
-		transformer = nil
-		panic("Unknown cloud " + cloud)
+		return nil, errors.New("Unknown cloud \"" + cloud + "\"")
 	}
-	return transformer
 }
 
 // getTransformer, from this cloud to this same cloud, without going through hub
@@ -166,10 +162,8 @@ func getInputClusters(inputFile string, inputCloud string, inputScope string, in
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot read input file")
 		}
-
 		log.Printf("Loaded %d clusters from file\n", len(inputClusterInfos))
 	} else {
-
 		clusterAccessor := clusteraccess.GetClusterAccess(inputCloud)
 		if clusterAccessor == nil {
 			return nil, errors.New("cannot get accessor for " + inputCloud)
@@ -203,7 +197,7 @@ func createClusters(transformationOutput []*clusters.ClusterInfo) ([]*clusters.C
 func createClusters0( /*immutable*/ createThese []*clusters.ClusterInfo) (createdClusters []*clusters.ClusterInfo, createdIndexes []int) {
 	createdIndexes = make([]int, 0)
 	createdClusters = make([]*clusters.ClusterInfo, len(createThese))
-	log.Println("Creating", len(createThese), "target clusters")
+	log.Println("Creating", len(createThese), "clusters")
 	for idx, createThis := range createThese {
 		created, err := createCluster(createThis)
 		if err != nil {
@@ -217,6 +211,7 @@ func createClusters0( /*immutable*/ createThese []*clusters.ClusterInfo) (create
 }
 
 func createCluster(createThis *clusters.ClusterInfo) (created *clusters.ClusterInfo, err error) {
+
 	var ca = clusteraccess.GetClusterAccess(createThis.Cloud)
 	if ca == nil {
 		return nil, errors.New("cannot create ClusterAccess")
@@ -310,10 +305,11 @@ func transformCloudToCloud(in *clusters.ClusterInfo, toCloud, outputScope string
 
 func toHubFormat(input *clusters.ClusterInfo) (ret *clusters.ClusterInfo, err error) {
 	cloud := input.Cloud
-	transformer := getTransformer(cloud)
-	if transformer == nil {
-		return nil, errors.New("cannot transform")
+	transformer, err := getTransformer(cloud)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot getTransformer to convert toHubFormat")
 	}
+
 	ret, err = transformer.CloudToHub(input)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot convert CloudToHub")
@@ -327,7 +323,10 @@ func fromHubFormat(hub *clusters.ClusterInfo, toCloud string, outputScope string
 		return nil, errors.Errorf("wrong Cloud %s", hub.Cloud)
 	}
 
-	var transformer = getTransformer(toCloud)
+	transformer, err := getTransformer(toCloud)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot getTransformer to convert fromHubFormat")
+	}
 	ret, err = transformer.HubToCloud(hub, outputScope)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot convert HubToCloud")
