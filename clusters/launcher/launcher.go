@@ -40,7 +40,7 @@ func CLIFlags() []cli.Flag {
 			Usage: "GCP, Azure, AWS, or Hub",
 		},
 		&cli.BoolFlag{
-			Name:  "create",
+			Name:  "nodryrun",
 			Usage: "true: Create new clusters; default is not to create (dry run)",
 		},
 		&cli.BoolFlag{

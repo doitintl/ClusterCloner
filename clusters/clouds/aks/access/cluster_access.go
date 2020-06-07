@@ -65,7 +65,7 @@ func (ca AKSClusterAccess) Delete(deleteThis *clusters.ClusterInfo) error {
 	}
 	status := response.StatusCode
 	if status != 200 {
-		return errors.New("could not delete cluster, staate was " + response.Status)
+		return errors.New("could not delete cluster, state was " + response.Status)
 	}
 	return nil
 }
@@ -245,7 +245,7 @@ func createAKSCluster(ctx context.Context,
 	clusterProperties := created.ManagedClusterProperties
 	state := *clusterProperties.ProvisioningState
 	if state != "Succeeded" {
-		return containerservice.ManagedCluster{}, errors.New("could not created cluster, staate was " + state)
+		return containerservice.ManagedCluster{}, errors.New("could not created cluster, state was " + state)
 	}
 	return created, nil
 }

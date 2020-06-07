@@ -36,23 +36,21 @@ type NodePoolInfo struct {
 	K8sVersion  string
 	MachineType machinetypes.MachineType
 	DiskSizeGB  int
-	Preemptible bool
+	Preemptible bool //Not now supported in EKS
 }
 
 var (
-	// Mock Created for testing
+	// Mock cluster created for testing
 	Mock = "Mock"
-	// Read from the cloud
+	// Read ... Cluster info which was read from the cloud
 	Read = "Read"
-	// Created using this tool
+	// Created ... A cluster that was created using this tool
 	Created = "Created"
-	// Transformation  by this tool; can be an intermediate transformation step (Hub) or the output of the transformation, which can be optionally created in the cloud
+	// Transformation ... The output of transformation by this tool; can be an intermediate transformation step (Hub) or the output of the transformation, which can then be optionally created in the cloud
 	Transformation = "Transformation"
-
-	// SearchTemplate used for searching for Clusters by label
+	// SearchTemplate ... A ClusterInfo object used as a SearchTemplate used for searching for Clusters by labels; or by name, location and scope (GCP project or Azure resource group).
 	SearchTemplate = "SearchTemplate"
-
-	// InputFile read from a JSON file. Even if the Cluster in the JSON file does not say InputFile, the value will be replaced
+	// InputFile ... ClusterInfo which was read from a JSON file. Even if the Cluster in the JSON file does not say InputFile, the value will be replaced
 	InputFile = "InputFile"
 )
 

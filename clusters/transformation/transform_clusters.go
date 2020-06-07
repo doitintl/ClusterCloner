@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"log"
+	"strings"
 )
 
 // Transformer ...
@@ -106,9 +107,9 @@ func parseCLIParams(cliCtx *cli.Context) (inputFile string, inputCloud string, o
 	outputScope = cliCtx.String("outputscope")
 	randomSuffix = cliCtx.Bool("randomsuffix")
 
-	shouldCreate = cliCtx.Bool("create")
+	shouldCreate = cliCtx.Bool("nodryrun")
 	if shouldCreate {
-		log.Printf("Will create target clusters")
+		log.Printf("No dry run; will create target clusters")
 	} else {
 		log.Printf("Dry run; will not create target clusters")
 	}
@@ -116,26 +117,35 @@ func parseCLIParams(cliCtx *cli.Context) (inputFile string, inputCloud string, o
 	labelFilter = clusterutil.CommaSeparatedKeyValPairsToMap(labelFilterS)
 	var errS string
 	if inputFile == "" {
-		if inputCloud == "" || inputScope == "" || inputLocation == "" {
-			errS += "some values missing for input from cloud"
+		if inputCloud == "" {
+			errS += "; input cloud missing"
+		}
+		if inputScope == "" && inputCloud != clusters.AWS {
+			errS += "; input scope missing"
+		}
+		if inputLocation == "" {
+			errS += "; input location missing"
 		}
 	} else {
 		if inputCloud != "" || inputScope != "" || inputLocation != "" {
-			errS += "if input file is provided, do not provide input from cloud"
+			errS += "; if input file is provided, do not provide input cloud name, scope, or location"
 		}
 	}
 
 	if shouldCreate {
-		if outputCloud == "" || outputScope == "" {
-			errS += "some output values missing"
+		if outputCloud == "" {
+			errS += "; output cloud missing"
+		}
+		if outputScope == "" && outputCloud != clusters.AWS {
+			errS += "; output scope"
 		}
 	}
 
 	if errS != "" {
+		errS = strings.TrimPrefix(errS, "; ")
 		err = errors.New(errS)
 	}
 
-	// and likewise if shouldCreate is true, then all output CLI params are there.
 	return inputFile, inputCloud, outputCloud, inputLocation, inputScope, outputScope, shouldCreate, randomSuffix, labelFilter, err
 }
 

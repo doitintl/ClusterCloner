@@ -71,7 +71,7 @@
 
 
 ### Clusters and NodeGroups
-- Use Paging in EKS
+- Use Paging in EKS and AKS
 
 ### Converting reference data
 #### Machine Types

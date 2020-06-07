@@ -6,20 +6,20 @@ import (
 	"clustercloner/clusters/transformation"
 	"clustercloner/clusters/transformation/util"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"os"
 	"strings"
 	"testing"
 )
 
-func getCreatedClustersByLabel(t *testing.T, searchTemplate *clusters.ClusterInfo, expectedCount int) *clusters.ClusterInfo {
+func getCreatedClustersByLabel(t *testing.T, searchTemplate *clusters.ClusterInfo, expectedCount int) []*clusters.ClusterInfo {
 	ca := clusteraccess.GetClusterAccess(searchTemplate.Cloud)
 	listed, err := ca.List(searchTemplate.Scope, searchTemplate.Location, searchTemplate.Labels)
-	assert.Nil(t, err)
-	assert.Equal(t, expectedCount, len(listed), listed)
-	if len(listed) == 0 {
-		return nil
+	if err != nil {
+		log.Println("none found in ", searchTemplate, ";error was ", err)
 	}
-	return listed[0]
+	assert.Equal(t, expectedCount, len(listed), listed)
+	return listed
 }
 
 func cleanCreateDeleteCluster(t *testing.T, inputFile string, alsoDescribe bool) {
@@ -34,7 +34,11 @@ func cleanCreateDeleteCluster(t *testing.T, inputFile string, alsoDescribe bool)
 				assert.Fail(t, "cluster not found "+err.Error())
 			}
 			assert.Nil(t, err)
-			assert.Equal(t, cl, description)
+			assert.Equal(t, cl.Name, description.Name)
+			assert.Equal(t, cl.K8sVersion, description.K8sVersion)
+			assert.Equal(t, cl.Cloud, description.Cloud)
+			assert.Equal(t, cl.Labels, description.Labels)
+			assert.Equal(t, cl.NodePools, description.NodePools)
 		}
 	}
 
@@ -54,16 +58,19 @@ func cleanAndCreateCluster(t *testing.T, inputFile string) []*clusters.ClusterIn
 		if !strings.HasPrefix(out[0].Name, clusterFromFile.Name) {
 			t.Fatalf("%s does not have %s as prefix", out[0].Name, clusterFromFile.Name)
 		}
-		createdClus := getCreatedClustersByLabel(t, clusterFromFile, 1)
-		assert.Equal(t, len(clusterFromFile.NodePools), len(createdClus.NodePools))
-		for _, createdNP := range createdClus.NodePools {
-			inputNP := clusterFromFile.NodePools[0]
-			assert.Equal(t, inputNP.Name, createdNP.Name)
-			assert.Equal(t, inputNP.DiskSizeGB, createdNP.DiskSizeGB)
-			assert.Equal(t, inputNP.NodeCount, createdNP.NodeCount)
-		}
 	}
-	return clustersFromFile
+	clusterFromFile := clustersFromFile[0]
+	createdClusters := getCreatedClustersByLabel(t, clusterFromFile, 1)
+	createdCluster := createdClusters[0]
+	assert.Equal(t, len(clusterFromFile.NodePools), len(createdCluster.NodePools))
+	for _, createdNP := range createdCluster.NodePools {
+		inputNP := clusterFromFile.NodePools[0]
+		assert.Equal(t, inputNP.Name, createdNP.Name)
+		assert.Equal(t, inputNP.DiskSizeGB, createdNP.DiskSizeGB)
+		assert.Equal(t, inputNP.NodeCount, createdNP.NodeCount)
+	}
+
+	return createdClusters
 }
 
 func deleteAllMatchingByLabel(t *testing.T, clusters []*clusters.ClusterInfo) {
@@ -72,12 +79,16 @@ func deleteAllMatchingByLabel(t *testing.T, clusters []*clusters.ClusterInfo) {
 		c.Scope = scopeForIntegrationTest()
 		ca := clusteraccess.GetClusterAccess(c.Cloud)
 		listed, err := ca.List(c.Scope, c.Location, c.Labels)
-		assert.Nil(t, err)
+		if err != nil {
+			log.Println("Error listing ", c.Scope, c.Location, c.Labels, err)
+		}
 		if len(listed) > 0 {
 			for _, deleteThis := range listed {
 				err = ca.Delete(deleteThis)
+				if err != nil {
+					log.Println("Could not delete", deleteThis.Name, "; error was ", err)
+				}
 			}
-			assert.Nil(t, err)
 		}
 		_ = getCreatedClustersByLabel(t, c, 0)
 	}
