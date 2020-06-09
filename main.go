@@ -36,10 +36,16 @@ func mainCmd(cliCtx *cli.Context) error {
 	return err
 }
 func printFlags(cliCtx *cli.Context) {
-	var s = "Command line flags\n:"
-	for _, flagName := range cliCtx.FlagNames() {
-		value := cliCtx.String(flagName)
-		s += fmt.Sprintf("\t\t%s: %s\n", flagName, value)
+	flagNames := cliCtx.FlagNames()
+	var s string
+	if len(flagNames) == 0 {
+		s = "No command line flags"
+	} else {
+		s = "Command line flags\n:"
+		for _, flagName := range flagNames {
+			value := cliCtx.String(flagName)
+			s += fmt.Sprintf("\t\t%s: %s\n", flagName, value)
+		}
 	}
 	log.Println(s)
 }
@@ -67,8 +73,6 @@ func main() {
 	//Stdout is reserved for CLI output (JSON)
 
 	log.SetOutput(os.Stderr)
-
-	log.Println("Starting")
 
 	flags := launcher.CLIFlags()
 	app := &cli.App{

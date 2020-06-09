@@ -119,8 +119,7 @@ func (GKETransformer) LocationHubToCloud(location string) (string, error) {
 	hyphenCount, _ := hyphensForGCPLocation(location)
 	var zone string
 	if hyphenCount == 1 {
-		//Even when converting GCP to GCP, use a random zone, because we decided to convert GCP to GCP through the Hub format.
-		//We choose one of "a", or "b", but not "c" etc, for simplicity, because these exist in all regions.
+		//For zone, we choose one of "a", or "b", but not "c" etc, for simplicity, because these exist in all regions.
 		zones := []string{"a", "b"}
 		var randIdx = randNumGen.Intn(len(zones))
 		randZone := zones[randIdx]

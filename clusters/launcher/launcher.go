@@ -37,7 +37,7 @@ func CLIFlags() []cli.Flag {
 		},
 		&cli.StringFlag{
 			Name:  "outputcloud",
-			Usage: "GCP, Azure, AWS, or Hub",
+			Usage: "GCP, Azure, AWS, or Hub (for internal \"hub\" format\"",
 		},
 		&cli.BoolFlag{
 			Name:  "nodryrun",

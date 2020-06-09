@@ -21,8 +21,9 @@ import (
 func init() {
 	key := "AWS_SHARED_CREDENTIALS_FILE"
 	cred := os.Getenv(key)
+	msg := ""
 	if cred == "" {
-		log.Println("No " + key + " env variable, so using awscredentials in application root as default")
+		msg = "Using default for awscredentials file: "
 		cred = "awscredentials"
 	}
 	rootPath := clusterutil.RootPath() + "/" + cred
@@ -32,7 +33,7 @@ func init() {
 	}
 	absPathCred := os.Getenv(key)
 
-	log.Println(key, absPathCred)
+	log.Println(msg+key, absPathCred)
 }
 
 //EKSClusterAccess ...
