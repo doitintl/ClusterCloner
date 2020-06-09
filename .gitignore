@@ -13,7 +13,6 @@
 
 # secret keys
 *credential*.json
-credential*.json
 account.json
 awscredentials
 # Azure environment and credentials
