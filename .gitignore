@@ -11,16 +11,14 @@
 # binaries
 .bin
 
-# env customization
-.env
-# binary
-clustercloner
-
 # secret keys
 *credential*.json
 credential*.json
 account.json
 awscredentials
+# Azure environment and credentials
+.env
+
 # temporary
 **/.DS_Store
 **/debug
@@ -29,5 +27,5 @@ awscredentials
 # personal scripts
 run.sh
 build.sh
+test.sh
 docker_run.sh
-out.txt
