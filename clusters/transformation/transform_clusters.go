@@ -131,14 +131,15 @@ func parseCLIParams(cliCtx *cli.Context) (inputFile string, inputCloud string, o
 			errS += "; if input file is provided, do not provide input cloud name, scope, or location"
 		}
 	}
+	if (inputScope != "" && inputCloud != clusters.AWS) || (outputScope != "" && outputCloud != clusters.AWS) {
+		errS += "; do not specify scope for AWS"
+	}
 
-	if shouldCreate {
-		if outputCloud == "" {
-			errS += "; output cloud missing"
-		}
-		if outputScope == "" && outputCloud != clusters.AWS {
-			errS += "; output scope"
-		}
+	if outputCloud == "" {
+		errS += "; output cloud missing"
+	}
+	if outputScope == "" && outputCloud != clusters.AWS {
+		errS += "; output scope"
 	}
 
 	if errS != "" {

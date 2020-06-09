@@ -12,6 +12,8 @@ Create,EKS,958.1
 Create,GKE,154.8
 Create,GKE,186.6
 Create,GKE,191.2
+Create,GKE,199.8
+Create,AKS,196.3
 Delete,AKS,1217
 Delete,AKS,432.7
 Delete,AKS,488.5
@@ -25,6 +27,8 @@ Delete,EKS,922.2
 Delete,EKS,938.6
 Delete,GKE,207.6
 Delete,GKE,219.7
+Delete,GKE,199.8
+Delete,AKS,549
 Describe,AKS,1.3
 Describe,AKS,4.7
 Describe,EKS,0.8
@@ -37,8 +41,4 @@ Describe,EKS,1.7
 Describe,EKS,81.3
 Describe,GKE,0.6
 Describe,GKE,0.6
-Create,GKE,199.8
 Describe,GKE,0.6
-Create,AKS,196.3
-Delete,GKE,199.8
-Delete,AKS,549.0

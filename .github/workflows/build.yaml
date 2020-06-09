@@ -54,7 +54,5 @@ jobs:
         run: |
           echo $GCR_PUSHER_KEYJSON_BASE64 | base64 --decode > account.json
           docker login -u _json_key --password-stdin ${DOCKER_REGISTRY}  < account.json
-          X=${IMAGE_NAME}:${IMAGE_TAG}
-          echo "XXXXX ${X} XXXXXX"
           docker push ${IMAGE_NAME}:${IMAGE_TAG}
           docker logout

@@ -32,7 +32,7 @@ For GitHub CI, please specify the following Secrets in GitHub:
 ## Building
 ### Docker Docker
 The Docker image is built in Github Workflows.
-In development, you can run  `DOCKER_BUILDKIT=1 docker build -t <TAG> .`
+In development, you can run  `DOCKER_BUILDKIT=1 docker build -t <TAG> .` (Don't forget that final dot.)
 
 ### Using `make`
 In the GitHub actions, `make` is used to build the application.
@@ -40,12 +40,14 @@ In development:
 #### Build
 Plain `make` to format, lint and build
 #### Lint and format
-`make lint` and `make fmt
+`make lint` and `make fmt`
 #### Unit tests
 `make test-short`
 #### Integration and unit tests
-`make test`. Before running, make sure that your Google Project and Azure Group are set up (See "Credentials" above) and have the same name.
+`make test`. Before running, make sure that your Google Project and
+Azure Group are set up (See "Credentials" above) and have the same name.
 Note that the full suite can take an hour.
 
 # Credits
-This project was started from the [goapp](https://github.com/alexei-led/goapp) template, a bootstrap project for Go CLI applications.
+This project was started from the [goapp](https://github.com/alexei-led/goapp) template,
+a bootstrap project for Go CLI applications.
