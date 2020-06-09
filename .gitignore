@@ -20,7 +20,7 @@ clustercloner
 *credential*.json
 credential*.json
 account.json
-
+awscredentials
 # temporary
 **/.DS_Store
 **/debug
