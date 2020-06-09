@@ -26,8 +26,9 @@ For GitHub CI, please specify the following Secrets in GitHub:
 - `AWS_CREDENTIALS_BASE64` AWS credentials file for the application. Use `awscredentials.tpl` as a template.
 - `GCP_CLUSTER_MANAGER_KEYJSON_BASE64` Google credentials file (JSON) for the application.
 - `GCR_PUSHER_KEYJSON_BASE64` Google credentials file (JSON) with role Storage Admin for pushing  to your GCR registry
-- `DOCKER_REGISTRY` - Point this to GCR
-- `DOCKER_REPOSITORY` - _optional_; Docker image name including repository, default to `$GITHUB_REPOSITORY` (in the form `user/repo`)
+- `DOCKER_REGISTRY` - Registry to which the GitHub action with authenticate, for example `gcr.io`.
+- `DOCKER_REPOSITORY` - _optional_. For example `gcr.io/my-gcp-project/image-name`.
+If missing, the value defaults to `$GITHUB_REPOSITORY`, in the form `user/repo`.
 
 ## Building
 ### Docker Docker
