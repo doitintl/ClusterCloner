@@ -1,7 +1,7 @@
 # Cluster Features
 
-## Key to document
--  "Yes": features that are copied
+## Key
+- "Yes": features that are copied
 - "No": features that will not be copied.
   - If not marked, it is because the feature is cloud-specific.
   - Other features are not copied becuase they are ephemeral, like cluster status, or secondary -- calculated from other values.
@@ -18,7 +18,7 @@
 - Network: TBD (Convert this in AWS to VPC; need to create system for re-use of VPCs or creation of VPCs)
 - ClusterIpv4Cidr: TBD
 - AddonsConfig: No
-- Subnetwork Copy (See above re AWS VPC.)
+- Subnetwork TBD (See above re AWS VPC.)
 - NodePools: Yes
 - Locations: Yes
 - EnableKubernetesAlpha: No
