@@ -12,7 +12,7 @@ import (
 
 // LoadLocationMap ...
 func LoadLocationMap(file string) (*orderedmap.OrderedMap, error) {
-	var ret *orderedmap.OrderedMap = orderedmap.New()
+	var ret = orderedmap.New()
 	filePath := "/locations/" + file
 	fn := util.RootPath() + filePath
 	csvfile, err := os.Open(fn)
