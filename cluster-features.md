@@ -7,7 +7,7 @@
   - Other features are not copied becuase they are ephemeral, like cluster status, or secondary -- calculated from other values.
 - "TBD": features that should be copied
 
-## Fields of Cluster (Based on GKE)
+## Fields of Cluster (Mostly based on GKE)
 - Name: Yes
 - Description: No
 - InitialNodeCount: No (Use value in NodePool)
@@ -41,14 +41,14 @@ but the user has to specify which zone.)
 - CurrentNodeVersion: No
 - CreateTime: No (ephemeral value)
 - Status: No (ephemeral value)
-- StatusMessage: No
+- StatusMessage: No (ephemeral value)
 - NodeIpv4CidrSize: No
 - ServicesIpv4Cidr: No
 - InstanceGroupUrls: No (secondary value)
 - CurrentNodeCount: No (ephemeral)
 - ExpireTime: No (ephemeral)
 - Location: Yes
-
+- Unmanaged clusters:  No
 -----------------------------
 ## Fields of Node (Based on GKE)
 - Name: Yes
@@ -73,7 +73,7 @@ but the user has to specify which zone.)
 -  Labels: TBD
 -  LocalSsdCount: No (Maybe should)
 -  Tags: TBD (as-is, only cluster tags are copied)
--  Preemptible: TBD
+-  Preemptible: Partly (GKE and ASK only)
 -  Accelerators: TBD (In EKS, this is defined differently: use a different machine type to get a GPU.)
 -  DiskType: TBD
 

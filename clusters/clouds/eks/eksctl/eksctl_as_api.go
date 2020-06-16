@@ -19,7 +19,7 @@ func AddLogging(clusterName, region, k8sVersion, tagsCsv string) error {
 }
 
 // CreateNodeGroup ...
-func CreateNodeGroup(clusterName, nodeGroupName, region, k8sVersion, nodeInstanceType, tagsCsv string, nodeCount, diskSizeGB int, preemptible bool) error {
+func CreateNodeGroup(clusterName, nodeGroupName, region, k8sVersion, nodeInstanceType, tagsCsv string, nodeCount, diskSizeGB int, spot bool) error {
 
 	args := []string{"eksctl", "create", "nodegroup", "--managed",
 		"--cluster", clusterName, "--name", nodeGroupName, "--region", region, "--version", k8sVersion,
