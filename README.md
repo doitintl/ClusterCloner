@@ -12,7 +12,6 @@ For usage, run  `clustercloner --help`
 # Setup
 ## Add Credentials  in local development environment
 - Add a file `credentials-cluster-manager.json` (or another file name) with credentials for a service account with the Kubernetes Cluster Admin role (to read and create clusters).
-  - Use `awscredentials.tpl` as a template.
   - This is loaded through the `GOOGLE_APPLICATION_CREDENTIALS` environment variable, which you should set to `credentials-cluster-manager.json`
    (or other file name). If this environment variable is not set, your logged-in `gcloud` account will be used.
 - Add a file `.env` with Azure credentials.
@@ -20,6 +19,7 @@ For usage, run  `clustercloner --help`
   - The user should have the  Azure Kubernetes Service Cluster Admin Role.
 - Add a file `awscredentials` with AWS credentials.
   - The application uses the `AWS_SHARED_CREDENTIALS_FILE` environment variable to find this file, but `awscredentials` is the default.
+  - Use `awscredentials.tpl` as a template.
   - The user should have the policy
  discussed [here](https://docs.aws.amazon.com/eks/latest/userguide/security_iam_id-based-policy-examples.html).
  Specific example [here](https://github.com/weaveworks/eksctl/issues/204#issuecomment-631630355)
