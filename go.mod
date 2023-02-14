@@ -19,7 +19,7 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.30.11
+	github.com/aws/aws-sdk-go v1.34.0
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0
 	github.com/kris-nova/logger v0.0.0-20181127235838-fd0d87064b06
